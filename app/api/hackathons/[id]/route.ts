@@ -28,10 +28,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         }
 
         HackathonsList[index] = editedHackathon as Hackathon;
-        return NextResponse.json(editedHackathon)
+
+        const response = NextResponse.json(editedHackathon);
+        response.headers.set("Access-Control-Allow-Origin", "*");
+        response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS, POST, PUT");
+        response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+
+        return response
     } catch (error) {
         console.error("Error in PUT /hackathons:", error);
         return NextResponse.json({ error: `Internal Server Error ${error}` }, { status: 500 });
     }
 }
 
+export async function OPTIONS() {
+    const response = NextResponse.json({});
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS, POST, PUT" );
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+    return response;
+  }
+  
