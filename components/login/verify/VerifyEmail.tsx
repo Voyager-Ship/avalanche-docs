@@ -111,7 +111,7 @@ export function VerifyEmail({ email ,onBack}: { email: string; onBack: () => voi
   };
 
   return (
-    <div className="flex gap-[10px]  border-none">
+    <div className="flex gap-[10px] justify-center border-none">
       <div className="w-[400px]  p-6 rounded-lg border-none ">
         <h1 className="text-2xl font-semibold text-center mb-4 border-none">
           Verify Your Email
