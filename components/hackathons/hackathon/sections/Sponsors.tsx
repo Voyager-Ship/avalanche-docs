@@ -44,7 +44,7 @@ function Sponsors({ hackathon }: { hackathon: HackathonHeader }) {
                 className="basis-1/5 h-44 items-center justify-center flex"
               >
                 <Image
-                  src="/temp/ava_cloud_banner.svg"
+                  src={partner.logo}
                   alt={partner.name}
                   className="object-contain filter grayscale invert dark:invert-0"
                   height={120}
