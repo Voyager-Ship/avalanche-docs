@@ -397,9 +397,9 @@ export const eventsMenu: LinkItemType = {
         className: 'md:row-span-2',
       },
       icon: <Ticket />,
-      text: 'Summit Hackathon London',
+      text: 'Hackathons',
       description: 'This hackathon aims to harness the potential of Avalanche’s robust technology stack to address pressing issues and create scalable, practical solutions.',
-      url: '/hackathon',
+      url: '/hackathons',
     },
     {
       menu: {
