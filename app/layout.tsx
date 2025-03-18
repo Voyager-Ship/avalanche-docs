@@ -12,6 +12,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import Chatbot from "@/components/ui/chatbot";
 import { PrivacyPolicyBox } from "@/components/privacy-policy";
 import MdxLayout from "./mdx-layout";
+import { SearchRootProvider } from './searchRootProvider';
+import { Banner } from "fumadocs-ui/components/banner";
+import Link from "next/link"
 
 export const metadata = createMetadata({
   title: {
@@ -38,10 +41,11 @@ export default function Layout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
     >
       <PHProvider>
+        <Banner id="banner" className="border-b border-border"><div className='max-w-10/12'><span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs">NEW</span> Register for the <a href="https://lu.ma/avalanchesummitlondonhackathon?utm_source=builder_hub" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-600 transition-colors">London Hackathon</a>!</div></Banner>
         <body className="flex min-h-screen flex-col">
-          <RootProvider>{children}</RootProvider>
-          <Analytics />
-          <SpeedInsights />
+          <SearchRootProvider>
+            {children}
+          </SearchRootProvider>
           <Chatbot />
           <div id="privacy-banner-root" className="relative">
             <PrivacyPolicyBox />

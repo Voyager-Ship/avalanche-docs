@@ -1,3 +1,5 @@
+"use client";
+
 import { useExampleStore } from "../../utils/store";
 import { Input, Select } from "../../ui";
 import { useState, useEffect } from "react";
@@ -11,7 +13,6 @@ const generateDockerCommand = (subnets: string[], isRPC: boolean, networkID: num
     const env: Record<string, string> = {
         AVAGO_PARTIAL_SYNC_PRIMARY_NETWORK: "true",
         AVAGO_PUBLIC_IP_RESOLUTION_SERVICE: "opendns",
-        AVAGO_PLUGIN_DIR: "/avalanchego/build/plugins/",
         AVAGO_HTTP_HOST: "0.0.0.0",
     };
 
@@ -72,8 +73,10 @@ const reverseProxyCommand = (domain: string) => {
   caddy reverse-proxy --from ${domain} --to localhost:8080`
 }
 
-const enableDebugNTraceCommand = (chainId: string) => `mkdir -p $HOME/.avalanchego_rpc/configs/chains/${chainId}
-echo '{
+const enableDebugNTraceCommand = (chainId: string) => `sudo mkdir -p $HOME/.avalanchego_rpc/configs/chains/${chainId}; 
+sudo chown -R $USER:$USER $HOME/.avalanchego_rpc/configs/chains/;
+
+sudo echo '{
   "log-level": "debug",
   "warp-api-enabled": true,
   "eth-apis": [
@@ -116,8 +119,9 @@ ${domain}/ext/bc/${chainID}/rpc`
     }
 }
 
-export const AvalanchegoDocker = () => {
-    const { subnetID, setSubnetID, networkID, setNetworkID, chainID, setChainID } = useExampleStore();
+
+export default function AvalanchegoDocker() {
+    const { subnetID, setSubnetID, networkID, setNetworkID, chainID, setChainID, setEvmChainRpcUrl } = useExampleStore();
     const [isRPC, setIsRPC] = useState<"true" | "false">("false");
     const [rpcCommand, setRpcCommand] = useState("");
     const [domain, setDomain] = useState("");
@@ -130,6 +134,19 @@ export const AvalanchegoDocker = () => {
             setRpcCommand((error as Error).message);
         }
     }, [subnetID, isRPC, networkID]);
+
+
+    useEffect(() => {
+        if (domain && chainID && isRPC === "true") {
+            setEvmChainRpcUrl("https://" + nipify(domain) + "/ext/bc/" + chainID + "/rpc");
+        }
+    }, [domain, chainID, isRPC]);
+
+    useEffect(() => {
+        if (isRPC === "false") {
+            setDomain("");
+        }
+    }, [isRPC]);
 
     return (
         <div className="space-y-4">

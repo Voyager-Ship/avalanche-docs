@@ -1,18 +1,15 @@
-import { createMDX } from "fumadocs-mdx/next";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
+import { createMDX } from 'fumadocs-mdx/next';
 
-const withMDX = createMDX({
-  mdxOptions: {
-    remarkPlugins: [remarkMath],
-    rehypePlugins: (v) => [rehypeKatex, ...v],
-    lastModifiedTime: "git",
-  },
-});
+const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  serverExternalPackages: [
+    'ts-morph',
+    'typescript',
+    'twoslash',
+  ],
   transpilePackages: ["avalanche-docs-toolbox", "next-mdx-remote"],
   images: {
     remotePatterns: [

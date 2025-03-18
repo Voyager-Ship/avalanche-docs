@@ -5,7 +5,7 @@ import { Wallet } from "lucide-react";
 import { useExampleStore } from "../utils/store";
 
 
-export const ConnectWallet = ({ children, onConnect, required }: { children: React.ReactNode, onConnect: (connected: boolean) => void, required: boolean }) => {
+export const ConnectWallet = ({ children, required }: { children: React.ReactNode, required: boolean }) => {
     const { walletChainId, setWalletChainId, walletEVMAddress, setWalletEVMAddress, setXpPublicKey } = useExampleStore();
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [hasWallet, setHasWallet] = useState<boolean>(false);
@@ -39,7 +39,6 @@ export const ConnectWallet = ({ children, onConnect, required }: { children: Rea
             setWalletEVMAddress(accounts[0]);
             setXpPublicKey(pubkeys.xp);
             setIsConnected(true);
-            onConnect(true);
         } catch (error) {
             showBoundary(error as Error);
         } finally {
@@ -64,11 +63,9 @@ export const ConnectWallet = ({ children, onConnect, required }: { children: Rea
                 }
 
                 setIsConnected(true);
-                onConnect(true);
             } else {
                 console.log(`ConnectWallet:Not connected`);
                 setIsConnected(false);
-                onConnect(false);
             }
         }).catch((error) => {
             console.log(`ConnectWallet:Error connecting to wallet: ${error}`);
@@ -104,11 +101,9 @@ export const ConnectWallet = ({ children, onConnect, required }: { children: Rea
                 }
 
                 setIsConnected(true);
-                onConnect(true);
             } else {
                 setWalletEVMAddress("");
                 setIsConnected(false);
-                onConnect(false);
             }
         });
 
@@ -149,7 +144,7 @@ export const ConnectWallet = ({ children, onConnect, required }: { children: Rea
 
     return (
         <div className={`space-y-4 transition`}>
-            {walletEVMAddress && <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 shadow-sm rounded-lg p-3 flex items-center justify-between">
+            {walletEVMAddress && <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-md rounded-xl p-3 flex items-center justify-between">
                 <div className="flex items-center space-x-3 flex-4 min-w-0">
                     <div className="p-2 rounded-full">
                         <Wallet className="w-6 h-8 text-blue-600 dark:text-blue-400" />
