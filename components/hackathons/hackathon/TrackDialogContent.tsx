@@ -15,10 +15,10 @@ export default async function TrackDialogContent({ track }: Props) {
           <div className="p-2 bg-red-500 rounded-full">
             <DynamicIcon name={track.logo as any} size={36} color="#F5F5F9" />
           </div>
-          <h1 className="text-3xl font-semibold m-0">{track.name}</h1>
+          <h1 className="text-3xl font-semibold !m-0 dark:text-zinc-50 text-zinc-900">{track.name}</h1>
         </div>
         <span className="block w-full h-[1px] my-8 bg-red-500"></span>
-        <div className="prose text-zinc-50 prose-h1:text-red-500">
+        <div className="prose text-zinc-50">
           <MDXRemote source={track.description} />
         </div>
       </div>

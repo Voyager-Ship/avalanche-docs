@@ -1,3 +1,4 @@
+import MdxLayout from "@/app/mdx-layout";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
@@ -98,24 +99,26 @@ export default async function Submission({
           <DialogTrigger asChild>
             <Button
               variant={"secondary"}
-              className="w-2/5 md:w-1/3 lg:w-1/4 bg-red-500 rounded-md text-zinc-100 text-xs sm:text-base"          
+              className="w-2/5 md:w-1/3 lg:w-1/4 bg-red-500 rounded-md text-zinc-100 text-xs sm:text-base"
             >
               View full guidelines
             </Button>
           </DialogTrigger>
           <DialogContent className="dark:bg-zinc-900 bg-zinc-50">
-            <div className="max-w-lg text-white rounded-2xl">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-red-500 rounded-full">
-                  <Trophy size={24} color="#F5F5F9" />
+            <MdxLayout>
+              <div className="max-w-lg text-white rounded-2xl">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-red-500 rounded-full">
+                    <Trophy size={24} color="#F5F5F9" />
+                  </div>
+                  <h1 className="text-3xl font-semibold !m-0 dark:text-zinc-50 text-zinc-900">Guidelines</h1>
                 </div>
-                <h1 className="text-3xl font-semibold">Guidelines</h1>
+                <span className="block w-full h-[1px] my-8 bg-red-500"></span>
+                <div className="prose text-zinc-50">
+                  <MDXRemote source={hackathon.content.judging_guidelines} />
+                </div>
               </div>
-              <span className="block w-full h-[1px] my-8 bg-red-500"></span>
-              <div className="prose text-zinc-50">
-                <MDXRemote source={hackathon.content.judging_guidelines} />
-              </div>
-            </div>
+            </MdxLayout>
           </DialogContent>
         </Dialog>
         <Button
