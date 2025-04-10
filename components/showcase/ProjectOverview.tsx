@@ -43,7 +43,7 @@ export default function ProjectOverview({ project }: Props) {
             <VideoRenderer link={project.demo_video_link} />
           )}
 
-          {project.prices?.length > 1 && <Prices prices={project.prices} />}
+          {project.prizes?.length > 1 && <Prices prices={project.prizes} />}
           {project.full_description && (
             <Description description={project.full_description} />
           )}

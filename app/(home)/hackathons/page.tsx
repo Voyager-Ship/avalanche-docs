@@ -1,4 +1,4 @@
-import type { HackathonsFilters, HackathonStatus } from "@/types/hackathons";
+import type { HackathonHeader, HackathonsFilters, HackathonStatus } from "@/types/hackathons";
 import Hackathons from "@/components/hackathons/Hackathons";
 import { getFilteredHackathons } from "@/server/services/hackathons";
 
@@ -15,6 +15,10 @@ export default async function HackathonsPage({
   }>;
 }) {
   const { page, location, recordsByPage } = await searchParams;
+  const { hackathons: topMostHackathons } = await getFilteredHackathons({
+    topMost: true,
+  });
+
   const { hackathons: pastHackathons, total: totalPastHackathons } =
     await getFilteredHackathons({
       page: page ?? 1,
@@ -28,21 +32,22 @@ export default async function HackathonsPage({
       page: page ?? 1,
       pageSize: Number(recordsByPage ?? 4),
       location: location,
-      status: '!ENDED',
+      status: "!ENDED",
     });
 
   const initialFilters: HackathonsFilters = {
     page: page ?? 1,
     location: location,
-    recordsByPage: Number(recordsByPage ?? 4)
+    recordsByPage: Number(recordsByPage ?? 4),
   };
 
   return (
     <main className="container relative max-w-[1400px] pt-4 pb-16">
       <div className="border border-zinc-300 dark:border-transparent shadow-sm dark:bg-zinc-950 bg-zinc-50 rounded-md">
         <Hackathons
-          initialPastHackathons={pastHackathons}
-          initialUpcomingHackathons={upcomingHackathons}
+          initialPastHackathons={pastHackathons as HackathonHeader[]}
+          initialUpcomingHackathons={upcomingHackathons as HackathonHeader[]}
+          initialTopMostHackathons={topMostHackathons as HackathonHeader[]}
           initialFilters={initialFilters}
           totalPastHackathons={totalPastHackathons}
           totalUpcomingHackathons={totalUpcomingHackathons}

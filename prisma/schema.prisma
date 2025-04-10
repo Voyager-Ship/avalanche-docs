@@ -22,6 +22,7 @@ model Hackathon {
   icon          String         @default("")
   small_banner  String         @default("")
   participants  Int
+  top_most      Boolean        @default(false)
   projects      Project[]
   registrations RegisterForm[]
 }
@@ -97,17 +98,8 @@ model Project {
   tags                String[]  @default([])
   is_winner           Boolean?  @default(false)
   members             Member[]
-  prices              Price[]
+  prizes              Json      @default("{}")
   hackathon           Hackathon @relation(fields: [hackaton_id], references: [id], onDelete: Cascade)
-}
-
-model Price {
-  id         String  @id @default(uuid())
-  icon       String
-  price      Int
-  track      String
-  project_id String
-  Project    Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
 }
 
 model Member {

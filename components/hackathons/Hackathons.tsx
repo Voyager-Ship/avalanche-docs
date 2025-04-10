@@ -23,6 +23,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "../ui/pagination";
+import OverviewBanner from "./hackathon/sections/OverviewBanner";
+import Link from "next/link";
+import Image from "next/image";
 
 function buildQueryString(
   filters: HackathonsFilters,
@@ -53,6 +56,7 @@ function buildQueryString(
 type Props = {
   initialPastHackathons: HackathonHeader[];
   initialUpcomingHackathons: HackathonHeader[];
+  initialTopMostHackathons: HackathonHeader[];
   initialFilters: HackathonsFilters;
   totalPastHackathons: number;
   totalUpcomingHackathons: number;
@@ -61,6 +65,7 @@ type Props = {
 export default function Hackathons({
   initialPastHackathons,
   initialUpcomingHackathons,
+  initialTopMostHackathons,
   initialFilters,
   totalPastHackathons,
   totalUpcomingHackathons,
@@ -161,8 +166,40 @@ export default function Hackathons({
 
   return (
     <section className="px-8 py-6">
+      {initialTopMostHackathons.length > 0 && (
+        <div className="w-full flex flex-col gap-8 justify-center">
+          {initialTopMostHackathons.map((hackathon) => (
+            <div className="sm:block relative w-full">
+              <OverviewBanner hackathon={hackathon} id={hackathon.id} />
+              <Link
+                href={
+                  hackathon.content?.join_custom_link
+                    ? hackathon.content?.join_custom_link
+                    : `/hackathons/registration-form?hackaId=${hackathon.id}`
+                }
+                target={
+                  hackathon.content?.join_custom_link ? "_blank" : "_self"
+                }
+              >
+                <Image
+                  src={hackathon.banner}
+                  alt="Hackathon background"
+                  width={1270}
+                  height={760}
+                  className="w-full h-full"
+                  priority
+                />
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
       {/* Hackathons List */}
-      <h2 className="font-medium text-3xl text-zinc-900 dark:text-zinc-50">
+      <h2
+        className={`font-medium text-3xl text-zinc-900 dark:text-zinc-50 ${
+          initialTopMostHackathons.length > 0 ? "mt-12" : ""
+        }`}
+      >
         Upcoming
       </h2>
       <Separator className="my-4 bg-zinc-300 dark:bg-zinc-800" />

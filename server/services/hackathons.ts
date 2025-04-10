@@ -33,8 +33,7 @@ export class ValidationError extends Error {
 
 
 export function getHackathonLite(hackathon: any): HackathonHeader {
-    delete hackathon.content
-    return hackathon;
+    return { ...hackathon, content: undefined };
 }
 
 export interface GetHackathonsOptions {
@@ -44,6 +43,7 @@ export interface GetHackathonsOptions {
     date?: string | null;
     status?: HackathonStatus | null;
     search?: string;
+    topMost?: boolean;
 }
 
 export async function getHackathon(id: string) {
@@ -83,6 +83,7 @@ export async function getFilteredHackathons(options: GetHackathonsOptions) {
     const offset = (page - 1) * pageSize;
 
     let filters: any = {};
+    if (options.topMost) filters.top_most = options.topMost
     if (options.location) {
         filters.location = options.location;
         if (options.location == 'InPerson') {
@@ -156,10 +157,15 @@ export async function getFilteredHackathons(options: GetHackathonsOptions) {
     });
 
     return {
-        hackathons: hackathonsLite.map((hackathon) => ({
+        hackathons: options.topMost ? hackathonList.map((hackathon) => ({
             ...hackathon,
+            content: hackathon.content as unknown as Hackathon,
             status: getStatus(hackathon.start_date, hackathon.end_date)
-        } as HackathonHeader)),
+        } as HackathonHeader))
+            : hackathonsLite.map((hackathon) => ({
+                ...hackathon,
+                status: getStatus(hackathon.start_date, hackathon.end_date)
+            } as HackathonHeader)),
         total: totalHackathons,
         page,
         pageSize,

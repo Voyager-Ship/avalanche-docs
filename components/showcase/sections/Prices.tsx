@@ -5,12 +5,12 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import AutoScroll from "embla-carousel-auto-scroll";
-import { ProjectPrice } from "@/types/showcase";
+import { ProjectPrize } from "@/types/showcase";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { useMemo } from "react";
 
 type Props = {
-  prices: ProjectPrice[];
+  prices: ProjectPrize[];
 };
 export default function Prices({ prices }: Props) {
   const plugin = useMemo(
