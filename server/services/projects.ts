@@ -78,7 +78,6 @@ export const getFilteredProjects = async (options: GetProjectOptions) => {
   const projects = await prisma.project.findMany({
     include: {
       members: true,
-      prices: true,
       hackathon: true,
     },
     where: filters,
@@ -107,7 +106,6 @@ export async function getProject(id: string) {
           user: true,
         },
       },
-      prices: true,
       hackathon: true,
     },
     where: { id },

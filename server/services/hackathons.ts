@@ -2,6 +2,7 @@ import { Hackathon, HackathonHeader, HackathonStatus } from "@/types/hackathons"
 import { hasAtLeastOne, requiredField, validateEntity, Validation } from "./base";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { InputJsonValue } from "@prisma/client/runtime/library";
 
 const prisma = new PrismaClient();
 
@@ -59,7 +60,7 @@ export async function getHackathon(id: string) {
         ...hackathon,
         content: hackathonContent,
         status: getStatus(hackathon.start_date, hackathon.end_date)
-    } as HackathonHeader
+    } as unknown as HackathonHeader
 }
 
 const getStatus = (start_date: Date, end_date: Date) => {
@@ -161,7 +162,7 @@ export async function getFilteredHackathons(options: GetHackathonsOptions) {
             ...hackathon,
             content: hackathon.content as unknown as Hackathon,
             status: getStatus(hackathon.start_date, hackathon.end_date)
-        } as HackathonHeader))
+        } as unknown as HackathonHeader))
             : hackathonsLite.map((hackathon) => ({
                 ...hackathon,
                 status: getStatus(hackathon.start_date, hackathon.end_date)
@@ -196,7 +197,7 @@ export async function createHackathon(hackathonData: Partial<HackathonHeader>): 
             icon: hackathonData.icon!,
             banner: hackathonData.banner!,
             small_banner: hackathonData.small_banner!,
-            content: content
+            content: content 
         },
     });
     hackathonData.id = newHackathon.id;

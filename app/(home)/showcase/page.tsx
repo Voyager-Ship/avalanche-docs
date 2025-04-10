@@ -35,7 +35,7 @@ export default async function ShowCasePage({
     search: search,
     winningProjecs: boolWinningProjects,
   };
-  const events = await getFilteredHackathons({});
+  const events = await getFilteredHackathons({ topMost: false });
   return (
     <main className="container relative max-w-[1400px] pt-4 pb-16">
       <ShowCaseCard

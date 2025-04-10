@@ -14,7 +14,7 @@ model Hackathon {
   location      String
   total_prizes  Int
   tags          String[]
-  content       Json           @default("{}")
+  content       Json[]         @default([]) 
   end_date      DateTime       @default(now()) @db.Timestamptz(3)
   start_date    DateTime       @default(now()) @db.Timestamptz(3)
   timezone      String         @default("UTC")
@@ -97,8 +97,8 @@ model Project {
   small_cover_url     String?   @default("")
   tags                String[]  @default([])
   is_winner           Boolean?  @default(false)
-  members             Member[]
   prizes              Json      @default("{}")
+  members             Member[]
   hackathon           Hackathon @relation(fields: [hackaton_id], references: [id], onDelete: Cascade)
 }
 
