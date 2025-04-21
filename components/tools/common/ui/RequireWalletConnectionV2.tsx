@@ -1,7 +1,7 @@
 import { useState, useEffect, ReactNode } from 'react';
 import Pre from './Pre';
 import { AddEthereumChainParameter, Chain, createWalletClient, custom } from 'viem';
-import { deduplicateEthRequestAccounts } from './deduplicateEthRequestAccounts';
+import { deduplicateEthRequestAccounts } from '../../L1Launcher/config/store';
 
 // Fuji Testnet configuration
 export const fujiConfig: Chain = {

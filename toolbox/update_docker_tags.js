@@ -8,9 +8,9 @@ function readVersionsFile() {
     return JSON.parse(content);
 }
 
-function fetchTags(repoName) {
+function fetchTags() {
     return new Promise((resolve, reject) => {
-        const request = https.get(`https://hub.docker.com/v2/repositories/${repoName}/tags?page_size=1000`, (res) => {
+        const request = https.get('https://hub.docker.com/v2/repositories/avaplatform/subnet-evm/tags?page_size=1000', (res) => {
             let data = '';
 
             res.on('data', (chunk) => {
@@ -25,8 +25,7 @@ function fetchTags(repoName) {
                     // Find semantic version tags like v0.7.1
                     const semanticTags = results
                         .map(tag => tag.name)
-                        .filter(name => /^v\d+\.\d+\.\d+/.test(name))
-                        .filter(name => !name.includes("-rc."));
+                        .filter(name => /^v\d+\.\d+\.\d+/.test(name));
 
                     if (semanticTags.length > 0) {
                         resolve(semanticTags[0]);
@@ -50,30 +49,16 @@ function fetchTags(repoName) {
 
 async function main() {
     try {
-        // Check for subnet-evm updates
-        const latestSubnetEvmTag = await fetchTags('avaplatform/subnet-evm');
+        const latestTag = await fetchTags();
         const versions = readVersionsFile();
-        const currentSubnetEvmVersion = versions['avaplatform/subnet-evm'];
+        const currentVersion = versions['avaplatform/subnet-evm'];
 
-        if (latestSubnetEvmTag !== currentSubnetEvmVersion) {
-            versions['avaplatform/subnet-evm'] = latestSubnetEvmTag;
+        if (latestTag !== currentVersion) {
+
+            versions['avaplatform/subnet-evm'] = latestTag;
             fs.writeFileSync('src/versions.json', JSON.stringify(versions, null, 2));
 
-            console.error(`New version ${latestSubnetEvmTag} is available for subnet-evm. Current version is ${currentSubnetEvmVersion}`);
-        }
-
-        // Check for icm-relayer updates
-        const latestRelayerTag = await fetchTags('avaplatform/icm-relayer');
-        const currentRelayerVersion = versions['avaplatform/icm-relayer'] || '';
-
-        if (latestRelayerTag !== currentRelayerVersion) {
-            versions['avaplatform/icm-relayer'] = latestRelayerTag;
-            fs.writeFileSync('src/versions.json', JSON.stringify(versions, null, 2));
-
-            console.error(`New version ${latestRelayerTag} is available for icm-relayer. Current version is ${currentRelayerVersion}`);
-        }
-
-        if (latestSubnetEvmTag !== currentSubnetEvmVersion || latestRelayerTag !== currentRelayerVersion) {
+            console.error(`New version ${latestTag} is available. Current version is ${currentVersion}`);
             console.error('Please run `node toolbox/update_docker_tags.js` and commit the changes');
             // process.exit(1);
         }

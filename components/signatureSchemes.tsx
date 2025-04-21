@@ -122,6 +122,7 @@ export const VerifySignatureButton: React.FC<{ aggregated?: boolean }> = ({
   const verifySignature = async () => {
     if (signature && pubKey && message) {
       checkSig(signature, pubKey, message).then((res) => {
+        console.log(res);
         if (res) {
           setIsValid(res);
         } else {

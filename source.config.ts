@@ -64,7 +64,6 @@ export const integrations = defineCollections({
     developer: z.string().optional(),
     website: z.string().optional(),
     documentation: z.string().optional(),
-    baas_platform: z.string().optional(),
     featured: z.boolean().default(false).optional()
   }),
 });

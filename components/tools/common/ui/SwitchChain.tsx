@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode } from 'react';
-import { deduplicateEthRequestAccounts } from './deduplicateEthRequestAccounts';
+import { deduplicateEthRequestAccounts } from '../../L1Launcher/config/store';
 
 interface ChainConfig {
     chainId: string;

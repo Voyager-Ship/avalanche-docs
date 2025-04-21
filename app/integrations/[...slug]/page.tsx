@@ -66,7 +66,7 @@ export default async function Page(props: {
                     <Feedback
                         path={path}
                         title={page.data.title}
-                        pagePath={`/integrations/${page.slugs.join('/')}`}
+                        pagePath={`/docs/${page.slugs.join('/')}`}
                         onRateAction={async (url, feedback) => {
                         'use server';
                         await posthog.capture('on_rate_document', feedback);
@@ -98,20 +98,14 @@ export default async function Page(props: {
                             {page.data.website}
                         </a>
                     </div>
-                    {page.data.baas_platform && (
-                        <div>
-                            <p className="mb-1 text-muted-foreground">BaaS Platform:</p>
-                            <a href={page.data.baas_platform} target="_blank" rel="noreferrer noopener">
-                                {page.data.baas_platform}
-                            </a>
-                        </div>
-                    )}
                     <div>
                         <p className="mb-1 text-muted-foreground">Documentation:</p>
                         <a href={page.data.documentation} target="_blank" rel="noreferrer noopener">
                             {page.data.documentation}
                         </a>
                     </div>
+
+                    {/* <Control url={page.url} /> */}
                 </div>
             </article>
         </>
@@ -141,7 +135,7 @@ export async function generateMetadata(props: {
 
   const image = {
     alt: 'Banner',
-    url: `/api/og/integrations/${params.slug[0]}?${imageParams.toString()}`,
+    url: `/api/og/docs/${params.slug[0]}?${imageParams.toString()}`,
     width: 1200,
     height: 630,
   };
@@ -150,7 +144,7 @@ export async function generateMetadata(props: {
     title: page.data.title,
     description,
     openGraph: {
-      url: `/integrations/${page.slugs.join('/')}`,
+      url: `/docs/${page.slugs.join('/')}`,
       images: image,
     },
     twitter: {
