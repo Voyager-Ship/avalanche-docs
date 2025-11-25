@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +34,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "../ui/toaster";
 import { useSession } from "next-auth/react";
+import ProfileTab from "./components/profile-tab";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -64,9 +66,11 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export default function ProfileForm({
   initialData,
   id,
+  achievements,
 }: {
   initialData: ProfileFormProps;
   id: string;
+  achievements?: ReactNode;
 }) {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -245,6 +249,10 @@ export default function ProfileForm({
     const imageUrl = URL.createObjectURL(file);
     form.setValue("image", imageUrl, { shouldDirty: true });
   };
+    return (
+    <ProfileTab achievements={achievements} />
+  )
+
   return (
     <div className="container mx-auto py-8 flex flex-col gap-4">
       <Toaster />
