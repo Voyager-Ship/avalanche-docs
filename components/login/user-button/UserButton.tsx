@@ -68,7 +68,7 @@ export function UserButton() {
                   />
                 ) : (
                   <CircleUserRound
-                    className='!h-8 !w-8 stroke-zinc-900 dark:stroke-white'
+                    className='h-8 w-8! stroke-zinc-900 dark:stroke-white'
                     strokeWidth={0.85}
                   />
                 )}
