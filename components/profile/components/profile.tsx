@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { countries } from "@/constants/countries";
-import { Pencil, Github, X, Send, Link2 } from "lucide-react";
+import { Pencil, Github, X, Send, Link2, Wallet } from "lucide-react";
 
 export default function Profile() {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
@@ -24,6 +24,7 @@ export default function Profile() {
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
   const [github, setGithub] = useState("");
+  const [wallet, setWallet] = useState("");
   const [socials, setSocials] = useState<string[]>([]);
   const [isFounder, setIsFounder] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
@@ -60,6 +61,29 @@ export default function Profile() {
     setSocials(socials.filter((_, i) => i !== index));
   };
 
+  // Calcular porcentaje de completitud del perfil
+  const calculateProfileProgress = () => {
+    const fields = [
+      username && username !== "username", // Username completado
+      country, // Country seleccionado
+      company, // Company ingresada
+      role, // Role ingresado
+      github, // GitHub conectado
+      wallet, // Wallet address ingresada
+      socials.length > 0 && socials.some(s => s.trim() !== ""), // Al menos un social
+      skills.length > 0, // Al menos una skill
+    ];
+    
+    const completedFields = fields.filter(Boolean).length;
+    const totalFields = fields.length;
+    return Math.round((completedFields / totalFields) * 100);
+  };
+
+  const profileProgress = calculateProfileProgress();
+  const radius = 50; // Radio del círculo (ajustado para avatar de 96px)
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (profileProgress / 100) * circumference;
+
   return (
     <div className="space-y-8">
       {/* Profile Picture */}
@@ -69,12 +93,52 @@ export default function Profile() {
           onMouseEnter={() => setIsHoveringAvatar(true)}
           onMouseLeave={() => setIsHoveringAvatar(false)}
         >
-          <Avatar className="h-24 w-24">
-            <AvatarImage src="" alt="Profile" />
-            <AvatarFallback className="text-2xl">U</AvatarFallback>
-          </Avatar>
+          {/* Círculo de progreso alrededor del avatar */}
+          <div className="relative h-28 w-28">
+            <svg
+              className="absolute inset-0 -rotate-90 transform"
+              width="112"
+              height="112"
+            >
+              {/* Círculo de fondo */}
+              <circle
+                cx="56"
+                cy="56"
+                r={radius}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                className="text-muted opacity-20"
+              />
+              {/* Círculo de progreso */}
+              <circle
+                cx="56"
+                cy="56"
+                r={radius}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+                className="text-red-500 transition-all duration-500"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Avatar className="h-24 w-24 relative z-10">
+                <AvatarImage src="" alt="Profile" />
+                <AvatarFallback className="text-2xl">U</AvatarFallback>
+              </Avatar>
+            </div>
+            {/* Porcentaje en la parte inferior del círculo */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 z-20 pointer-events-none">
+              <span className="text-xs font-semibold text-red-500 bg-background border border-red-500/30 rounded-full px-2 py-0.5 shadow-sm">
+                {profileProgress}%
+              </span>
+            </div>
+          </div>
           {isHoveringAvatar && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity z-30">
               <span className="text-white text-sm font-medium">Edit</span>
             </div>
           )}
@@ -153,6 +217,19 @@ export default function Profile() {
             Connect
           </Button>
         </div>
+      </div>
+
+      {/* Wallet */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Label>Wallet</Label>
+          <Wallet className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <Input
+          value={wallet}
+          onChange={(e) => setWallet(e.target.value)}
+          placeholder="0x..."
+        />
       </div>
 
       {/* Socials */}
