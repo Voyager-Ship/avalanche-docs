@@ -126,7 +126,7 @@ export const AuthOptions: NextAuthOptions = {
       try {
         const dbUser = await upsertUser(user, account, profile);
         user.id = dbUser.id;
-
+ 
         if (account?.provider == 'github') {
           await badgeAssignmentService.assignBadge({
             userId: dbUser.id,
