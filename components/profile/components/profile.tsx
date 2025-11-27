@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -14,64 +16,103 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
 import { countries } from "@/constants/countries";
-import { Pencil, Github, X, Send, Link2, Wallet } from "lucide-react";
+import { hsEmploymentRoles } from "@/constants/hs_employment_role";
+import { Pencil, Github, X, Link2, Wallet } from "lucide-react";
+
+// Schema de validación con Zod
+const profileSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  email: z.string().email("Invalid email"),
+  country: z.string().optional(),
+  company_name: z.string().optional(),
+  role: z.string().optional(),
+  github: z.string().optional(),
+  wallet: z.string().optional(),
+  socials: z.array(z.string()).default([]),
+  founder_check: z.boolean().default(false),
+  avalanche_ecosystem_member: z.boolean().default(false),
+  skills: z.array(z.string()).default([]),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function Profile() {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
-  const [username, setUsername] = useState("username");
-  const [country, setCountry] = useState("");
-  const [company, setCompany] = useState("");
-  const [role, setRole] = useState("");
-  const [github, setGithub] = useState("");
-  const [wallet, setWallet] = useState("");
-  const [socials, setSocials] = useState<string[]>([]);
-  const [isFounder, setIsFounder] = useState(false);
-  const [isStudent, setIsStudent] = useState(false);
-  const [universityName, setUniversityName] = useState("");
-  const [skills, setSkills] = useState<string[]>([
-    "Foundary",
-    "solidity",
-    "python",
-  ]);
   const [newSkill, setNewSkill] = useState("");
 
+  // Inicializar formulario con react-hook-form y Zod
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      username: "username",
+      email: "",
+      country: "",
+      company_name: "",
+      role: "",
+      github: "",
+      wallet: "",
+      socials: [],
+      founder_check: false,
+      avalanche_ecosystem_member: false,
+      skills: ["Foundary", "solidity", "python"],
+    },
+  });
+
+  const { watch, setValue } = form;
+  const watchedValues = watch();
+
   const handleAddSkill = () => {
-    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-      setSkills([...skills, newSkill.trim()]);
+    const currentSkills = watchedValues.skills || [];
+    if (newSkill.trim() && !currentSkills.includes(newSkill.trim())) {
+      setValue("skills", [...currentSkills, newSkill.trim()], { shouldDirty: true });
       setNewSkill("");
     }
   };
 
   const handleRemoveSkill = (skillToRemove: string) => {
-    setSkills(skills.filter((skill) => skill !== skillToRemove));
+    const currentSkills = watchedValues.skills || [];
+    setValue("skills", currentSkills.filter((skill) => skill !== skillToRemove), { shouldDirty: true });
   };
 
   const handleAddSocial = () => {
-    setSocials([...socials, ""]);
-  };
-
-  const handleUpdateSocial = (index: number, value: string) => {
-    const newSocials = [...socials];
-    newSocials[index] = value;
-    setSocials(newSocials);
+    const currentSocials = watchedValues.socials || [];
+    setValue("socials", [...currentSocials, ""], { shouldDirty: true });
   };
 
   const handleRemoveSocial = (index: number) => {
-    setSocials(socials.filter((_, i) => i !== index));
+    const currentSocials = watchedValues.socials || [];
+    setValue("socials", currentSocials.filter((_, i) => i !== index), { shouldDirty: true });
+  };
+
+  const onSubmit = (data: ProfileFormValues) => {
+    // Por ahora solo mostramos los datos en consola (mockeado)
+    console.log("Profile data:", data);
+    // TODO: Implementar guardado en BD cuando esté listo
   };
 
   // Calcular porcentaje de completitud del perfil
   const calculateProfileProgress = () => {
+    const values = watchedValues;
     const fields = [
-      username && username !== "username", // Username completado
-      country, // Country seleccionado
-      company, // Company ingresada
-      role, // Role ingresado
-      github, // GitHub conectado
-      wallet, // Wallet address ingresada
-      socials.length > 0 && socials.some(s => s.trim() !== ""), // Al menos un social
-      skills.length > 0, // Al menos una skill
+      values.username && values.username !== "username", // Username completado
+      values.country, // Country seleccionado
+      values.company_name, // Company ingresada
+      values.role, // Role ingresado
+      values.github, // GitHub conectado
+      values.wallet, // Wallet address ingresada
+      values.socials && values.socials.length > 0 && values.socials.some(s => s.trim() !== ""), // Al menos un social
+      values.skills && values.skills.length > 0, // Al menos una skill
     ];
     
     const completedFields = fields.filter(Boolean).length;
@@ -85,7 +126,8 @@ export default function Profile() {
   const offset = circumference - (profileProgress / 100) * circumference;
 
   return (
-    <div className="space-y-8">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       {/* Profile Picture */}
       <div className="flex items-start gap-6">
         <div
@@ -145,198 +187,323 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Email */}
-      <div className="space-y-2">
-        <Label>Email</Label>
-        <Input type="email" placeholder="email@" disabled />
-      </div>
-
-      {/* Username */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Label>Username</Label>
-          <Pencil className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <Input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Enter username"
-        />
-      </div>
-
-      {/* Country */}
-      <div className="space-y-2">
-        <Label>Country</Label>
-        <Select value={country} onValueChange={setCountry}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select country" />
-          </SelectTrigger>
-          <SelectContent>
-            {countries.map((countryOption) => (
-              <SelectItem key={countryOption.value} value={countryOption.label}>
-                {countryOption.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Company */}
-      <div className="space-y-2">
-        <Label>Company</Label>
-        <Input
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-          placeholder="Enter company name"
-        />
-      </div>
-
-      {/* Role */}
-      <div className="space-y-2">
-        <Label>Role</Label>
-        <Input
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          placeholder="Enter your role"
-        />
-      </div>
-
-      {/* GitHub */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Label>Github</Label>
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            value={github}
-            onChange={(e) => setGithub(e.target.value)}
-            placeholder="github.com/username"
-          />
-          <Button variant="outline" size="default">
-            <Github className="h-4 w-4 mr-2" />
-            Connect
-          </Button>
-        </div>
-      </div>
-
-      {/* Wallet */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Label>Wallet</Label>
-          <Wallet className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <Input
-          value={wallet}
-          onChange={(e) => setWallet(e.target.value)}
-          placeholder="0x..."
-        />
-      </div>
-
-      {/* Socials */}
-      <div className="space-y-2">
-        <Label>Socials (X, Telegram..)</Label>
-        <div className="space-y-2">
-          {socials.map((social, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <Input
-                value={social}
-                onChange={(e) => handleUpdateSocial(index, e.target.value)}
-                placeholder="https://"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleRemoveSocial(index)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          <Button
-            variant="outline"
-            onClick={handleAddSocial}
-            className="w-fit"
-          >
-            <Link2 className="h-4 w-4 mr-2" />
-            Add social link
-          </Button>
-        </div>
-      </div>
-
-      {/* Founder and Student Checkboxes */}
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="founder"
-            checked={isFounder}
-            onCheckedChange={(checked) => setIsFounder(checked as boolean)}
-          />
-          <Label htmlFor="founder" className="cursor-pointer">
-            Founder?
-          </Label>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="student"
-              checked={isStudent}
-              onCheckedChange={(checked) => setIsStudent(checked as boolean)}
-            />
-            <Label htmlFor="student" className="cursor-pointer">
-              Student?
-            </Label>
-          </div>
-          {isStudent && (
-            <div className="ml-6 space-y-2">
-              <Label>University Name</Label>
-              <Input
-                value={universityName}
-                onChange={(e) => setUniversityName(e.target.value)}
-                placeholder="Enter university name"
-              />
-            </div>
+        {/* Email */}
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="email@" disabled {...field} />
+              </FormControl>
+            </FormItem>
           )}
-        </div>
-      </div>
+        />
 
-      {/* Skills */}
-      <div className="space-y-2">
-        <Label>Skills:</Label>
-        <div className="flex flex-wrap gap-2">
-          {skills.map((skill) => (
-            <Badge
-              key={skill}
-              variant="secondary"
-              className="flex items-center gap-1"
-            >
-              {skill}
-              <button
-                onClick={() => handleRemoveSkill(skill)}
-                className="ml-1 hover:bg-secondary/80 rounded-full p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
+        {/* Username */}
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-center gap-2">
+                <FormLabel>Username</FormLabel>
+                <Pencil className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <FormControl>
+                <Input placeholder="Enter username" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Separator />
+
+        {/* Demographics Section */}
+        <div>
+          <h3 className="text-lg font-medium mb-4">Demographics</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Tell us about yourself to help us personalize your experience.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Input
-            value={newSkill}
-            onChange={(e) => setNewSkill(e.target.value)}
-            placeholder="Add skill"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAddSkill();
-              }
-            }}
-          />
-          <Button variant="outline" onClick={handleAddSkill}>
-            Add
+
+        {/* Country */}
+        <FormField
+          control={form.control}
+          name="country"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Country of Residence</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {countries.map((countryOption) => (
+                    <SelectItem key={countryOption.value} value={countryOption.label}>
+                      {countryOption.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                This will help us bring in-person events closer to you.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Company */}
+        <FormField
+          control={form.control}
+          name="company_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company/University</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter company or university name" {...field} />
+              </FormControl>
+              <FormDescription>
+                If you are part of a company or affiliated with a university, mention it here.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Role */}
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Role at Company</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {hsEmploymentRoles.map((roleOption) => (
+                    <SelectItem key={roleOption.value} value={roleOption.label}>
+                      {roleOption.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Select the option that best matches your role.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Separator />
+
+        {/* Additional Information */}
+        <div>
+          <h3 className="text-lg font-medium mb-4">Additional Information</h3>
+        </div>
+
+        {/* Founder Check */}
+        <FormField
+          control={form.control}
+          name="founder_check"
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-3 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-0.5">
+                <FormLabel className="cursor-pointer">
+                  Are you a founder or co-founder of a blockchain project?
+                </FormLabel>
+                <FormDescription>
+                  Check this if you are a founder or co-founder of a blockchain project.
+                </FormDescription>
+              </div>
+            </FormItem>
+          )}
+        />
+
+        {/* Avalanche Ecosystem Member */}
+        <FormField
+          control={form.control}
+          name="avalanche_ecosystem_member"
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-3 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-0.5">
+                <FormLabel className="cursor-pointer">
+                  Consider yourself an Avalanche ecosystem member?
+                </FormLabel>
+                <FormDescription>
+                  Check this if you consider yourself part of the Avalanche ecosystem.
+                </FormDescription>
+              </div>
+            </FormItem>
+          )}
+        />
+
+        <Separator />
+
+        {/* GitHub */}
+        <FormField
+          control={form.control}
+          name="github"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>GitHub</FormLabel>
+              <div className="flex items-center gap-2">
+                <FormControl>
+                  <Input placeholder="github.com/username" {...field} />
+                </FormControl>
+                <Button type="button" variant="outline" size="default">
+                  <Github className="h-4 w-4 mr-2" />
+                  Connect
+                </Button>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Wallet */}
+        <FormField
+          control={form.control}
+          name="wallet"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-center gap-2">
+                <FormLabel>Wallet</FormLabel>
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <FormControl>
+                <Input placeholder="0x..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Socials */}
+        <FormField
+          control={form.control}
+          name="socials"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Socials (X, Telegram, etc.)</FormLabel>
+              <div className="space-y-2">
+                {field.value?.map((social, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <FormControl>
+                      <Input
+                        value={social}
+                        onChange={(e) => {
+                          const newSocials = [...(field.value || [])];
+                          newSocials[index] = e.target.value;
+                          field.onChange(newSocials);
+                        }}
+                        placeholder="https://"
+                      />
+                    </FormControl>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveSocial(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddSocial}
+                  className="w-fit"
+                >
+                  <Link2 className="h-4 w-4 mr-2" />
+                  Add social link
+                </Button>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Skills */}
+        <FormField
+          control={form.control}
+          name="skills"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Skills</FormLabel>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {field.value?.map((skill) => (
+                  <Badge
+                    key={skill}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    {skill}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkill(skill)}
+                      className="ml-1 hover:bg-secondary/80 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <FormControl>
+                  <Input
+                    value={newSkill}
+                    onChange={(e) => setNewSkill(e.target.value)}
+                    placeholder="Add skill"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddSkill();
+                      }
+                    }}
+                  />
+                </FormControl>
+                <Button type="button" variant="outline" onClick={handleAddSkill}>
+                  Add
+                </Button>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Separator />
+
+        {/* Submit Button */}
+        <div className="flex justify-end">
+          <Button type="submit" variant="default">
+            Save Changes
           </Button>
         </div>
-      </div>
-    </div>
+      </form>
+    </Form>
   );
 }

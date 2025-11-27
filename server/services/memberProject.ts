@@ -156,3 +156,10 @@ export async function UpdateRoleMember(member_id: string, role: string) {
   });
   return updatedMember;
 }
+
+export async function GetProjectsByUserId(user_id: string) {
+  const projects = await prisma.project.findMany({
+    where: { members: { some: { user_id: user_id } } },
+  });
+  return projects;
+}
