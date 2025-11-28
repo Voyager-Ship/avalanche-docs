@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { countries } from "@/constants/countries";
 import { hsEmploymentRoles } from "@/constants/hs_employment_role";
 import { Pencil, Github, X, Link2, Wallet } from "lucide-react";
+import { WalletConnectButton } from "./WalletConnectButton";
 
 // Schema de validación con Zod
 const profileSchema = z.object({
@@ -394,8 +395,37 @@ export default function Profile() {
                 <Wallet className="h-4 w-4 text-muted-foreground" />
               </div>
               <FormControl>
-                <Input placeholder="0x..." {...field} />
+                <div className="flex items-center gap-2">
+                  <Input 
+                    placeholder="0x..." 
+                    {...field} 
+                    className="flex-1 font-mono"
+                    readOnly={true}
+                  />
+                  {field.value ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="default"
+                      onClick={() => {
+                        field.onChange("");
+                      }}
+                    >
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <WalletConnectButton
+                      onWalletConnected={(address) => {
+                        field.onChange(address);
+                      }}
+                      currentAddress={field.value}
+                    />
+                  )}
+                </div>
               </FormControl>
+              <FormDescription>
+                Connect your wallet to automatically fill in your address
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
