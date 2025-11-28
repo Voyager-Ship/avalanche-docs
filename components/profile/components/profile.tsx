@@ -34,6 +34,7 @@ import { Pencil, Github, X, Link2, Wallet } from "lucide-react";
 import { WalletConnectButton } from "./WalletConnectButton";
 import { UploadModal } from "@/components/ui/upload-modal";
 import { useProfileProgress } from "@/components/profile/components/hooks/useProfileProgress";
+import { SkillsAutocomplete } from "./SkillsAutocomplete";
 
 // Schema de validación con Zod
 const profileSchema = z.object({
@@ -44,13 +45,15 @@ const profileSchema = z.object({
   notification_email: z.string().email("Invalid email").optional(),
   image: z.string().optional(),
   country: z.string().optional(),
+  is_student: z.boolean().default(false),
+  is_founder: z.boolean().default(false),
+  is_employee: z.boolean().default(false),
+  is_enthusiast: z.boolean().default(false),
   company_name: z.string().optional(),
   role: z.string().optional(),
   github: z.string().optional(),
   wallet: z.string().optional(),
   socials: z.array(z.string()).default([]),
-  founder_check: z.boolean().default(false),
-  avalanche_ecosystem_member: z.boolean().default(false),
   student_institution: z.string().optional(),
   skills: z.array(z.string()).default([]),
   notifications: z.boolean().default(false),
@@ -77,13 +80,15 @@ export default function Profile() {
       notification_email: "",
       image: "",
       country: "",
+      is_student: false,
+      is_founder: false,
+      is_employee: false,
+      is_enthusiast: false,
       company_name: "",
       role: "",
       github: "",
       wallet: "",
       socials: [],
-      founder_check: false,
-      avalanche_ecosystem_member: false,
       student_institution: "",
       skills: ["Foundary", "solidity", "python"],
       notifications: false,
@@ -139,65 +144,65 @@ export default function Profile() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-      {/* Profile Picture */}
-      <div className="flex items-center justify-center">
-        <div
-          className="relative"
-          onMouseEnter={() => setIsHoveringAvatar(true)}
-          onMouseLeave={() => setIsHoveringAvatar(false)}
-          onClick={() => setIsUploadModalOpen(true)}
-        >
-          {/* Círculo de progreso alrededor del avatar */}
-          <div className="relative h-32 w-32">
-            <svg
-              className="absolute inset-0 -rotate-90 transform"
-              width="128"
-              height="128"
-            >
-              {/* Círculo de fondo */}
-              <circle
-                cx="64"
-                cy="64"
-                r={radius}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                className="text-muted opacity-20"
-              />
-              {/* Círculo de progreso */}
-              <circle
-                cx="64"
-                cy="64"
-                r={radius}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
-                className="text-red-500 transition-all duration-500"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Avatar className="h-26 w-26 relative z-10">
-                <AvatarImage src={form.watch("image") || ""} alt="Profile" />
-                <AvatarFallback className="text-2xl">U</AvatarFallback>
-              </Avatar>
+        {/* Profile Picture */}
+        <div className="flex items-center justify-center">
+          <div
+            className="relative"
+            onMouseEnter={() => setIsHoveringAvatar(true)}
+            onMouseLeave={() => setIsHoveringAvatar(false)}
+            onClick={() => setIsUploadModalOpen(true)}
+          >
+            {/* Círculo de progreso alrededor del avatar */}
+            <div className="relative h-32 w-32">
+              <svg
+                className="absolute inset-0 -rotate-90 transform"
+                width="128"
+                height="128"
+              >
+                {/* Círculo de fondo */}
+                <circle
+                  cx="64"
+                  cy="64"
+                  r={radius}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="text-muted opacity-20"
+                />
+                {/* Círculo de progreso */}
+                <circle
+                  cx="64"
+                  cy="64"
+                  r={radius}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={offset}
+                  strokeLinecap="round"
+                  className="text-red-500 transition-all duration-500"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Avatar className="h-26 w-26 relative z-10">
+                  <AvatarImage src={form.watch("image") || ""} alt="Profile" />
+                  <AvatarFallback className="text-2xl">U</AvatarFallback>
+                </Avatar>
+              </div>
+              {/* Porcentaje en la parte inferior del círculo */}
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 z-20 pointer-events-none">
+                <span className="text-xs font-semibold text-red-500 bg-background border border-red-500/30 rounded-full px-2 py-0.5 shadow-sm">
+                  {profileProgress}%
+                </span>
+              </div>
             </div>
-            {/* Porcentaje en la parte inferior del círculo */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 z-20 pointer-events-none">
-              <span className="text-xs font-semibold text-red-500 bg-background border border-red-500/30 rounded-full px-2 py-0.5 shadow-sm">
-                {profileProgress}%
-              </span>
-            </div>
+            {isHoveringAvatar && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity z-30">
+                <span className="text-white text-sm font-medium">Edit</span>
+              </div>
+            )}
           </div>
-          {isHoveringAvatar && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity z-30">
-              <span className="text-white text-sm font-medium">Edit</span>
-            </div>
-          )}
         </div>
-      </div>
 
         {/* Full Name */}
         <FormField
@@ -303,124 +308,214 @@ export default function Profile() {
             )}
           />
 
-          {/* Company */}
-          <FormField
-            control={form.control}
-            name="company_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company/University</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter company or university name" {...field} />
-                </FormControl>
-                <FormDescription>
-                  If you are part of a company or affiliated with a university, mention it here.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Role */}
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Role at Company</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="text-zinc-600">
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="bg-white dark:bg-black border-gray-300 dark:border-zinc-600 text-zinc-600 rounded-md shadow-md max-h-60 overflow-y-auto">
-                    {hsEmploymentRoles.map((roleOption) => (
-                      <SelectItem key={roleOption.value} value={roleOption.label}>
-                        {roleOption.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Select the option that best matches your role.
-                </FormDescription>
-                <FormMessage className="text-zinc-600" />
-              </FormItem>
-            )}
-          />
         </div>
 
-        
-        {/* Additional Information */}
-        
+        <Separator />
 
-        {/* Founder Check */}
-        <FormField
-          control={form.control}
-          name="founder_check"
-          render={({ field }) => (
-            <FormItem className="flex items-center space-x-3 ">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-0.5">
-                <FormLabel className="cursor-pointer">
-                  Founder?
-                </FormLabel>
-              
-              </div>
-            </FormItem>
-          )}
-        />
+        {/* User Type Checkboxes */}
+        <div className="space-y-4">
+          <div>
+            <FormLabel className="text-base">I am a...</FormLabel>
+            <FormDescription className="mt-1">
+              Select the option(s) that best describe you.
+            </FormDescription>
+          </div>
 
-        {/* Avalanche Ecosystem Member */}
-        <FormField
-          control={form.control}
-          name="avalanche_ecosystem_member"
-          render={({ field }) => (
-            <FormItem className="flex items-center space-x-3 ">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-0.5">
-                <FormLabel className="cursor-pointer">
-                 Student?
-                </FormLabel>
-              </div>
-            </FormItem>
-          )}
-        />
+          <div >
+            {/* Student */}
+            <FormField
+              control={form.control}
+              name="is_student"
+              render={({ field }) => (
+                <FormItem className="px-4 py-3">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-3 shrink-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="cursor-pointer font-normal">
+                        Student
+                      </FormLabel>
+                    </div>
+                    {field.value && (
+                      <FormField
+                        control={form.control}
+                        name="student_institution"
+                        render={({ field: inputField }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input
+                                placeholder="Enter your university or institution name"
+                                {...inputField}
+                                className="w-full"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                </FormItem>
+              )}
+            />
 
-        {/* Student Institution - Solo se muestra si Student está marcado */}
-        {form.watch("avalanche_ecosystem_member") && (
-          <FormField
-            control={form.control}
-            name="student_institution"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Institution Name</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Enter your university or institution name"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Enter the name of your educational institution.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+            {/* Founder */}
+            <FormField
+              control={form.control}
+              name="is_founder"
+              render={({ field }) => (
+                <FormItem className="px-4 py-3">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-3 shrink-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="cursor-pointer font-normal">
+                        Founder
+                      </FormLabel>
+                    </div>
+                    {field.value && (
+                      <div className="flex-1 flex items-center gap-4">
+                        <FormField
+                          control={form.control}
+                          name="company_name"
+                          render={({ field: inputField }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+                                <Input
+                                  placeholder="Company name"
+                                  {...inputField}
+                                  className="w-full"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="role"
+                          render={({ field: selectField }) => (
+                            <FormItem className="flex-1">
+                              <Select onValueChange={selectField.onChange} value={selectField.value}>
+                                <FormControl>
+                                  <SelectTrigger className="text-zinc-600 w-full">
+                                    <SelectValue placeholder="Role" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="bg-white dark:bg-black border-gray-300 dark:border-zinc-600 text-zinc-600 rounded-md shadow-md max-h-60 overflow-y-auto">
+                                  {hsEmploymentRoles.map((roleOption) => (
+                                    <SelectItem key={roleOption.value} value={roleOption.label}>
+                                      {roleOption.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage className="text-zinc-600" />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </FormItem>
+              )}
+            />
 
+            {/* Employee */}
+            <FormField
+              control={form.control}
+              name="is_employee"
+              render={({ field }) => (
+                <FormItem className="px-4 py-3">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-3 shrink-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="cursor-pointer font-normal">
+                        Employee
+                      </FormLabel>
+                    </div>
+                    {field.value && (
+                      <div className="flex-1 flex items-center gap-4">
+                        <FormField
+                          control={form.control}
+                          name="company_name"
+                          render={({ field: inputField }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+                                <Input
+                                  placeholder="Company name"
+                                  {...inputField}
+                                  className="w-full"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="role"
+                          render={({ field: selectField }) => (
+                            <FormItem className="flex-1">
+                              <Select onValueChange={selectField.onChange} value={selectField.value}>
+                                <FormControl>
+                                  <SelectTrigger className="text-zinc-600 w-full">
+                                    <SelectValue placeholder="Role" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="bg-white dark:bg-black border-gray-300 dark:border-zinc-600 text-zinc-600 rounded-md shadow-md max-h-60 overflow-y-auto">
+                                  {hsEmploymentRoles.map((roleOption) => (
+                                    <SelectItem key={roleOption.value} value={roleOption.label}>
+                                      {roleOption.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage className="text-zinc-600" />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {/* Enthusiast */}
+            <FormField
+              control={form.control}
+              name="is_enthusiast"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-3 px-4 py-3">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="cursor-pointer font-normal">
+                    Enthusiast
+                  </FormLabel>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+        <Separator />
         {/* GitHub */}
         <FormField
           control={form.control}
@@ -454,9 +549,9 @@ export default function Profile() {
               </div>
               <FormControl>
                 <div className="flex items-center gap-2">
-                  <Input 
-                    placeholder="0x..." 
-                    {...field} 
+                  <Input
+                    placeholder="0x..."
+                    {...field}
                     className="flex-1 font-mono"
                     readOnly={true}
                   />
@@ -592,19 +687,26 @@ export default function Profile() {
               </div>
               <div className="flex items-center gap-2">
                 <FormControl>
-                  <Input
+                  <SkillsAutocomplete
                     value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    placeholder="Add skill"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddSkill();
+                    onChange={setNewSkill}
+                    onSelect={(skill) => {
+                      const currentSkills = watchedValues.skills || [];
+                      if (!currentSkills.includes(skill)) {
+                        setValue("skills", [...currentSkills, skill], { shouldDirty: true });
+                        setNewSkill("");
                       }
                     }}
+                    existingSkills={watchedValues.skills || []}
+                    placeholder="Type to search skills..."
                   />
                 </FormControl>
-                <Button type="button" variant="outline" onClick={handleAddSkill}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddSkill}
+                  disabled={!newSkill.trim()}
+                >
                   Add
                 </Button>
               </div>
@@ -613,10 +715,10 @@ export default function Profile() {
           )}
         />
 
-        <Separator />
+        {/* <Separator /> */}
 
         {/* Profile Privacy */}
-        <FormField
+        {/* <FormField
           control={form.control}
           name="profile_privacy"
           render={({ field }) => (
@@ -644,10 +746,10 @@ export default function Profile() {
           )}
         />
 
-        <Separator />
+        <Separator /> */}
 
         {/* Notifications */}
-        <div>
+        {/* <div>
           <h3 className="text-lg font-medium mb-4">Notifications</h3>
           <p className="text-sm text-muted-foreground mb-4">
             Manage the basic settings and primary details of your profile.
@@ -686,10 +788,10 @@ export default function Profile() {
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> */}
 
-        <Separator />
-
+     
+     
         {/* Submit Button */}
         <div className="flex justify-end">
           <Button type="submit" variant="default">
