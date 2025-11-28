@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -14,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,11 +32,17 @@ import { countries } from "@/constants/countries";
 import { hsEmploymentRoles } from "@/constants/hs_employment_role";
 import { Pencil, Github, X, Link2, Wallet } from "lucide-react";
 import { WalletConnectButton } from "./WalletConnectButton";
+import { UploadModal } from "@/components/ui/upload-modal";
+import { useProfileProgress } from "@/components/profile/components/hooks/useProfileProgress";
 
 // Schema de validación con Zod
 const profileSchema = z.object({
+  name: z.string().min(1, "Full name is required").optional(),
   username: z.string().min(1, "Username is required"),
+  bio: z.string().max(250, "Bio must not exceed 250 characters").optional(),
   email: z.string().email("Invalid email"),
+  notification_email: z.string().email("Invalid email").optional(),
+  image: z.string().optional(),
   country: z.string().optional(),
   company_name: z.string().optional(),
   role: z.string().optional(),
@@ -43,7 +51,11 @@ const profileSchema = z.object({
   socials: z.array(z.string()).default([]),
   founder_check: z.boolean().default(false),
   avalanche_ecosystem_member: z.boolean().default(false),
+  student_institution: z.string().optional(),
   skills: z.array(z.string()).default([]),
+  notifications: z.boolean().default(false),
+  profile_privacy: z.string().default("public"),
+  telegram_user: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -51,13 +63,19 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export default function Profile() {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
   const [newSkill, setNewSkill] = useState("");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const formData = useRef(new FormData());
 
   // Inicializar formulario con react-hook-form y Zod
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
+      name: "",
       username: "username",
+      bio: "",
       email: "",
+      notification_email: "",
+      image: "",
       country: "",
       company_name: "",
       role: "",
@@ -66,7 +84,11 @@ export default function Profile() {
       socials: [],
       founder_check: false,
       avalanche_ecosystem_member: false,
+      student_institution: "",
       skills: ["Foundary", "solidity", "python"],
+      notifications: false,
+      profile_privacy: "public",
+      telegram_user: "",
     },
   });
 
@@ -96,33 +118,21 @@ export default function Profile() {
     setValue("socials", currentSocials.filter((_, i) => i !== index), { shouldDirty: true });
   };
 
+  const handleFileSelect = (file: File) => {
+    formData.current.set("file", file);
+    const imageUrl = URL.createObjectURL(file);
+    form.setValue("image", imageUrl, { shouldDirty: true });
+  };
+
   const onSubmit = (data: ProfileFormValues) => {
     // Por ahora solo mostramos los datos en consola (mockeado)
     console.log("Profile data:", data);
     // TODO: Implementar guardado en BD cuando esté listo
   };
 
-  // Calcular porcentaje de completitud del perfil
-  const calculateProfileProgress = () => {
-    const values = watchedValues;
-    const fields = [
-      values.username && values.username !== "username", // Username completado
-      values.country, // Country seleccionado
-      values.company_name, // Company ingresada
-      values.role, // Role ingresado
-      values.github, // GitHub conectado
-      values.wallet, // Wallet address ingresada
-      values.socials && values.socials.length > 0 && values.socials.some(s => s.trim() !== ""), // Al menos un social
-      values.skills && values.skills.length > 0, // Al menos una skill
-    ];
-    
-    const completedFields = fields.filter(Boolean).length;
-    const totalFields = fields.length;
-    return Math.round((completedFields / totalFields) * 100);
-  };
-
-  const profileProgress = calculateProfileProgress();
-  const radius = 50; // Radio del círculo (ajustado para avatar de 96px)
+  // Calcular porcentaje de completitud del perfil con debounce
+  const profileProgress = useProfileProgress(watchedValues, 300);
+  const radius = 52; // Radio del círculo (ajustado para avatar de 104px)
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (profileProgress / 100) * circumference;
 
@@ -130,23 +140,24 @@ export default function Profile() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       {/* Profile Picture */}
-      <div className="flex items-start gap-6">
+      <div className="flex items-center justify-center">
         <div
           className="relative"
           onMouseEnter={() => setIsHoveringAvatar(true)}
           onMouseLeave={() => setIsHoveringAvatar(false)}
+          onClick={() => setIsUploadModalOpen(true)}
         >
           {/* Círculo de progreso alrededor del avatar */}
-          <div className="relative h-28 w-28">
+          <div className="relative h-32 w-32">
             <svg
               className="absolute inset-0 -rotate-90 transform"
-              width="112"
-              height="112"
+              width="128"
+              height="128"
             >
               {/* Círculo de fondo */}
               <circle
-                cx="56"
-                cy="56"
+                cx="64"
+                cy="64"
                 r={radius}
                 fill="none"
                 stroke="currentColor"
@@ -155,8 +166,8 @@ export default function Profile() {
               />
               {/* Círculo de progreso */}
               <circle
-                cx="56"
-                cy="56"
+                cx="64"
+                cy="64"
                 r={radius}
                 fill="none"
                 stroke="currentColor"
@@ -168,8 +179,8 @@ export default function Profile() {
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Avatar className="h-24 w-24 relative z-10">
-                <AvatarImage src="" alt="Profile" />
+              <Avatar className="h-26 w-26 relative z-10">
+                <AvatarImage src={form.watch("image") || ""} alt="Profile" />
                 <AvatarFallback className="text-2xl">U</AvatarFallback>
               </Avatar>
             </div>
@@ -188,19 +199,61 @@ export default function Profile() {
         </div>
       </div>
 
+        {/* Full Name */}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter your full name" {...field} />
+              </FormControl>
+              <FormDescription>
+                This name will be displayed on your profile and submissions.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Bio */}
+        <FormField
+          control={form.control}
+          name="bio"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bio</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Tell others about yourself in a few words"
+                  className="resize-none h-24"
+                  maxLength={250}
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                250 characters. Highlight your background, interests, and experience.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         {/* Email */}
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Account Email Address</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="email@" disabled {...field} />
               </FormControl>
             </FormItem>
           )}
         />
+
 
         {/* Username */}
         <FormField
@@ -220,105 +273,94 @@ export default function Profile() {
           )}
         />
 
-        <Separator />
+        <div className="grid grid-cols-1 gap-4">
+          {/* Country */}
+          <FormField
+            control={form.control}
+            name="country"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Country of Residence</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="text-zinc-600">
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="bg-white dark:bg-black border-gray-300 dark:border-zinc-600 text-zinc-600 rounded-md shadow-md max-h-60 overflow-y-auto">
+                    {countries.map((countryOption) => (
+                      <SelectItem key={countryOption.value} value={countryOption.label}>
+                        {countryOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  This will help us bring in-person events closer to you.
+                </FormDescription>
+                <FormMessage className="text-zinc-600" />
+              </FormItem>
+            )}
+          />
 
-        {/* Demographics Section */}
-        <div>
-          <h3 className="text-lg font-medium mb-4">Demographics</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Tell us about yourself to help us personalize your experience.
-          </p>
+          {/* Company */}
+          <FormField
+            control={form.control}
+            name="company_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Company/University</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter company or university name" {...field} />
+                </FormControl>
+                <FormDescription>
+                  If you are part of a company or affiliated with a university, mention it here.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Role */}
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Role at Company</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="text-zinc-600">
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="bg-white dark:bg-black border-gray-300 dark:border-zinc-600 text-zinc-600 rounded-md shadow-md max-h-60 overflow-y-auto">
+                    {hsEmploymentRoles.map((roleOption) => (
+                      <SelectItem key={roleOption.value} value={roleOption.label}>
+                        {roleOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Select the option that best matches your role.
+                </FormDescription>
+                <FormMessage className="text-zinc-600" />
+              </FormItem>
+            )}
+          />
         </div>
 
-        {/* Country */}
-        <FormField
-          control={form.control}
-          name="country"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Country of Residence</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {countries.map((countryOption) => (
-                    <SelectItem key={countryOption.value} value={countryOption.label}>
-                      {countryOption.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                This will help us bring in-person events closer to you.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Company */}
-        <FormField
-          control={form.control}
-          name="company_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Company/University</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter company or university name" {...field} />
-              </FormControl>
-              <FormDescription>
-                If you are part of a company or affiliated with a university, mention it here.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Role */}
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role at Company</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {hsEmploymentRoles.map((roleOption) => (
-                    <SelectItem key={roleOption.value} value={roleOption.label}>
-                      {roleOption.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                Select the option that best matches your role.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Separator />
-
+        
         {/* Additional Information */}
-        <div>
-          <h3 className="text-lg font-medium mb-4">Additional Information</h3>
-        </div>
+        
 
         {/* Founder Check */}
         <FormField
           control={form.control}
           name="founder_check"
           render={({ field }) => (
-            <FormItem className="flex items-center space-x-3 rounded-md border p-4">
+            <FormItem className="flex items-center space-x-3 ">
               <FormControl>
                 <Checkbox
                   checked={field.value}
@@ -327,11 +369,9 @@ export default function Profile() {
               </FormControl>
               <div className="space-y-0.5">
                 <FormLabel className="cursor-pointer">
-                  Are you a founder or co-founder of a blockchain project?
+                  Founder?
                 </FormLabel>
-                <FormDescription>
-                  Check this if you are a founder or co-founder of a blockchain project.
-                </FormDescription>
+              
               </div>
             </FormItem>
           )}
@@ -342,7 +382,7 @@ export default function Profile() {
           control={form.control}
           name="avalanche_ecosystem_member"
           render={({ field }) => (
-            <FormItem className="flex items-center space-x-3 rounded-md border p-4">
+            <FormItem className="flex items-center space-x-3 ">
               <FormControl>
                 <Checkbox
                   checked={field.value}
@@ -351,17 +391,35 @@ export default function Profile() {
               </FormControl>
               <div className="space-y-0.5">
                 <FormLabel className="cursor-pointer">
-                  Consider yourself an Avalanche ecosystem member?
+                 Student?
                 </FormLabel>
-                <FormDescription>
-                  Check this if you consider yourself part of the Avalanche ecosystem.
-                </FormDescription>
               </div>
             </FormItem>
           )}
         />
 
-        <Separator />
+        {/* Student Institution - Solo se muestra si Student está marcado */}
+        {form.watch("avalanche_ecosystem_member") && (
+          <FormField
+            control={form.control}
+            name="student_institution"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Institution Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Enter your university or institution name"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Enter the name of your educational institution.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* GitHub */}
         <FormField
@@ -437,41 +495,71 @@ export default function Profile() {
           name="socials"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Socials (X, Telegram, etc.)</FormLabel>
-              <div className="space-y-2">
-                {field.value?.map((social, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <FormControl>
-                      <Input
-                        value={social}
-                        onChange={(e) => {
-                          const newSocials = [...(field.value || [])];
-                          newSocials[index] = e.target.value;
-                          field.onChange(newSocials);
-                        }}
-                        placeholder="https://"
-                      />
-                    </FormControl>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveSocial(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleAddSocial}
-                  className="w-fit"
-                >
-                  <Link2 className="h-4 w-4 mr-2" />
-                  Add social link
-                </Button>
+              <div>
+                <h4 className="text-sm font-medium mb-2">
+                  Connect Your Accounts
+                </h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add your social media or professional links
+                </p>
               </div>
+              <FormControl>
+                <div className="space-y-2">
+                  {field.value?.map((social, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <FormControl>
+                        <Input
+                          value={social}
+                          onChange={(e) => {
+                            const newSocials = [...(field.value || [])];
+                            newSocials[index] = e.target.value;
+                            field.onChange(newSocials);
+                          }}
+                          placeholder="https://"
+                        />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveSocial(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddSocial}
+                    className="w-fit"
+                  >
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Add social link
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Telegram User */}
+        <FormField
+          control={form.control}
+          name="telegram_user"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Telegram user</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Enter your telegram user without the @"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                We can be in touch through telegram.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -527,6 +615,81 @@ export default function Profile() {
 
         <Separator />
 
+        {/* Profile Privacy */}
+        <FormField
+          control={form.control}
+          name="profile_privacy"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Profile Privacy (Coming soon)</FormLabel>
+              <FormControl>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="text-zinc-600">
+                    <SelectValue placeholder="Select privacy setting" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-black border-gray-300 dark:border-zinc-600 text-zinc-600 rounded-md shadow-md max-h-60 overflow-y-auto">
+                    <SelectItem value="public">
+                      Public (Visible to everyone)
+                    </SelectItem>
+                    <SelectItem value="private">Private</SelectItem>
+                    <SelectItem value="community">Community-only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormDescription>
+                Choose who can see your profile
+              </FormDescription>
+              <FormMessage className="text-zinc-600" />
+            </FormItem>
+          )}
+        />
+
+        <Separator />
+
+        {/* Notifications */}
+        <div>
+          <h3 className="text-lg font-medium mb-4">Notifications</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Manage the basic settings and primary details of your profile.
+          </p>
+        </div>
+
+        <FormField
+          control={form.control}
+          name="notifications"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <div className="flex items-center justify-between p-4 border rounded">
+                <div className="space-y-1">
+                  <FormLabel>Email Notifications</FormLabel>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-line italic">
+                    I wish to stay informed about Avalanche news and events and
+                    agree to receive newsletters and other promotional materials
+                    at the email address I provided. {"\n"}I know that I
+                    may opt-out at any time. I have read and agree to the{" "}
+                    <a
+                      href="https://www.avax.network/privacy-policy"
+                      className="text-primary hover:text-primary/80 dark:text-primary/90 dark:hover:text-primary/70"
+                    >
+                      Avalanche Privacy Policy
+                    </a>
+                    .
+                  </p>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Separator />
+
         {/* Submit Button */}
         <div className="flex justify-end">
           <Button type="submit" variant="default">
@@ -534,6 +697,11 @@ export default function Profile() {
           </Button>
         </div>
       </form>
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onOpenChange={setIsUploadModalOpen}
+        onFileSelect={(file) => file && handleFileSelect(file)}
+      />
     </Form>
   );
 }
