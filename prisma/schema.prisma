@@ -35,31 +35,31 @@ model Hackathon {
 }
 
 model User {
-  id                  String             @id @default(cuid())
-  name                String?
-  email               String?            @unique
-  image               String?
-  authentication_mode String?
-  integration         String?
-  last_login          DateTime?
-  user_name           String?
-  bio                 String?
-  notification_email  String?
-  profile_privacy     String?            @default("public")
-  social_media        String[]
-  notifications       Boolean?
-  custom_attributes   String[]
-  telegram_user       String?
-  created_at          DateTime           @default(now()) @db.Timestamptz(3)
-  consoleLog          ConsoleLog[]
-  hackathons          Hackathon[]
-  updated_hackathons  Hackathon[]        @relation("HackathonUpdatedBy")
-  memberships         Member[]
-  managedTestnetNodes NodeRegistration[]
-  registrations       RegisterForm[]
-  badges              UserBadge[]
-  statsPlaygrounds    StatsPlayground[]
+  id                       String                    @id @default(cuid())
+  name                     String?
+  email                    String?                   @unique
+  image                    String?
+  authentication_mode      String?
+  integration              String?
+  last_login               DateTime?
+  user_name                String?
+  bio                      String?
+  notification_email       String?
+  profile_privacy          String?                   @default("public")
+  social_media             String[]
+  notifications            Boolean?
+  custom_attributes        String[]
+  telegram_user            String?
+  created_at               DateTime                  @default(now()) @db.Timestamptz(3)
+  consoleLog               ConsoleLog[]
+  hackathons               Hackathon[]
+  updated_hackathons       Hackathon[]               @relation("HackathonUpdatedBy")
+  memberships              Member[]
+  managedTestnetNodes      NodeRegistration[]
+  registrations            RegisterForm[]
+  statsPlaygrounds         StatsPlayground[]
   statsPlaygroundFavorites StatsPlaygroundFavorite[] @relation("StatsPlaygroundFavorites")
+  badges                   UserBadge[]
 }
 
 model VerificationToken {
@@ -226,16 +226,16 @@ model ConsoleLog {
 }
 
 model StatsPlayground {
-  id          String   @id @default(uuid())
-  user_id     String
-  name        String
-  is_public   Boolean  @default(false)
-  charts      Json     // Array of chart configurations
-  view_count  Int      @default(0)
-  created_at  DateTime @default(now()) @db.Timestamptz(3)
-  updated_at  DateTime @updatedAt @db.Timestamptz(3)
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  favorites   StatsPlaygroundFavorite[]
+  id         String                    @id @default(uuid())
+  user_id    String
+  name       String
+  is_public  Boolean                   @default(false)
+  charts     Json
+  created_at DateTime                  @default(now()) @db.Timestamptz(3)
+  updated_at DateTime                  @updatedAt @db.Timestamptz(3)
+  view_count Int                       @default(0)
+  user       User                      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  favorites  StatsPlaygroundFavorite[]
 
   @@index([user_id])
   @@index([is_public])
@@ -243,12 +243,12 @@ model StatsPlayground {
 }
 
 model StatsPlaygroundFavorite {
-  id           String    @id @default(uuid())
+  id            String          @id @default(uuid())
   playground_id String
-  user_id      String
-  created_at   DateTime  @default(now()) @db.Timestamptz(3)
-  playground   StatsPlayground @relation(fields: [playground_id], references: [id], onDelete: Cascade)
-  user         User      @relation("StatsPlaygroundFavorites", fields: [user_id], references: [id], onDelete: Cascade)
+  user_id       String
+  created_at    DateTime        @default(now()) @db.Timestamptz(3)
+  playground    StatsPlayground @relation(fields: [playground_id], references: [id], onDelete: Cascade)
+  user          User            @relation("StatsPlaygroundFavorites", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([playground_id, user_id])
   @@index([playground_id])
