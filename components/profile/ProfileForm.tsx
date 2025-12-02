@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "../ui/toaster";
 import { useSession } from "next-auth/react";
 import ProfileTab from "./components/profile-tab";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -249,10 +250,16 @@ export default function ProfileForm({
     const imageUrl = URL.createObjectURL(file);
     form.setValue("image", imageUrl, { shouldDirty: true });
   };
-    return (
-    <ProfileTab achievements={achievements} />
-  )
 
+  // Feature flag to control which profile version to show
+  const isNewProfileEnabled = useFeatureFlag('new-profile-ui', false);
+
+  // If the feature flag is enabled, show the new version (ProfileTab)
+  if (isNewProfileEnabled) {
+    return <ProfileTab achievements={achievements} />;
+  }
+
+  // Versión antigua del formulario
   return (
     <div className="container mx-auto py-8 flex flex-col gap-4">
       <Toaster />
