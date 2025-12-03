@@ -3,7 +3,7 @@ import { ImageResponse } from 'next/og';
 import { loadFonts, createOGResponse } from '@/utils/og-image';
 import { getHackathon } from '@/server/services/hackathons';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export async function GET(
   request: NextRequest,
