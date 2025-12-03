@@ -60,6 +60,7 @@ export interface L1Chain {
   chainId: string;
   chainName: string;
   chainLogoURI: string;
+  blockchainId?: string;
   subnetId: string;
   slug: string;
   color?: string;
@@ -71,6 +72,10 @@ export interface L1Chain {
     linkedin?: string;
   };
   explorers?: BlockExplorer[];
+  rpcUrl?: string;
+  coingeckoId?: string;
+  tokenSymbol?: string;
+  sourcifySupport?: boolean;
 }
 
 export type TimeRange = "30d" | "90d" | "1y" | "all";
