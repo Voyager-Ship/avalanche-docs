@@ -51,6 +51,11 @@ model User {
   custom_attributes        String[]
   telegram_user            String?
   created_at               DateTime                  @default(now()) @db.Timestamptz(3)
+  country                  String?
+  user_type                Json?
+  github                   String?
+  wallet                   String?
+  skills                   String[]                  @default([])
   consoleLog               ConsoleLog[]
   hackathons               Hackathon[]
   updated_hackathons       Hackathon[]               @relation("HackathonUpdatedBy")

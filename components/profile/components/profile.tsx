@@ -1,9 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,115 +31,47 @@ import { WalletConnectButton } from "./WalletConnectButton";
 import { UploadModal } from "@/components/ui/upload-modal";
 import { useProfileProgress } from "@/components/profile/components/hooks/useProfileProgress";
 import { SkillsAutocomplete } from "./SkillsAutocomplete";
-
-// Schema de validación con Zod
-const profileSchema = z.object({
-  name: z.string().min(1, "Full name is required").optional(),
-  username: z.string().min(1, "Username is required"),
-  bio: z.string().max(250, "Bio must not exceed 250 characters").optional(),
-  email: z.string().email("Invalid email"),
-  notification_email: z.string().email("Invalid email").optional(),
-  image: z.string().optional(),
-  country: z.string().optional(),
-  is_student: z.boolean().default(false),
-  is_founder: z.boolean().default(false),
-  is_employee: z.boolean().default(false),
-  is_enthusiast: z.boolean().default(false),
-  company_name: z.string().optional(),
-  role: z.string().optional(),
-  github: z.string().optional(),
-  wallet: z.string().optional(),
-  socials: z.array(z.string()).default([]),
-  student_institution: z.string().optional(),
-  skills: z.array(z.string()).default([]),
-  notifications: z.boolean().default(false),
-  profile_privacy: z.string().default("public"),
-  telegram_user: z.string().optional(),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
+import { useProfileForm } from "./hooks/useProfileForm";
 
 export default function Profile() {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
   const [newSkill, setNewSkill] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const formData = useRef(new FormData());
 
-  // Inicializar formulario con react-hook-form y Zod
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      username: "username",
-      bio: "",
-      email: "",
-      notification_email: "",
-      image: "",
-      country: "",
-      is_student: false,
-      is_founder: false,
-      is_employee: false,
-      is_enthusiast: false,
-      company_name: "",
-      role: "",
-      github: "",
-      wallet: "",
-      socials: [],
-      student_institution: "",
-      skills: ["Foundary", "solidity", "python"],
-      notifications: false,
-      profile_privacy: "public",
-      telegram_user: "",
-    },
-  });
+  // Use custom hook for all profile logic
+  const {
+    form,
+    watchedValues,
+    isLoading,
+    isSaving,
+    handleFileSelect,
+    handleAddSkill,
+    handleRemoveSkill,
+    handleAddSocial,
+    handleRemoveSocial,
+    onSubmit,
+  } = useProfileForm();
 
-  const { watch, setValue } = form;
-  const watchedValues = watch();
-
-  const handleAddSkill = () => {
-    const currentSkills = watchedValues.skills || [];
-    if (newSkill.trim() && !currentSkills.includes(newSkill.trim())) {
-      setValue("skills", [...currentSkills, newSkill.trim()], { shouldDirty: true });
-      setNewSkill("");
-    }
-  };
-
-  const handleRemoveSkill = (skillToRemove: string) => {
-    const currentSkills = watchedValues.skills || [];
-    setValue("skills", currentSkills.filter((skill) => skill !== skillToRemove), { shouldDirty: true });
-  };
-
-  const handleAddSocial = () => {
-    const currentSocials = watchedValues.socials || [];
-    setValue("socials", [...currentSocials, ""], { shouldDirty: true });
-  };
-
-  const handleRemoveSocial = (index: number) => {
-    const currentSocials = watchedValues.socials || [];
-    setValue("socials", currentSocials.filter((_, i) => i !== index), { shouldDirty: true });
-  };
-
-  const handleFileSelect = (file: File) => {
-    formData.current.set("file", file);
-    const imageUrl = URL.createObjectURL(file);
-    form.setValue("image", imageUrl, { shouldDirty: true });
-  };
-
-  const onSubmit = (data: ProfileFormValues) => {
-    // Por ahora solo mostramos los datos en consola (mockeado)
-    console.log("Profile data:", data);
-    // TODO: Implementar guardado en BD cuando esté listo
-  };
-
-  // Calcular porcentaje de completitud del perfil con debounce
-  const profileProgress = useProfileProgress(watchedValues, 300);
-  const radius = 52; // Radio del círculo (ajustado para avatar de 104px)
+  // Calculate profile completion percentage with debounce (optimized)
+  const profileProgress = useProfileProgress(watchedValues, 800);
+  const radius = 52; // Circle radius (adjusted for 104px avatar)
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (profileProgress / 100) * circumference;
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={onSubmit} className="space-y-8">
         {/* Profile Picture */}
         <div className="flex items-center justify-center">
           <div
@@ -152,14 +80,14 @@ export default function Profile() {
             onMouseLeave={() => setIsHoveringAvatar(false)}
             onClick={() => setIsUploadModalOpen(true)}
           >
-            {/* Círculo de progreso alrededor del avatar */}
+            {/* Progress circle around avatar */}
             <div className="relative h-32 w-32">
               <svg
                 className="absolute inset-0 -rotate-90 transform"
                 width="128"
                 height="128"
               >
-                {/* Círculo de fondo */}
+                {/* Background circle */}
                 <circle
                   cx="64"
                   cy="64"
@@ -169,7 +97,7 @@ export default function Profile() {
                   strokeWidth="3"
                   className="text-muted opacity-20"
                 />
-                {/* Círculo de progreso */}
+                {/* Progress circle */}
                 <circle
                   cx="64"
                   cy="64"
@@ -189,7 +117,7 @@ export default function Profile() {
                   <AvatarFallback className="text-2xl">U</AvatarFallback>
                 </Avatar>
               </div>
-              {/* Porcentaje en la parte inferior del círculo */}
+              {/* Percentage at bottom of circle */}
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 z-20 pointer-events-none">
                 <span className="text-xs font-semibold text-red-500 bg-background border border-red-500/30 rounded-full px-2 py-0.5 shadow-sm">
                   {profileProgress}%
@@ -359,6 +287,7 @@ export default function Profile() {
                       />
                     )}
                   </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -693,7 +622,7 @@ export default function Profile() {
                     onSelect={(skill) => {
                       const currentSkills = watchedValues.skills || [];
                       if (!currentSkills.includes(skill)) {
-                        setValue("skills", [...currentSkills, skill], { shouldDirty: true });
+                        form.setValue("skills", [...currentSkills, skill], { shouldDirty: true });
                         setNewSkill("");
                       }
                     }}
@@ -704,7 +633,7 @@ export default function Profile() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleAddSkill}
+                  onClick={() => handleAddSkill(newSkill, setNewSkill)}
                   disabled={!newSkill.trim()}
                 >
                   Add
@@ -794,8 +723,8 @@ export default function Profile() {
      
         {/* Submit Button */}
         <div className="flex justify-end">
-          <Button type="submit" variant="default">
-            Save Changes
+          <Button type="submit" variant="default" disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </form>

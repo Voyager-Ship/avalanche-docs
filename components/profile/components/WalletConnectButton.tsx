@@ -16,6 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 import EthereumProvider from "@walletconnect/ethereum-provider";
 import { QRCodeSVG } from "qrcode.react";
 
+// Singleton pattern for WalletConnect Provider to prevent multiple initializations
+let walletConnectProviderInstance: EthereumProvider | null = null;
+let initializationPromise: Promise<EthereumProvider | null> | null = null;
+
 interface WalletProvider {
   name: string;
   icon: string;
@@ -34,43 +38,70 @@ export function WalletConnectButton({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [walletConnectProvider, setWalletConnectProvider] = useState<EthereumProvider | null>(null);
+  const [walletConnectProvider, setWalletConnectProvider] = useState<EthereumProvider | null>(walletConnectProviderInstance);
   const [qrCodeUri, setQrCodeUri] = useState<string | null>(null);
   const [showQRCode, setShowQRCode] = useState(false);
   const { toast } = useToast();
   
-  // Usar useRef para mantener una referencia estable a la función callback
+  // Use useRef to maintain stable callback reference
   const onWalletConnectedRef = useRef(onWalletConnected);
   
-  // Actualizar la referencia cuando cambie la función
+  // Update reference when callback changes
   useEffect(() => {
     onWalletConnectedRef.current = onWalletConnected;
   }, [onWalletConnected]);
 
-  // Inicializar WalletConnect Provider
+  // Initialize WalletConnect Provider with singleton pattern
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const initWalletConnect = async () => {
       try {
-        const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-        
-        if (!projectId || projectId === "YOUR_PROJECT_ID") {
-          console.warn("WalletConnect Project ID not configured. Get one at https://cloud.walletconnect.com");
+        // If already initialized, use existing instance
+        if (walletConnectProviderInstance) {
+          setWalletConnectProvider(walletConnectProviderInstance);
           return;
         }
 
-        const provider = await EthereumProvider.init({
-          projectId: projectId,
-          chains: [1, 43114, 43113], // Ethereum, Avalanche Mainnet, Avalanche Fuji
-          showQrModal: false, // Deshabilitamos el modal automático para usar nuestro propio
-        });
+        // If initialization is in progress, wait for it
+        if (initializationPromise) {
+          const provider = await initializationPromise;
+          if (provider) {
+            setWalletConnectProvider(provider);
+          }
+          return;
+        }
 
-        // Escuchar eventos de WalletConnect
+        // Start new initialization
+        initializationPromise = (async () => {
+          const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+          
+          if (!projectId || projectId === "YOUR_PROJECT_ID") {
+            console.warn("WalletConnect Project ID not configured. Get one at https://cloud.walletconnect.com");
+            return null;
+          }
+
+          const provider = await EthereumProvider.init({
+            projectId: projectId,
+            chains: [1, 43114, 43113], // Ethereum, Avalanche Mainnet, Avalanche Fuji
+            showQrModal: false, // Disable automatic modal to use our own
+          });
+
+          // Store singleton instance
+          walletConnectProviderInstance = provider;
+          
+          return provider;
+        })();
+
+        const provider = await initializationPromise;
+        
+        if (!provider) return;
+
+        // Setup event listeners
         provider.on("display_uri", (uri: string) => {
           setQrCodeUri(uri);
           setShowQRCode(true);
-          setIsConnecting(true); // Asegurar que estamos en estado de conexión
+          setIsConnecting(true);
         });
 
         provider.on("connect", () => {
@@ -97,12 +128,13 @@ export function WalletConnectButton({
         setWalletConnectProvider(provider);
       } catch (error) {
         console.error("Error initializing WalletConnect:", error);
+        initializationPromise = null; // Reset on error to allow retry
       }
     };
 
     initWalletConnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Solo ejecutar una vez al montar
+  }, []); // Only run once on mount
 
   // Detectar wallets disponibles
   const detectWallets = (): WalletProvider[] => {
