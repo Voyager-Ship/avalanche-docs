@@ -109,8 +109,27 @@ export const AuthOptions: NextAuthOptions = {
           //   },
           // }
           user = {
-            email, notification_email: email, name: '', image: '', last_login: new Date(), authentication_mode: '', bio: '',
-            custom_attributes: [], id: '', integration: '', notifications: null, profile_privacy: null, social_media: [], telegram_user: '', user_name: '', created_at: new Date()
+            email, 
+            notification_email: email, 
+            name: '', 
+            image: '', 
+            last_login: new Date(), 
+            authentication_mode: '', 
+            bio: '',
+            custom_attributes: [], 
+            id: '', 
+            integration: '', 
+            notifications: null, 
+            profile_privacy: null, 
+            social_media: [], 
+            telegram_user: '', 
+            user_name: '', 
+            created_at: new Date(),
+            country: null,
+            user_type: null,
+            github: null,
+            wallet: null,
+            skills: []
           }
         }
 

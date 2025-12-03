@@ -37,6 +37,16 @@ export type ExtendedProfile = {
 /**
  * Tipo para los datos que se pueden actualizar en el perfil
  * Todos los campos son opcionales para permitir actualizaciones parciales
+ * Permite tanto la estructura anidada (user_type) como campos planos para facilidad de uso
  */
-export type UpdateExtendedProfileData = Partial<Omit<ExtendedProfile, 'id' | 'email'>>;
+export type UpdateExtendedProfileData = Partial<Omit<ExtendedProfile, 'id'>> & {
+    // Permitir campos de UserType a nivel superior para facilitar validaciones
+    is_student?: boolean;
+    is_founder?: boolean;
+    is_employee?: boolean;
+    is_enthusiast?: boolean;
+    student_institution?: string;
+    company_name?: string;
+    role?: string;
+};
 
