@@ -17,6 +17,11 @@ export async function upsertUser(user: User, account: Account | null, profile: P
     ? existingUser.authentication_mode
     : `${existingUser?.authentication_mode ?? ""},${account?.provider}`.replace(/^,/, "");
 
+  // Prepare GitHub URL if authenticating with GitHub
+  const githubUrl = account?.provider === "github" && (profile as any)?.html_url
+    ? (profile as any).html_url
+    : existingUser?.github ?? "";
+
   return await prisma.user.upsert({
     where: { email: user.email },
     update: {
@@ -25,6 +30,8 @@ export async function upsertUser(user: User, account: Account | null, profile: P
       authentication_mode: updatedAuthMode,
       last_login: new Date(),
       user_name: (profile as any)?.login ?? "",
+      // Update github field only if authenticating with GitHub and field is empty
+      ...(account?.provider === "github" && !existingUser?.github && { github: githubUrl }),
     },
     create: {
       email: user.email,
@@ -35,6 +42,8 @@ export async function upsertUser(user: User, account: Account | null, profile: P
       last_login: new Date(),
       user_name: (profile as any)?.login ?? "",
       notifications: null,
+      // Set github field if authenticating with GitHub
+      ...(account?.provider === "github" && { github: githubUrl }),
     },
   });
 

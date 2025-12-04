@@ -459,10 +459,7 @@ export default function Profile() {
                 <FormControl>
                   <Input placeholder="github.com/username" {...field} />
                 </FormControl>
-                <Button type="button" variant="outline" size="default">
-                  <Github className="h-4 w-4 mr-2" />
-                  Connect
-                </Button>
+               
               </div>
               <FormMessage />
             </FormItem>
