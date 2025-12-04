@@ -154,6 +154,11 @@ function normalizeUser(user: Partial<User>): User {
     social_media: user.social_media ?? [],
     notifications: user.notifications ?? null,
     created_at: user.created_at ?? new Date(),
+    country: user.country ?? null,
+    user_type: user.user_type ?? null,
+    github: user.github ?? null,
+    wallet: user.wallet ?? null,
+    skills: user.skills ?? [],
   };
 }
 export async function getProject(projectId: string): Promise<Project | null> {
