@@ -32,6 +32,8 @@ import { UploadModal } from "@/components/ui/upload-modal";
 import { useProfileProgress } from "@/components/profile/components/hooks/useProfileProgress";
 import { SkillsAutocomplete } from "./SkillsAutocomplete";
 import { useProfileForm } from "./hooks/useProfileForm";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function Profile() {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
@@ -70,8 +72,9 @@ export default function Profile() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={onSubmit} className="space-y-8">
+    <>
+      <Form {...form}>
+        <form onSubmit={onSubmit} className="space-y-8">
         {/* Profile Picture */}
         <div className="flex items-center justify-center">
           <div
@@ -314,7 +317,7 @@ export default function Profile() {
                       <div className="flex-1 flex items-center gap-4">
                         <FormField
                           control={form.control}
-                          name="company_name"
+                          name="founder_company_name"
                           render={({ field: inputField }) => (
                             <FormItem className="flex-1">
                               <FormControl>
@@ -330,7 +333,7 @@ export default function Profile() {
                         />
                         <FormField
                           control={form.control}
-                          name="role"
+                          name="founder_role"
                           render={({ field: selectField }) => (
                             <FormItem className="flex-1">
                               <Select onValueChange={selectField.onChange} value={selectField.value}>
@@ -380,7 +383,7 @@ export default function Profile() {
                       <div className="flex-1 flex items-center gap-4">
                         <FormField
                           control={form.control}
-                          name="company_name"
+                          name="employee_company_name"
                           render={({ field: inputField }) => (
                             <FormItem className="flex-1">
                               <FormControl>
@@ -396,7 +399,7 @@ export default function Profile() {
                         />
                         <FormField
                           control={form.control}
-                          name="role"
+                          name="employee_role"
                           render={({ field: selectField }) => (
                             <FormItem className="flex-1">
                               <Select onValueChange={selectField.onChange} value={selectField.value}>
@@ -456,10 +459,7 @@ export default function Profile() {
                 <FormControl>
                   <Input placeholder="github.com/username" {...field} />
                 </FormControl>
-                <Button type="button" variant="outline" size="default">
-                  <Github className="h-4 w-4 mr-2" />
-                  Connect
-                </Button>
+               
               </div>
               <FormMessage />
             </FormItem>
@@ -614,31 +614,21 @@ export default function Profile() {
                   </Badge>
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <FormControl>
-                  <SkillsAutocomplete
-                    value={newSkill}
-                    onChange={setNewSkill}
-                    onSelect={(skill) => {
-                      const currentSkills = watchedValues.skills || [];
-                      if (!currentSkills.includes(skill)) {
-                        form.setValue("skills", [...currentSkills, skill], { shouldDirty: true });
-                        setNewSkill("");
-                      }
-                    }}
-                    existingSkills={watchedValues.skills || []}
-                    placeholder="Type to search skills..."
-                  />
-                </FormControl>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleAddSkill(newSkill, setNewSkill)}
-                  disabled={!newSkill.trim()}
-                >
-                  Add
-                </Button>
-              </div>
+              <FormControl>
+                <SkillsAutocomplete
+                  value={newSkill}
+                  onChange={setNewSkill}
+                  onSelect={(skill) => {
+                    const currentSkills = watchedValues.skills || [];
+                    if (!currentSkills.includes(skill)) {
+                      form.setValue("skills", [...currentSkills, skill], { shouldDirty: true });
+                      setNewSkill("");
+                    }
+                  }}
+                  existingSkills={watchedValues.skills || []}
+                  placeholder="Select skills..."
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -723,16 +713,18 @@ export default function Profile() {
      
         {/* Submit Button */}
         <div className="flex justify-end">
-          <Button type="submit" variant="default" disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Changes"}
-          </Button>
+          <LoadingButton type="submit" variant="default" isLoading={isSaving} loadingText="Saving...">
+          Save Changes
+          </LoadingButton>
         </div>
-      </form>
-      <UploadModal
-        isOpen={isUploadModalOpen}
-        onOpenChange={setIsUploadModalOpen}
-        onFileSelect={(file) => file && handleFileSelect(file)}
-      />
-    </Form>
+        </form>
+        <UploadModal
+          isOpen={isUploadModalOpen}
+          onOpenChange={setIsUploadModalOpen}
+          onFileSelect={(file) => file && handleFileSelect(file)}
+        />
+      </Form>
+      <Toaster />
+    </>
   );
 }

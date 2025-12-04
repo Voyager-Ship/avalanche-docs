@@ -10,8 +10,7 @@ export const profileSchema = z.object({
   name: z.string().optional(),
   username: z.string().optional(),
   bio: z.string().max(250, "Bio must not exceed 250 characters").optional(),
-  email: z.string().email().optional(), // Email from session, optional
-  notification_email: z.string().email().optional(),
+  email: z.email("Invalid email").optional(), // Email from session, optional
   image: z.string().optional(),
   country: z.string().optional(),
   // user_type as JSON object - all optional
@@ -19,9 +18,17 @@ export const profileSchema = z.object({
   is_founder: z.boolean().optional().default(false),
   is_employee: z.boolean().optional().default(false),
   is_enthusiast: z.boolean().optional().default(false),
+  // Founder fields
+  founder_company_name: z.string().optional(),
+  founder_role: z.string().optional(),
+  // Employee fields
+  employee_company_name: z.string().optional(),
+  employee_role: z.string().optional(),
+  // Student fields
+  student_institution: z.string().optional(),
+  // Legacy fields (for backward compatibility)
   company_name: z.string().optional(),
   role: z.string().optional(),
-  student_institution: z.string().optional(),
   github: z.string().optional(),
   wallet: z.string().optional(),
   socials: z.array(z.string()).default([]),
@@ -48,16 +55,19 @@ export function useProfileForm() {
       username: "",
       bio: "",
       email: session?.user?.email || "",
-      notification_email: "",
       image: "",
       country: "",
       is_student: false,
       is_founder: false,
       is_employee: false,
       is_enthusiast: false,
+      founder_company_name: "",
+      founder_role: "",
+      employee_company_name: "",
+      employee_role: "",
+      student_institution: "",
       company_name: "",
       role: "",
-      student_institution: "",
       github: "",
       wallet: "",
       socials: [],
@@ -98,9 +108,13 @@ export function useProfileForm() {
             is_founder: profile.user_type?.is_founder || false,
             is_employee: profile.user_type?.is_employee || false,
             is_enthusiast: profile.user_type?.is_enthusiast || false,
+            founder_company_name: profile.user_type?.founder_company_name || "",
+            founder_role: profile.user_type?.founder_role || "",
+            employee_company_name: profile.user_type?.employee_company_name || "",
+            employee_role: profile.user_type?.employee_role || "",
+            student_institution: profile.user_type?.student_institution || "",
             company_name: profile.user_type?.company_name || "",
             role: profile.user_type?.role || "",
-            student_institution: profile.user_type?.student_institution || "",
             github: profile.github || "",
             wallet: profile.wallet || "",
             socials: profile.socials || [],
@@ -206,7 +220,20 @@ export function useProfileForm() {
       }
 
       // Build user_type object to send as JSON
-      const { is_student, is_founder, is_employee, is_enthusiast, company_name, role, student_institution, ...restData } = data;
+      const { 
+        is_student, 
+        is_founder, 
+        is_employee, 
+        is_enthusiast, 
+        founder_company_name,
+        founder_role,
+        employee_company_name,
+        employee_role,
+        student_institution, 
+        company_name, 
+        role, 
+        ...restData 
+      } = data;
       
       const profileData = {
         ...restData,
@@ -216,9 +243,14 @@ export function useProfileForm() {
           is_founder,
           is_employee,
           is_enthusiast,
+          ...(founder_company_name && { founder_company_name }),
+          ...(founder_role && { founder_role }),
+          ...(employee_company_name && { employee_company_name }),
+          ...(employee_role && { employee_role }),
+          ...(student_institution && { student_institution }),
+          // Legacy fields for backward compatibility
           ...(company_name && { company_name }),
           ...(role && { role }),
-          ...(student_institution && { student_institution }),
         }
       };
 
@@ -256,9 +288,13 @@ export function useProfileForm() {
         is_founder: updatedProfile.user_type?.is_founder || false,
         is_employee: updatedProfile.user_type?.is_employee || false,
         is_enthusiast: updatedProfile.user_type?.is_enthusiast || false,
+        founder_company_name: updatedProfile.user_type?.founder_company_name || "",
+        founder_role: updatedProfile.user_type?.founder_role || "",
+        employee_company_name: updatedProfile.user_type?.employee_company_name || "",
+        employee_role: updatedProfile.user_type?.employee_role || "",
+        student_institution: updatedProfile.user_type?.student_institution || "",
         company_name: updatedProfile.user_type?.company_name || "",
         role: updatedProfile.user_type?.role || "",
-        student_institution: updatedProfile.user_type?.student_institution || "",
         github: updatedProfile.github || "",
         wallet: updatedProfile.wallet || "",
         socials: updatedProfile.socials || [],

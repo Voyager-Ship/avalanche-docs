@@ -176,20 +176,6 @@ export const PUT = withAuth(async (
       }
     }
 
-    // Validaciones condicionales
-    if (newProfileData.is_student && !newProfileData.student_institution) {
-      return NextResponse.json(
-        { error: 'Student institution is required when "Student" is selected.' },
-        { status: 400 }
-      );
-    }
-
-    if ((newProfileData.is_founder || newProfileData.is_employee) && !newProfileData.company_name) {
-      return NextResponse.json(
-        { error: 'Company name is required when "Founder" or "Employee" is selected.' },
-        { status: 400 }
-      );
-    }
 
     const updatedProfile = await updateExtendedProfile(id, newProfileData);
 

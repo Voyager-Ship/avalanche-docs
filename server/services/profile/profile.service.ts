@@ -134,3 +134,47 @@ export async function isUsernameAvailable(username: string, currentUserId?: stri
     return !existingUser;
 }
 
+/**
+ * Interface representing a popular skill
+ */
+export interface PopularSkill {
+    name: string;
+    usageCount: number;
+}
+
+/**
+ * Service to get the most popular skills from all users
+ * Analyzes all skills from the User table and counts how many times each one appears
+ * @returns Array of skills sorted by popularity (descending order)
+ */
+export async function getPopularSkills(): Promise<PopularSkill[]> {
+    const users = await prisma.user.findMany({
+        select: {
+            skills: true
+        }
+    });
+
+    const skillCountMap = new Map<string, number>();
+
+    users.forEach(user => {
+        if (user.skills && Array.isArray(user.skills) && user.skills.length > 0) {
+            user.skills.forEach(skill => {
+                const skillName = skill.trim();
+                if (skillName) {
+                    const currentCount = skillCountMap.get(skillName) || 0;
+                    skillCountMap.set(skillName, currentCount + 1);
+                }
+            });
+        }
+    });
+
+    const popularSkills: PopularSkill[] = Array.from(skillCountMap.entries())
+        .map(([name, usageCount]) => ({
+            name,
+            usageCount
+        }))
+        .sort((a, b) => b.usageCount - a.usageCount);
+
+    return popularSkills;
+}
+
