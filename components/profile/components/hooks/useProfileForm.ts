@@ -10,8 +10,7 @@ export const profileSchema = z.object({
   name: z.string().optional(),
   username: z.string().optional(),
   bio: z.string().max(250, "Bio must not exceed 250 characters").optional(),
-  email: z.string().email().optional(), // Email from session, optional
-  notification_email: z.string().email().optional(),
+  email: z.email("Invalid email").optional(), // Email from session, optional
   image: z.string().optional(),
   country: z.string().optional(),
   // user_type as JSON object - all optional
@@ -48,7 +47,6 @@ export function useProfileForm() {
       username: "",
       bio: "",
       email: session?.user?.email || "",
-      notification_email: "",
       image: "",
       country: "",
       is_student: false,

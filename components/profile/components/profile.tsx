@@ -32,6 +32,8 @@ import { UploadModal } from "@/components/ui/upload-modal";
 import { useProfileProgress } from "@/components/profile/components/hooks/useProfileProgress";
 import { SkillsAutocomplete } from "./SkillsAutocomplete";
 import { useProfileForm } from "./hooks/useProfileForm";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function Profile() {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
@@ -70,8 +72,9 @@ export default function Profile() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={onSubmit} className="space-y-8">
+    <>
+      <Form {...form}>
+        <form onSubmit={onSubmit} className="space-y-8">
         {/* Profile Picture */}
         <div className="flex items-center justify-center">
           <div
@@ -723,16 +726,18 @@ export default function Profile() {
      
         {/* Submit Button */}
         <div className="flex justify-end">
-          <Button type="submit" variant="default" disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Changes"}
-          </Button>
+          <LoadingButton type="submit" variant="default" isLoading={isSaving} loadingText="Saving...">
+          Save Changes
+          </LoadingButton>
         </div>
-      </form>
-      <UploadModal
-        isOpen={isUploadModalOpen}
-        onOpenChange={setIsUploadModalOpen}
-        onFileSelect={(file) => file && handleFileSelect(file)}
-      />
-    </Form>
+        </form>
+        <UploadModal
+          isOpen={isUploadModalOpen}
+          onOpenChange={setIsUploadModalOpen}
+          onFileSelect={(file) => file && handleFileSelect(file)}
+        />
+      </Form>
+      <Toaster />
+    </>
   );
 }
