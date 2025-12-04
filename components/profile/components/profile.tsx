@@ -614,31 +614,21 @@ export default function Profile() {
                   </Badge>
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <FormControl>
-                  <SkillsAutocomplete
-                    value={newSkill}
-                    onChange={setNewSkill}
-                    onSelect={(skill) => {
-                      const currentSkills = watchedValues.skills || [];
-                      if (!currentSkills.includes(skill)) {
-                        form.setValue("skills", [...currentSkills, skill], { shouldDirty: true });
-                        setNewSkill("");
-                      }
-                    }}
-                    existingSkills={watchedValues.skills || []}
-                    placeholder="Type to search skills..."
-                  />
-                </FormControl>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleAddSkill(newSkill, setNewSkill)}
-                  disabled={!newSkill.trim()}
-                >
-                  Add
-                </Button>
-              </div>
+              <FormControl>
+                <SkillsAutocomplete
+                  value={newSkill}
+                  onChange={setNewSkill}
+                  onSelect={(skill) => {
+                    const currentSkills = watchedValues.skills || [];
+                    if (!currentSkills.includes(skill)) {
+                      form.setValue("skills", [...currentSkills, skill], { shouldDirty: true });
+                      setNewSkill("");
+                    }
+                  }}
+                  existingSkills={watchedValues.skills || []}
+                  placeholder="Select skills..."
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
