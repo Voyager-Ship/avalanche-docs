@@ -317,7 +317,7 @@ export default function Profile() {
                       <div className="flex-1 flex items-center gap-4">
                         <FormField
                           control={form.control}
-                          name="company_name"
+                          name="founder_company_name"
                           render={({ field: inputField }) => (
                             <FormItem className="flex-1">
                               <FormControl>
@@ -333,7 +333,7 @@ export default function Profile() {
                         />
                         <FormField
                           control={form.control}
-                          name="role"
+                          name="founder_role"
                           render={({ field: selectField }) => (
                             <FormItem className="flex-1">
                               <Select onValueChange={selectField.onChange} value={selectField.value}>
@@ -383,7 +383,7 @@ export default function Profile() {
                       <div className="flex-1 flex items-center gap-4">
                         <FormField
                           control={form.control}
-                          name="company_name"
+                          name="employee_company_name"
                           render={({ field: inputField }) => (
                             <FormItem className="flex-1">
                               <FormControl>
@@ -399,7 +399,7 @@ export default function Profile() {
                         />
                         <FormField
                           control={form.control}
-                          name="role"
+                          name="employee_role"
                           render={({ field: selectField }) => (
                             <FormItem className="flex-1">
                               <Select onValueChange={selectField.onChange} value={selectField.value}>
