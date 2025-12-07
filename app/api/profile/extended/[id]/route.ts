@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { 
   getExtendedProfile, 
   updateExtendedProfile,
-  isUsernameAvailable 
+  ProfileValidationError
 } from '@/server/services/profile/profile.service';
-import { ExtendedProfile, UpdateExtendedProfileData } from '@/types/extended-profile';
+import { UpdateExtendedProfileData } from '@/types/extended-profile';
 import { withAuth } from '@/lib/protectedRoute';
 
 /**
  * GET /api/profile/extended/[id]
- * Obtiene el perfil extendido de un usuario
+ * Gets the extended profile of a user
  */
 export const GET = withAuth(async (
   req: NextRequest,
@@ -26,8 +26,8 @@ export const GET = withAuth(async (
       );
     }
 
-    // Verificar que el usuario solo pueda acceder a su propio perfil
-    // Comentar esta validación si quieres permitir ver perfiles de otros usuarios
+    // Verify that the user can only access their own profile
+    // Comment this validation if you want to allow viewing other users' profiles
     const isOwnProfile = session.user.id === id;
     if (!isOwnProfile) {
       return NextResponse.json(
@@ -60,7 +60,7 @@ export const GET = withAuth(async (
 
 /**
  * PUT /api/profile/extended/[id]
- * Actualiza el perfil extendido de un usuario
+ * update extended profile
  */
 export const PUT = withAuth(async (
   req: NextRequest,
@@ -77,7 +77,7 @@ export const PUT = withAuth(async (
       );
     }
 
-    // Verificar que el usuario solo pueda actualizar su propio perfil
+    // verify that the user can only update their own profile
     if (session.user.id !== id) {
       return NextResponse.json(
         { error: 'Forbidden: You can only update your own profile.' },
@@ -87,101 +87,22 @@ export const PUT = withAuth(async (
 
     const newProfileData = (await req.json()) as UpdateExtendedProfileData;
 
-    // Validar que se envió algo para actualizar
-    if (!newProfileData || Object.keys(newProfileData).length === 0) {
-      return NextResponse.json(
-        { error: 'No data provided for update.' },
-        { status: 400 }
-      );
-    }
-
-    // Validar username si se está actualizando
-    if (newProfileData.username) {
-      const username = newProfileData.username.trim();
-      
-      if (username.length === 0) {
-        return NextResponse.json(
-          { error: 'Username cannot be empty.' },
-          { status: 400 }
-        );
-      }
-
-      // Verificar que el username esté disponible
-      const available = await isUsernameAvailable(username, id);
-      if (!available) {
-        return NextResponse.json(
-          { error: 'Username is already taken.' },
-          { status: 409 }
-        );
-      }
-    }
-
-    // Validar bio si se está actualizando
-    if (newProfileData.bio && newProfileData.bio.length > 250) {
-      return NextResponse.json(
-        { error: 'Bio must not exceed 250 characters.' },
-        { status: 400 }
-      );
-    }
-
-    // Validar emails si se están actualizando
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
-    if (newProfileData.email && !emailRegex.test(newProfileData.email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format.' },
-        { status: 400 }
-      );
-    }
-
-    if (newProfileData.notification_email && !emailRegex.test(newProfileData.notification_email)) {
-      return NextResponse.json(
-        { error: 'Invalid notification email format.' },
-        { status: 400 }
-      );
-    }
-
-    // Validar wallet si se está actualizando (formato Ethereum básico)
-    if (newProfileData.wallet) {
-      const walletRegex = /^0x[a-fA-F0-9]{40}$/;
-      if (!walletRegex.test(newProfileData.wallet)) {
-        return NextResponse.json(
-          { error: 'Invalid wallet address format. Expected Ethereum address (0x...).' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validar que al menos uno de los tipos de usuario esté seleccionado
-    // Solo validar si se están actualizando los tipos de usuario
-    const hasUserTypeUpdate = 
-      newProfileData.is_student !== undefined ||
-      newProfileData.is_founder !== undefined ||
-      newProfileData.is_employee !== undefined ||
-      newProfileData.is_enthusiast !== undefined;
-    
-    if (hasUserTypeUpdate) {
-      const userTypes = [
-        newProfileData.is_student,
-        newProfileData.is_founder,
-        newProfileData.is_employee,
-        newProfileData.is_enthusiast
-      ];
-      
-      if (userTypes.every(type => type === false)) {
-        return NextResponse.json(
-          { error: 'At least one user type must be selected (Student, Founder, Employee, or Enthusiast).' },
-          { status: 400 }
-        );
-      }
-    }
-
-
+    // The service now handles all business validations
     const updatedProfile = await updateExtendedProfile(id, newProfileData);
 
     return NextResponse.json(updatedProfile);
   } catch (error) {
     console.error('Error in PUT /api/profile/extended/[id]:', error);
+    
+    // Handle validation errors with the appropriate status code
+    if (error instanceof ProfileValidationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
+    }
+
+    // Handle other errors
     return NextResponse.json(
       { 
         error: 'Internal Server Error',

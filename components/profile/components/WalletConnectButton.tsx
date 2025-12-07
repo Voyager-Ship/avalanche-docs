@@ -22,12 +22,59 @@ let initializationPromise: Promise<EthereumProvider | null> | null = null;
 
 interface WalletProvider {
   name: string;
-  icon: string;
+  icon: string; // Can be emoji or image URL
+  iconUrl?: string; // Optional image URL for wallet icons
   id: string;
   available: boolean;
   connect: () => Promise<string | null>;
   type: "extension" | "walletconnect";
 }
+
+// EIP-6963 types for wallet discovery
+interface EIP6963ProviderInfo {
+  uuid: string;
+  name: string;
+  icon: string;
+  rdns: string;
+}
+
+interface EIP6963ProviderDetail {
+  info: EIP6963ProviderInfo;
+  provider: any;
+}
+
+// Known wallet identifiers and their metadata
+// Keys can be: rdns (e.g., "io.zerion"), normalized rdns (e.g., "io_zerion"), or name (e.g., "zerion")
+const KNOWN_WALLETS: Record<string, { name: string; icon: string; rdns?: string }> = {
+  // By rdns (with dots)
+  "io.zerion": { name: "Zerion", icon: "Z", rdns: "io.zerion" },
+  "io.metamask": { name: "MetaMask", icon: "🦊", rdns: "io.metamask" },
+  "com.coinbase.wallet": { name: "Coinbase Wallet", icon: "🔵", rdns: "com.coinbase.wallet" },
+  "com.trustwallet.app": { name: "Trust Wallet", icon: "🔒", rdns: "com.trustwallet.app" },
+  "com.brave.wallet": { name: "Brave Wallet", icon: "🦁", rdns: "com.brave.wallet" },
+  "me.rainbow": { name: "Rainbow", icon: "🌈", rdns: "me.rainbow" },
+  "app.frame": { name: "Frame", icon: "🖼️", rdns: "app.frame" },
+  "io.rabby": { name: "Rabby", icon: "🐰", rdns: "io.rabby" },
+  // By normalized rdns (with underscores)
+  "io_zerion": { name: "Zerion", icon: "Z", rdns: "io.zerion" },
+  "io_metamask": { name: "MetaMask", icon: "🦊", rdns: "io.metamask" },
+  "com_coinbase_wallet": { name: "Coinbase Wallet", icon: "🔵", rdns: "com.coinbase.wallet" },
+  "com_trustwallet_app": { name: "Trust Wallet", icon: "🔒", rdns: "com.trustwallet.app" },
+  "com_brave_wallet": { name: "Brave Wallet", icon: "🦁", rdns: "com.brave.wallet" },
+  "me_rainbow": { name: "Rainbow", icon: "🌈", rdns: "me.rainbow" },
+  "app_frame": { name: "Frame", icon: "🖼️", rdns: "app.frame" },
+  "io_rabby": { name: "Rabby", icon: "🐰", rdns: "io.rabby" },
+  // By name (lowercase, no spaces)
+  "zerion": { name: "Zerion", icon: "Z", rdns: "io.zerion" },
+  "metamask": { name: "MetaMask", icon: "🦊", rdns: "io.metamask" },
+  "coinbasewallet": { name: "Coinbase Wallet", icon: "🔵", rdns: "com.coinbase.wallet" },
+  "trustwallet": { name: "Trust Wallet", icon: "🔒", rdns: "com.trustwallet.app" },
+  "bravewallet": { name: "Brave Wallet", icon: "🦁", rdns: "com.brave.wallet" },
+  "rainbow": { name: "Rainbow", icon: "🌈", rdns: "me.rainbow" },
+  "frame": { name: "Frame", icon: "🖼️", rdns: "app.frame" },
+  "rabby": { name: "Rabby", icon: "🐰", rdns: "io.rabby" },
+  "core": { name: "Core Wallet", icon: "🔷" },
+};
 
 export function WalletConnectButton({
   onWalletConnected,
@@ -41,6 +88,7 @@ export function WalletConnectButton({
   const [walletConnectProvider, setWalletConnectProvider] = useState<EthereumProvider | null>(walletConnectProviderInstance);
   const [qrCodeUri, setQrCodeUri] = useState<string | null>(null);
   const [showQRCode, setShowQRCode] = useState(false);
+  const [eip6963Providers, setEip6963Providers] = useState<EIP6963ProviderDetail[]>([]);
   const { toast } = useToast();
   
   // Use useRef to maintain stable callback reference
@@ -136,11 +184,62 @@ export function WalletConnectButton({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
-  // Detectar wallets disponibles
+  // Setup EIP-6963 wallet discovery
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const providers: EIP6963ProviderDetail[] = [];
+
+    const handleAnnounceProvider = (event: CustomEvent<EIP6963ProviderDetail>) => {
+      const detail = event.detail;
+      // Avoid duplicates
+      if (!providers.find(p => p.info.uuid === detail.info.uuid)) {
+        providers.push(detail);
+        setEip6963Providers([...providers]);
+        console.log('EIP-6963 wallet detected:', detail.info.name, detail.info.rdns);
+      }
+    };
+
+    // Listen for wallet announcements
+    window.addEventListener("eip6963:announceProvider", handleAnnounceProvider as EventListener);
+
+    // Request wallet providers to announce themselves
+    // Some wallets announce immediately, others need a request
+    window.dispatchEvent(new Event("eip6963:requestProvider"));
+    
+    // Also try after a short delay in case wallets load asynchronously
+    const timeoutId = setTimeout(() => {
+      window.dispatchEvent(new Event("eip6963:requestProvider"));
+    }, 100);
+
+    // Cleanup
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("eip6963:announceProvider", handleAnnounceProvider as EventListener);
+    };
+  }, []);
+
+  
   const detectWallets = (): WalletProvider[] => {
     const wallets: WalletProvider[] = [];
+    const detectedIds = new Set<string>();
 
-    // WalletConnect (para wallets móviles) - solo si está inicializado
+    if (typeof window === "undefined") {
+      return wallets;
+    }
+
+    console.log('Detecting wallets...', {
+      eip6963Count: eip6963Providers.length,
+      hasEthereum: !!window.ethereum,
+      hasZerion: !!window.zerion,
+      hasCoinbase: !!(window as any).coinbaseWalletExtension,
+      hasAvalanche: !!window.avalanche,
+      isMetaMask: !!(window.ethereum as any)?.isMetaMask,
+      isBrave: !!(window.ethereum as any)?.isBraveWallet,
+      isRainbow: !!(window.ethereum as any)?.isRainbow,
+    });
+
+    // WalletConnect (for mobile wallets) - only if initialized
     if (walletConnectProvider) {
       wallets.push({
         name: "WalletConnect",
@@ -154,8 +253,8 @@ export function WalletConnectButton({
           }
           try {
             setIsConnecting(true);
-            // enable() genera el QR code y dispara el evento display_uri inmediatamente
-            // Luego espera a que el usuario escanee y apruebe la conexión
+            // enable() generates the QR code and triggers the display_uri event immediately
+            // Then waits for the user to scan and approve the connection
             await walletConnectProvider.enable();
             const accounts = walletConnectProvider.accounts;
             return accounts?.[0] || null;
@@ -170,10 +269,73 @@ export function WalletConnectButton({
           }
         },
       });
+      detectedIds.add("walletconnect");
     }
 
-    // MetaMask
-    if (typeof window !== "undefined" && (window.ethereum as any)?.isMetaMask) {
+    // EIP-6963: Modern wallet discovery standard
+    // Process EIP-6963 providers from state
+    eip6963Providers.forEach((detail) => {
+      const { info, provider } = detail;
+      
+      // Try multiple matching strategies
+      const rdnsKey = info.rdns || '';
+      const rdnsKeyNormalized = info.rdns?.replace(/\./g, '_') || '';
+      const nameKey = info.name.toLowerCase().replace(/\s+/g, '');
+      
+      // Match wallet info from KNOWN_WALLETS using multiple keys
+      const walletInfo = KNOWN_WALLETS[rdnsKey] || 
+                        KNOWN_WALLETS[rdnsKeyNormalized] || 
+                        KNOWN_WALLETS[nameKey] || { 
+                          name: info.name, 
+                          icon: "💼" 
+                        };
+
+      // Use the icon from EIP-6963 if available (it's a base64 data URL or URL)
+      const iconUrl = info.icon && (info.icon.startsWith('data:') || info.icon.startsWith('http')) 
+        ? info.icon 
+        : undefined;
+
+      // Create unique ID from rdns or name
+      const walletId = info.rdns || nameKey;
+      
+      // Check if already detected
+      if (!detectedIds.has(walletId) && 
+          !detectedIds.has(rdnsKey) && 
+          !detectedIds.has(rdnsKeyNormalized) && 
+          !detectedIds.has(nameKey)) {
+        wallets.push({
+          name: walletInfo.name,
+          icon: iconUrl ? "💼" : walletInfo.icon, // Use emoji fallback if we have iconUrl, otherwise use known icon
+          iconUrl: iconUrl, // Use real wallet icon if available
+          id: walletId,
+          available: true,
+          type: "extension",
+          connect: async () => {
+            try {
+              const accounts = await provider.request({
+                method: "eth_requestAccounts",
+              }) as string[];
+              return accounts?.[0] || null;
+            } catch (error: any) {
+              if (error.code === 4001) {
+                throw new Error(`Please connect to ${walletInfo.name}.`);
+              }
+              throw error;
+            }
+          },
+        });
+        // Mark all variations as detected to avoid duplicates
+        detectedIds.add(walletId);
+        if (info.rdns) {
+          detectedIds.add(info.rdns);
+          detectedIds.add(rdnsKeyNormalized);
+        }
+        detectedIds.add(nameKey);
+      }
+    });
+
+    // Legacy detection: MetaMask (check isMetaMask flag first to avoid duplicates)
+    if ((window.ethereum as any)?.isMetaMask && !detectedIds.has("metamask")) {
       wallets.push({
         name: "MetaMask",
         icon: "🦊",
@@ -194,10 +356,67 @@ export function WalletConnectButton({
           }
         },
       });
+      detectedIds.add("metamask");
     }
 
-    // Core Wallet (Avalanche)
-    if (typeof window !== "undefined" && window.avalanche?.request) {
+    // Zerion Wallet detection (window.zerion)
+    // Check both window.zerion and if it's already detected via EIP-6963
+    if (window.zerion && 
+        !detectedIds.has("zerion") && 
+        !detectedIds.has("io.zerion") && 
+        !detectedIds.has("io_zerion")) {
+      wallets.push({
+        name: "Zerion",
+        icon: "Z",
+        id: "zerion",
+        available: true,
+        type: "extension",
+        connect: async () => {
+          try {
+            const accounts = await window.zerion!.request({
+              method: "eth_requestAccounts",
+            }) as string[];
+            return accounts?.[0] || null;
+          } catch (error: any) {
+            if (error.code === 4001) {
+              throw new Error("Please connect to Zerion.");
+            }
+            throw error;
+          }
+        },
+      });
+      detectedIds.add("zerion");
+      detectedIds.add("io.zerion");
+      detectedIds.add("io_zerion");
+    }
+
+    // Coinbase Wallet detection (window.coinbaseWalletExtension)
+    if ((window as any).coinbaseWalletExtension && !detectedIds.has("coinbase")) {
+      wallets.push({
+        name: "Coinbase Wallet",
+        icon: "🔵",
+        id: "coinbase",
+        available: true,
+        type: "extension",
+        connect: async () => {
+          try {
+            const accounts = await (window as any).coinbaseWalletExtension.request({
+              method: "eth_requestAccounts",
+            }) as string[];
+            return accounts?.[0] || null;
+          } catch (error: any) {
+            if (error.code === 4001) {
+              throw new Error("Please connect to Coinbase Wallet.");
+            }
+            throw error;
+          }
+        },
+      });
+      detectedIds.add("coinbase");
+    }
+
+    // Core Wallet (Avalanche wallet)
+    if ((window as any).avalanche?.request && !detectedIds.has("core")) {
       wallets.push({
         name: "Core Wallet",
         icon: "🔷",
@@ -206,9 +425,9 @@ export function WalletConnectButton({
         type: "extension",
         connect: async () => {
           try {
-            const accounts = await window.avalanche!.request<string[]>({
+            const accounts = await window.avalanche!.request({
               method: "eth_requestAccounts",
-            });
+            }) as string[];
             return accounts?.[0] || null;
           } catch (error: any) {
             if (error.code === 4001) {
@@ -218,13 +437,66 @@ export function WalletConnectButton({
           }
         },
       });
+      detectedIds.add("core");
     }
 
-    // Otros proveedores EIP-1193
+    // Brave Wallet detection
+    if ((window.ethereum as any)?.isBraveWallet && !detectedIds.has("brave")) {
+      wallets.push({
+        name: "Brave Wallet",
+        icon: "🦁",
+        id: "brave",
+        available: true,
+        type: "extension",
+        connect: async () => {
+          try {
+            const accounts = await (window.ethereum as any)!.request({
+              method: "eth_requestAccounts",
+            }) as string[];
+            return accounts?.[0] || null;
+          } catch (error: any) {
+            if (error.code === 4001) {
+              throw new Error("Please connect to Brave Wallet.");
+            }
+            throw error;
+          }
+        },
+      });
+      detectedIds.add("brave");
+    }
+
+    // Rainbow Wallet detection
+    if ((window.ethereum as any)?.isRainbow && !detectedIds.has("rainbow")) {
+      wallets.push({
+        name: "Rainbow",
+        icon: "🌈",
+        id: "rainbow",
+        available: true,
+        type: "extension",
+        connect: async () => {
+          try {
+            const accounts = await (window.ethereum as any)!.request({
+              method: "eth_requestAccounts",
+            }) as string[];
+            return accounts?.[0] || null;
+          } catch (error: any) {
+            if (error.code === 4001) {
+              throw new Error("Please connect to Rainbow.");
+            }
+            throw error;
+          }
+        },
+      });
+      detectedIds.add("rainbow");
+    }
+
+    // Other EIP-1193 providers (fallback for unknown wallets)
     if (
-      typeof window !== "undefined" &&
       window.ethereum &&
-      !(window.ethereum as any).isMetaMask
+      !(window.ethereum as any).isMetaMask &&
+      !(window.ethereum as any).isBraveWallet &&
+      !(window.ethereum as any).isRainbow &&
+      !detectedIds.has("other")
     ) {
       wallets.push({
         name: "Other Wallet",
@@ -246,19 +518,21 @@ export function WalletConnectButton({
           }
         },
       });
+      detectedIds.add("other");
     }
 
+    console.log(`Total wallets detected: ${wallets.length}`, wallets.map(w => w.name));
     return wallets;
   };
 
   const [availableWallets, setAvailableWallets] = useState<WalletProvider[]>([]);
 
-  // Actualizar wallets disponibles cuando cambie el provider de WalletConnect
+  // update available wallets when the WalletConnect provider or EIP-6963 providers change
   useEffect(() => {
     setAvailableWallets(detectWallets());
-  }, [walletConnectProvider]);
+  }, [walletConnectProvider, eip6963Providers]);
 
-  // Escuchar cambios de cuenta en MetaMask
+  // Listen for account changes in MetaMask
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum || !currentAddress) {
       return;
@@ -266,7 +540,7 @@ export function WalletConnectButton({
 
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length > 0 && currentAddress) {
-        // Usar la referencia estable en lugar de la función directamente
+        // Use stable reference instead of the function directly
         onWalletConnectedRef.current(accounts[0]);
       }
     };
@@ -277,19 +551,17 @@ export function WalletConnectButton({
     return () => {
       ethereum.removeListener?.("accountsChanged", handleAccountsChanged);
     };
-  }, [currentAddress]); // Solo currentAddress como dependencia
+  }, [currentAddress]);
 
   const handleConnect = async (wallet: WalletProvider) => {
     setIsConnecting(true);
     try {
       if (wallet.type === "walletconnect") {
-        // Para WalletConnect, llamamos connect que iniciará el proceso
-        // El QR code se mostrará cuando se dispare el evento display_uri
+    
         await wallet.connect();
-        // No cerramos el diálogo aquí, se cerrará cuando se conecte exitosamente
-        // El evento 'connect' manejará la actualización del estado
+     
       } else {
-        // Para wallets de extensión
+      
         const address = await wallet.connect();
         if (address) {
           onWalletConnected(address);
@@ -435,7 +707,15 @@ export function WalletConnectButton({
                   onClick={() => handleConnect(wallet)}
                   disabled={isConnecting || !wallet.available}
                 >
-                  <span className="text-2xl mr-3">{wallet.icon}</span>
+                  {wallet.iconUrl ? (
+                    <img 
+                      src={wallet.iconUrl} 
+                      alt={wallet.name}
+                      className="w-8 h-8 mr-3 rounded"
+                    />
+                  ) : (
+                    <span className="text-2xl mr-3">{wallet.icon}</span>
+                  )}
                   <div className="flex flex-col items-start flex-1">
                     <span className="font-medium">{wallet.name}</span>
                     {wallet.type === "walletconnect" && (

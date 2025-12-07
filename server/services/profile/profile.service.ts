@@ -1,14 +1,24 @@
 import { prisma } from "@/prisma/prisma";
-import { ExtendedProfile, UserType } from "@/types/extended-profile";
+import { ExtendedProfile, UserType, UpdateExtendedProfileData } from "@/types/extended-profile";
 
 /**
- * Servicio para obtener el perfil extendido de un usuario
- * @param id - ID del usuario
- * @returns Perfil completo del usuario con todos los campos
+ * Custom errors for profile service
+ */
+export class ProfileValidationError extends Error {
+    constructor(message: string, public statusCode: number = 400) {
+        super(message);
+        this.name = 'ProfileValidationError';
+    }
+}
+
+/**
+ * Service to get extended user profile
+ * @param id - User ID
+ * @returns Complete user profile with all fields
  */
 export async function getExtendedProfile(id: string): Promise<ExtendedProfile | null> {
-    // Obtener todos los campos del usuario
-    // Nota: Los tipos de Prisma pueden estar desactualizados. Los campos existen en la BD.
+    // Get all user fields
+    // Note: Prisma types may be outdated. Fields exist in the database.
     const user: any = await prisma.user.findUnique({
         where: { id },
     });
@@ -17,7 +27,7 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
         return null;
     }
 
-    // Parsear user_type de JSON a objeto, con valores por defecto si no existe
+    // Parse user_type from JSON to object, with default values if it doesn't exist
     const userType: UserType = user.user_type ? 
         (typeof user.user_type === 'string' ? JSON.parse(user.user_type) : user.user_type) : 
         {
@@ -27,7 +37,7 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
             is_enthusiast: false,
         };
 
-    // Mapear user_name a username para mantener consistencia con el frontend
+    // Map user_name to username to maintain consistency with frontend
     return {
         id: user.id,
         name: user.name,
@@ -49,15 +59,69 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
 }
 
 /**
- * Servicio para actualizar el perfil extendido de un usuario
- * @param id - ID del usuario
- * @param profileData - Datos parciales del perfil a actualizar
- * @returns Perfil actualizado
+ * Validates profile data before updating
+ * @param profileData - Profile data to validate
+ * @param userId - User ID to validate username availability
+ * @throws ProfileValidationError if validation fails
+ */
+function validateProfileData(profileData: UpdateExtendedProfileData, userId: string): void {
+    // Validate that data was sent for update
+    if (!profileData || Object.keys(profileData).length === 0) {
+        throw new ProfileValidationError('No data provided for update.', 400);
+    }
+
+   
+    // Validate wallet format if it's being updated
+    if (profileData.wallet !== undefined && profileData.wallet !== null) {
+        const walletRegex = /^0x[a-fA-F0-9]{40}$/;
+        if (!walletRegex.test(profileData.wallet)) {
+            throw new ProfileValidationError(
+                'Invalid wallet address format. Expected Ethereum address (0x...).',
+                400
+            );
+        }
+    }
+
+    // Validate that at least one user type is selected
+    // Only validate if user types are being updated
+    const hasUserTypeUpdate = 
+        profileData.is_student !== undefined ||
+        profileData.is_founder !== undefined ||
+        profileData.is_employee !== undefined ||
+        profileData.is_enthusiast !== undefined;
+    
+    if (hasUserTypeUpdate) {
+        const userTypes = [
+            profileData.is_student,
+            profileData.is_founder,
+            profileData.is_employee,
+            profileData.is_enthusiast
+        ];
+        
+        if (userTypes.every(type => type === false)) {
+            throw new ProfileValidationError(
+                'At least one user type must be selected (Student, Founder, Employee, or Enthusiast).',
+                400
+            );
+        }
+    }
+}
+
+/**
+ * update extended profile
+ * @param id - user ID
+ * @param profileData - Partial profile data to update
+ * @returns Updated profile
+ * @throws ProfileValidationError si la validación falla
+ * @throws Error si el usuario no existe o hay un error en la actualización
  */
 export async function updateExtendedProfile(
     id: string, 
-    profileData: Partial<ExtendedProfile>
+    profileData: UpdateExtendedProfileData
 ): Promise<ExtendedProfile> {
+    // Validate data before processing
+    validateProfileData(profileData, id);
+
     const existingUser = await prisma.user.findUnique({
         where: { id },
     });
@@ -66,7 +130,16 @@ export async function updateExtendedProfile(
         throw new Error("User not found");
     }
 
-    // Si no hay datos para actualizar, solo actualizar last_login
+    // Validate username availability if it's being updated
+    if (profileData.username && profileData.username!="")  {
+        const username = profileData.username.trim();
+        const available = await isUsernameAvailable(username, id);
+        if (!available) {
+            throw new ProfileValidationError('Username is already taken.', 409);
+        }
+    }
+
+    // if there is no data to update, only update last_login
     if (Object.keys(profileData).length === 0) {
         await prisma.user.update({
             where: { id },
@@ -82,7 +155,7 @@ export async function updateExtendedProfile(
         return profile;
     }
 
-    // Mapear username a user_name y socials a social_media
+    // map username to user_name and socials to social_media
     const { username, socials, user_type, ...restData } = profileData;
     
     const updateData: any = {
@@ -90,16 +163,16 @@ export async function updateExtendedProfile(
         last_login: new Date(),
     };
 
-    // Mapear campos del frontend a la BD
+    // map frontend fields to the database
     if (username !== undefined) {
-        updateData.user_name = username;
+        updateData.user_name = username.trim();
     }
     
     if (socials !== undefined) {
         updateData.social_media = socials;
     }
 
-    // Convertir user_type a JSON para almacenar en la BD
+    // convert user_type to JSON to store in the database
     if (user_type !== undefined) {
         updateData.user_type = user_type;
     }
@@ -118,10 +191,10 @@ export async function updateExtendedProfile(
 }
 
 /**
- * Servicio para validar si un username está disponible
- * @param username - Username a validar
- * @param currentUserId - ID del usuario actual (opcional, para permitir el username actual del usuario)
- * @returns true si el username está disponible, false si ya está en uso
+ * validate if a username is available
+ * @param username - username to validate
+ * @param currentUserId - current user ID (optional, to allow the current user's username)
+ * @returns true if the username is available, false if it is already in use
  */
 export async function isUsernameAvailable(username: string, currentUserId?: string): Promise<boolean> {
     const existingUser = await prisma.user.findFirst({
@@ -135,7 +208,7 @@ export async function isUsernameAvailable(username: string, currentUserId?: stri
 }
 
 /**
- * Interface representing a popular skill
+ * interface representing a popular skill
  */
 export interface PopularSkill {
     name: string;
@@ -143,7 +216,7 @@ export interface PopularSkill {
 }
 
 /**
- * Service to get the most popular skills from all users
+    * get the most popular skills from all users
  * Analyzes all skills from the User table and counts how many times each one appears
  * @returns Array of skills sorted by popularity (descending order)
  */

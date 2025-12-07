@@ -102,9 +102,16 @@ export function UserButton() {
             <DropdownMenuItem asChild className='cursor-pointer'>
               <Link href='/profile'>Profile</Link>
             </DropdownMenuItem>
-           <DropdownMenuItem asChild className='cursor-pointer'>
-              <Link href='/profile/rewards-board'>Achievements Board</Link>
+            <DropdownMenuItem asChild className='cursor-pointer'>
+              <Link href='/profile#achievements'>Achievements Board</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild className='cursor-pointer'>
+              <Link href='/profile#projects'>Projects</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className='cursor-pointer'>
+              <Link href='/profile#settings'>Settings</Link>
+            </DropdownMenuItem>
+
            
             <DropdownMenuItem
               onClick={() => setIsDialogOpen(true)}
