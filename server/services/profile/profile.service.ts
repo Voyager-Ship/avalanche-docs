@@ -1,5 +1,15 @@
 import { prisma } from "@/prisma/prisma";
-import { ExtendedProfile, UserType } from "@/types/extended-profile";
+import { ExtendedProfile, UserType, UpdateExtendedProfileData } from "@/types/extended-profile";
+
+/**
+ * Errores personalizados para el servicio de perfil
+ */
+export class ProfileValidationError extends Error {
+    constructor(message: string, public statusCode: number = 400) {
+        super(message);
+        this.name = 'ProfileValidationError';
+    }
+}
 
 /**
  * Servicio para obtener el perfil extendido de un usuario
@@ -49,15 +59,77 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
 }
 
 /**
- * Servicio para actualizar el perfil extendido de un usuario
- * @param id - ID del usuario
- * @param profileData - Datos parciales del perfil a actualizar
- * @returns Perfil actualizado
+ * Valida los datos del perfil antes de actualizar
+ * @param profileData - Datos del perfil a validar
+ * @param userId - ID del usuario para validar disponibilidad de username
+ * @throws ProfileValidationError si la validación falla
+ */
+function validateProfileData(profileData: UpdateExtendedProfileData, userId: string): void {
+    // Validar que se envió data para actualizar
+    if (!profileData || Object.keys(profileData).length === 0) {
+        throw new ProfileValidationError('No data provided for update.', 400);
+    }
+
+    // Validar username si se está actualizando
+    if (profileData.username !== undefined) {
+        const username = profileData.username.trim();
+        
+        if (username.length === 0) {
+            throw new ProfileValidationError('Username cannot be empty.', 400);
+        }
+    }
+
+    // Validar formato de wallet si se está actualizando
+    if (profileData.wallet !== undefined && profileData.wallet !== null) {
+        const walletRegex = /^0x[a-fA-F0-9]{40}$/;
+        if (!walletRegex.test(profileData.wallet)) {
+            throw new ProfileValidationError(
+                'Invalid wallet address format. Expected Ethereum address (0x...).',
+                400
+            );
+        }
+    }
+
+    // Validar que al menos uno de los tipos de usuario esté seleccionado
+    // Solo validar si se están actualizando los tipos de usuario
+    const hasUserTypeUpdate = 
+        profileData.is_student !== undefined ||
+        profileData.is_founder !== undefined ||
+        profileData.is_employee !== undefined ||
+        profileData.is_enthusiast !== undefined;
+    
+    if (hasUserTypeUpdate) {
+        const userTypes = [
+            profileData.is_student,
+            profileData.is_founder,
+            profileData.is_employee,
+            profileData.is_enthusiast
+        ];
+        
+        if (userTypes.every(type => type === false)) {
+            throw new ProfileValidationError(
+                'At least one user type must be selected (Student, Founder, Employee, or Enthusiast).',
+                400
+            );
+        }
+    }
+}
+
+/**
+ * update extended profile
+ * @param id - user ID
+ * @param profileData - Partial profile data to update
+ * @returns Updated profile
+ * @throws ProfileValidationError si la validación falla
+ * @throws Error si el usuario no existe o hay un error en la actualización
  */
 export async function updateExtendedProfile(
     id: string, 
-    profileData: Partial<ExtendedProfile>
+    profileData: UpdateExtendedProfileData
 ): Promise<ExtendedProfile> {
+    // Validar datos antes de procesar
+    validateProfileData(profileData, id);
+
     const existingUser = await prisma.user.findUnique({
         where: { id },
     });
@@ -66,7 +138,16 @@ export async function updateExtendedProfile(
         throw new Error("User not found");
     }
 
-    // Si no hay datos para actualizar, solo actualizar last_login
+    // Validar disponibilidad de username si se está actualizando
+    if (profileData.username !== undefined) {
+        const username = profileData.username.trim();
+        const available = await isUsernameAvailable(username, id);
+        if (!available) {
+            throw new ProfileValidationError('Username is already taken.', 409);
+        }
+    }
+
+    // if there is no data to update, only update last_login
     if (Object.keys(profileData).length === 0) {
         await prisma.user.update({
             where: { id },
@@ -82,7 +163,7 @@ export async function updateExtendedProfile(
         return profile;
     }
 
-    // Mapear username a user_name y socials a social_media
+    // map username to user_name and socials to social_media
     const { username, socials, user_type, ...restData } = profileData;
     
     const updateData: any = {
@@ -90,16 +171,16 @@ export async function updateExtendedProfile(
         last_login: new Date(),
     };
 
-    // Mapear campos del frontend a la BD
+    // map frontend fields to the database
     if (username !== undefined) {
-        updateData.user_name = username;
+        updateData.user_name = username.trim();
     }
     
     if (socials !== undefined) {
         updateData.social_media = socials;
     }
 
-    // Convertir user_type a JSON para almacenar en la BD
+    // convert user_type to JSON to store in the database
     if (user_type !== undefined) {
         updateData.user_type = user_type;
     }
@@ -118,10 +199,10 @@ export async function updateExtendedProfile(
 }
 
 /**
- * Servicio para validar si un username está disponible
- * @param username - Username a validar
- * @param currentUserId - ID del usuario actual (opcional, para permitir el username actual del usuario)
- * @returns true si el username está disponible, false si ya está en uso
+ * validate if a username is available
+ * @param username - username to validate
+ * @param currentUserId - current user ID (optional, to allow the current user's username)
+ * @returns true if the username is available, false if it is already in use
  */
 export async function isUsernameAvailable(username: string, currentUserId?: string): Promise<boolean> {
     const existingUser = await prisma.user.findFirst({
@@ -135,7 +216,7 @@ export async function isUsernameAvailable(username: string, currentUserId?: stri
 }
 
 /**
- * Interface representing a popular skill
+ * interface representing a popular skill
  */
 export interface PopularSkill {
     name: string;
@@ -143,7 +224,7 @@ export interface PopularSkill {
 }
 
 /**
- * Service to get the most popular skills from all users
+    * get the most popular skills from all users
  * Analyzes all skills from the User table and counts how many times each one appears
  * @returns Array of skills sorted by popularity (descending order)
  */

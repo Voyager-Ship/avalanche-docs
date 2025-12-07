@@ -331,29 +331,6 @@ export default function Profile() {
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name="founder_role"
-                          render={({ field: selectField }) => (
-                            <FormItem className="flex-1">
-                              <Select onValueChange={selectField.onChange} value={selectField.value}>
-                                <FormControl>
-                                  <SelectTrigger className="text-zinc-600 w-full">
-                                    <SelectValue placeholder="Role" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="bg-white dark:bg-black border-gray-300 dark:border-zinc-600 text-zinc-600 rounded-md shadow-md max-h-60 overflow-y-auto">
-                                  {hsEmploymentRoles.map((roleOption) => (
-                                    <SelectItem key={roleOption.value} value={roleOption.label}>
-                                      {roleOption.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage className="text-zinc-600" />
-                            </FormItem>
-                          )}
-                        />
                       </div>
                     )}
                   </div>
