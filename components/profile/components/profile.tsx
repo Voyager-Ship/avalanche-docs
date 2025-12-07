@@ -34,6 +34,7 @@ import { SkillsAutocomplete } from "./SkillsAutocomplete";
 import { useProfileForm } from "./hooks/useProfileForm";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Toaster } from "@/components/ui/toaster";
+import { signIn } from "next-auth/react";
 
 export default function Profile() {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
@@ -429,18 +430,42 @@ export default function Profile() {
         <FormField
           control={form.control}
           name="github"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>GitHub</FormLabel>
-              <div className="flex items-center gap-2">
-                <FormControl>
-                  <Input placeholder="github.com/username" {...field} />
-                </FormControl>
-               
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const hasGithubConnected = !!field.value;
+            return (
+              <FormItem>
+                <FormLabel>GitHub</FormLabel>
+                <div className="flex items-center gap-2">
+                  <FormControl>
+                    <Input 
+                      placeholder="github.com/username" 
+                      {...field} 
+                      readOnly={hasGithubConnected}
+                      className={hasGithubConnected ? "bg-muted" : ""}
+                    />
+                  </FormControl>
+                  <Button disabled={hasGithubConnected}
+                    type="button"
+                    variant={hasGithubConnected ? "default" : "outline"}
+                    size="icon"
+                    onClick={async () => {
+                      const callbackUrl = window.location.pathname;
+                      await signIn("github", { callbackUrl });
+                    }}
+                    title={hasGithubConnected ? "Reconnect with GitHub" : "Connect with GitHub"}
+                  >
+                    <Github className="h-4 w-4" />
+                  </Button>
+                </div>
+                {hasGithubConnected && (
+                  <FormDescription className="text-xs text-muted-foreground">
+                    Connected via GitHub OAuth
+                  </FormDescription>
+                )}
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
 
         {/* Wallet */}
