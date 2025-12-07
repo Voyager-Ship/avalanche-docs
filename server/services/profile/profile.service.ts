@@ -70,15 +70,7 @@ function validateProfileData(profileData: UpdateExtendedProfileData, userId: str
         throw new ProfileValidationError('No data provided for update.', 400);
     }
 
-    // Validate username if it's being updated
-    if (profileData.username !== undefined) {
-        const username = profileData.username.trim();
-        
-        if (username.length === 0) {
-            throw new ProfileValidationError('Username cannot be empty.', 400);
-        }
-    }
-
+   
     // Validate wallet format if it's being updated
     if (profileData.wallet !== undefined && profileData.wallet !== null) {
         const walletRegex = /^0x[a-fA-F0-9]{40}$/;
@@ -139,7 +131,7 @@ export async function updateExtendedProfile(
     }
 
     // Validate username availability if it's being updated
-    if (profileData.username !== undefined) {
+    if (profileData.username && profileData.username!="")  {
         const username = profileData.username.trim();
         const available = await isUsernameAvailable(username, id);
         if (!available) {
