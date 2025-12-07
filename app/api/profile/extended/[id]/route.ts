@@ -9,7 +9,7 @@ import { withAuth } from '@/lib/protectedRoute';
 
 /**
  * GET /api/profile/extended/[id]
- * Obtiene el perfil extendido de un usuario
+ * Gets the extended profile of a user
  */
 export const GET = withAuth(async (
   req: NextRequest,
@@ -26,8 +26,8 @@ export const GET = withAuth(async (
       );
     }
 
-    // Verificar que el usuario solo pueda acceder a su propio perfil
-    // Comentar esta validación si quieres permitir ver perfiles de otros usuarios
+    // Verify that the user can only access their own profile
+    // Comment this validation if you want to allow viewing other users' profiles
     const isOwnProfile = session.user.id === id;
     if (!isOwnProfile) {
       return NextResponse.json(
@@ -87,14 +87,14 @@ export const PUT = withAuth(async (
 
     const newProfileData = (await req.json()) as UpdateExtendedProfileData;
 
-    // El servicio ahora maneja todas las validaciones de negocio
+    // The service now handles all business validations
     const updatedProfile = await updateExtendedProfile(id, newProfileData);
 
     return NextResponse.json(updatedProfile);
   } catch (error) {
     console.error('Error in PUT /api/profile/extended/[id]:', error);
     
-    // Manejar errores de validación con el código de estado apropiado
+    // Handle validation errors with the appropriate status code
     if (error instanceof ProfileValidationError) {
       return NextResponse.json(
         { error: error.message },
@@ -102,7 +102,7 @@ export const PUT = withAuth(async (
       );
     }
 
-    // Manejar otros errores
+    // Handle other errors
     return NextResponse.json(
       { 
         error: 'Internal Server Error',

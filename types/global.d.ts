@@ -30,6 +30,20 @@ declare global {
             on<T>(event: string, callback: (data: T) => void): void;
             removeListener(event: string, callback: () => void): void;
         };
+        zerion?: {
+            request: (args: { method: string; params?: any[] }) => Promise<any>;
+            on: (event: string, callback: (...args: any[]) => void) => void;
+            removeListener: (event: string, callback: (...args: any[]) => void) => void;
+        };
+        coinbaseWalletExtension?: {
+            request: (args: { method: string; params?: any[] }) => Promise<any>;
+            on: (event: string, callback: (...args: any[]) => void) => void;
+            removeListener: (event: string, callback: (...args: any[]) => void) => void;
+        };
+        ethereum?: {
+            isBraveWallet?: boolean;
+            isRainbow?: boolean;
+        };
     }
 }
 
