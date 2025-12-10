@@ -106,7 +106,7 @@ model RegisterForm {
 
 model Project {
   id                  String         @id @default(uuid())
-  hackaton_id         String
+  hackaton_id         String?
   project_name        String
   short_description   String
   full_description    String?        @default("")
@@ -125,9 +125,11 @@ model Project {
   small_cover_url     String?        @default("")
   tags                String[]       @default([])
   is_winner           Boolean?       @default(false)
+  origin              String
+  formData            FormData[]
   members             Member[]
   prizes              Prize[]
-  hackathon           Hackathon      @relation(fields: [hackaton_id], references: [id], onDelete: Cascade)
+  hackathon           Hackathon?     @relation(fields: [hackaton_id], references: [id], onDelete: Cascade)
   badges              ProjectBadge[]
 }
 
@@ -258,4 +260,13 @@ model StatsPlaygroundFavorite {
   @@unique([playground_id, user_id])
   @@index([playground_id])
   @@index([user_id])
+}
+
+model FormData {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  form_data  Json
+  timestamp  DateTime @db.Timestamptz(6)
+  origin     String
+  project_id String
+  project    Project  @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
