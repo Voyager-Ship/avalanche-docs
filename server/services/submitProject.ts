@@ -111,6 +111,7 @@ export async function createProject(
           screenshots: projectData.screenshots ?? [],
           tracks: projectData.tracks ?? [],
           explanation: projectData.explanation ?? "",
+          origin: "Project submission",
           // Member created together with project
           members: {
             create: {
@@ -180,7 +181,7 @@ export async function getProject(projectId: string): Promise<Project | null> {
 
   const project: Project = {
     id: projectData.id,
-    hackaton_id: projectData.hackaton_id,
+    hackaton_id: projectData.hackaton_id ?? undefined,
     project_name: projectData.project_name,
     short_description: projectData.short_description,
     full_description: projectData.full_description ?? undefined,
