@@ -699,7 +699,6 @@ export default function GrantApplicationForm({
                     <FormItem>
                       <FormLabel className="dark:text-gray-200 text-md">
                         Project{" "}
-                        <span className="text-red-500">*</span>
                       </FormLabel>
                       <Select
                         onValueChange={(value) => {
