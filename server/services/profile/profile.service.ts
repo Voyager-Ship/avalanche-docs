@@ -71,17 +71,7 @@ function validateProfileData(profileData: UpdateExtendedProfileData, userId: str
     }
 
    
-    // Validate wallet format if it's being updated
-    if (profileData.wallet !== undefined && profileData.wallet !== null) {
-        const walletRegex = /^0x[a-fA-F0-9]{40}$/;
-        if (!walletRegex.test(profileData.wallet)) {
-            throw new ProfileValidationError(
-                'Invalid wallet address format. Expected Ethereum address (0x...).',
-                400
-            );
-        }
-    }
-
+  
     // Validate that at least one user type is selected
     // Only validate if user types are being updated
     const hasUserTypeUpdate = 
@@ -98,12 +88,7 @@ function validateProfileData(profileData: UpdateExtendedProfileData, userId: str
             profileData.is_enthusiast
         ];
         
-        if (userTypes.every(type => type === false)) {
-            throw new ProfileValidationError(
-                'At least one user type must be selected (Student, Founder, Employee, or Enthusiast).',
-                400
-            );
-        }
+
     }
 }
 
