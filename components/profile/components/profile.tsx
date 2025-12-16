@@ -363,7 +363,7 @@ export default function Profile() {
                       return (
                         <FormItem>
                           <FormLabel>Github</FormLabel>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-2">
                             <FormControl>
                               <Input 
                                 placeholder="Your github username" 
@@ -375,8 +375,9 @@ export default function Profile() {
                             <LoadingButton
                               disabled={hasGithubConnected}
                               type="button"
-                              variant={hasGithubConnected ? "default" : "outline"}
+                              variant='default'
                               isLoading={isConnectingGithub}
+                              className="w-fit"
                               loadingText="Connecting..."
                               onClick={async () => {
                                 setIsConnectingGithub(true);
@@ -390,7 +391,8 @@ export default function Profile() {
                                 }
                               }}
                             >
-                              {hasGithubConnected ? "Connected" : "Connect"}
+                              <Github className="w-4 h-4" />
+                              {hasGithubConnected ? "Connected" : "Connect GitHub"}
                             </LoadingButton>
                           </div>
                           {hasGithubConnected && (
@@ -426,11 +428,11 @@ export default function Profile() {
                     <FormItem>
                       <FormLabel>Wallet</FormLabel>
                       <FormControl>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2">
                           <Input
                             placeholder="0x..."
                             {...field}
-                            className="flex-1 font-mono text-sm"
+                            className="font-mono text-sm"
                             readOnly={true}
                           />
                           {field.value ? (
@@ -438,6 +440,7 @@ export default function Profile() {
                               type="button"
                               variant="outline"
                               size="default"
+                              className="w-fit"
                               onClick={() => {
                                 field.onChange("");
                               }}
@@ -445,12 +448,14 @@ export default function Profile() {
                               Disconnect
                             </Button>
                           ) : (
-                            <WalletConnectButton
-                              onWalletConnected={(address) => {
-                                field.onChange(address);
-                              }}
-                              currentAddress={field.value}
-                            />
+                            <div className="w-fit">
+                              <WalletConnectButton
+                                onWalletConnected={(address) => {
+                                  field.onChange(address);
+                                }}
+                                currentAddress={field.value}
+                              />
+                            </div>
                           )}
                         </div>
                       </FormControl>

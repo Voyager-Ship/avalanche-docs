@@ -80,7 +80,7 @@ export function SkillsAutocomplete({
       <PopoverContent className="w-full p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Search skills..."
+            placeholder="Search or add skills..."
             value={searchValue}
             onValueChange={setSearchValue}
             onKeyDown={handleKeyDown}
@@ -98,7 +98,7 @@ export function SkillsAutocomplete({
                       No skill found.
                     </p>
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="sm"
                       onClick={() => {
                         if (searchValue.trim()) {

@@ -228,16 +228,7 @@ export function WalletConnectButton({
       return wallets;
     }
 
-    console.log('Detecting wallets...', {
-      eip6963Count: eip6963Providers.length,
-      hasEthereum: !!window.ethereum,
-      hasZerion: !!window.zerion,
-      hasCoinbase: !!(window as any).coinbaseWalletExtension,
-      hasAvalanche: !!window.avalanche,
-      isMetaMask: !!(window.ethereum as any)?.isMetaMask,
-      isBrave: !!(window.ethereum as any)?.isBraveWallet,
-      isRainbow: !!(window.ethereum as any)?.isRainbow,
-    });
+ 
 
     // WalletConnect (for mobile wallets) - only if initialized
     if (walletConnectProvider) {
@@ -607,7 +598,7 @@ export function WalletConnectButton({
       }
     }}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="default">
+        <Button type="button" variant="default" size="default">
           <Wallet className="h-4 w-4 mr-2" />
           Connect Wallet
         </Button>

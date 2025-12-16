@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pencil } from "lucide-react";
+import { AvatarWithProgress } from "./AvatarWithProgress";
 
 interface ProfileHeaderProps {
   name?: string;
@@ -22,12 +22,25 @@ export function ProfileHeader({
   onEditAvatar,
 }: ProfileHeaderProps) {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
-  
-  // Circle calculations for progress
-  const radius = 70; // Increased to separate from avatar
-  const circumference = 2 * Math.PI * radius;
-  // Start from left (180deg rotation) and go clockwise
-  const offset = circumference - (profileProgress / 100) * circumference;
+
+  // Get progress color based on percentage for the horizontal progress bar
+  const getProgressColor = () => {
+    if (profileProgress < 40) {
+      return {
+        tailwindClass: "bg-red-500"
+      };
+    } else if (profileProgress <= 80) {
+      return {
+        tailwindClass: "bg-[#FCD34D]"
+      };
+    } else {
+      return {
+        tailwindClass: "bg-[#4D7C0F]"
+      };
+    }
+  };
+
+  const progressColor = getProgressColor();
 
   return (
     <div className="flex flex-col items-center lg:items-start rounded-lg p-4">
@@ -46,69 +59,14 @@ export function ProfileHeader({
           onMouseLeave={() => setIsHoveringAvatar(false)}
           onClick={onEditAvatar}
         >
-          <div className="relative h-40 w-40">
-            <svg
-              className="absolute inset-0 rotate-180 transform"
-              width="160"
-              height="160"
-            >
-              <defs>
-                {/* Gradient for smoother appearance */}
-                <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ef4444" stopOpacity="1" />
-                  <stop offset="100%" stopColor="#dc2626" stopOpacity="1" />
-                </linearGradient>
-                {/* Shadow filter for depth */}
-                <filter id="progressShadow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
-                  <feOffset dx="0" dy="0" result="offsetblur"/>
-                  <feComponentTransfer>
-                    <feFuncA type="linear" slope="0.3"/>
-                  </feComponentTransfer>
-                  <feMerge>
-                    <feMergeNode/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-              </defs>
-              {/* Background circle */}
-              <circle
-                cx="80"
-                cy="80"
-                r={radius}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="text-muted opacity-20"
-              />
-              {/* Progress circle - thicker and smoother */}
-              <circle
-                cx="80"
-                cy="80"
-                r={radius}
-                fill="none"
-                stroke="url(#progressGradient)"
-                strokeWidth="6"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#progressShadow)"
-                className="transition-all duration-500 ease-out"
-                style={{ 
-                  filter: 'drop-shadow(0 2px 4px rgba(239, 68, 68, 0.3))'
-                }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Avatar className="h-32 w-32 relative z-10">
-                <AvatarImage src={image || ""} alt="Profile" />
-                <AvatarFallback className="text-3xl">
-                  {name?.charAt(0).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
+          <AvatarWithProgress
+            image={image}
+            name={name}
+            profileProgress={profileProgress}
+            size="large"
+            showHover={true}
+            onEdit={onEditAvatar}
+          />
           {isHoveringAvatar && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity z-30">
               <Pencil className="h-5 w-5 text-white" />
@@ -139,7 +97,7 @@ export function ProfileHeader({
         </div>
         <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-red-500 transition-all duration-500"
+            className={`h-full ${progressColor.tailwindClass} transition-all duration-500`}
             style={{ width: `${profileProgress}%` }}
           />
         </div>
