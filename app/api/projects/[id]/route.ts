@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { HackathonHeader } from "@/types/hackathons";
 import { getProject, updateProject } from "@/server/services/projects";
+import { GetProjectByIdWithMembers } from "@/server/services/memberProject";
 
 export async function GET(req: NextRequest, context: any) {
 
@@ -11,10 +12,16 @@ export async function GET(req: NextRequest, context: any) {
       return NextResponse.json({ error: "ID required" }, { status: 400 });
     }
 
-    const hackathon = await getProject(id)
-    return NextResponse.json(hackathon);
+    // Use GetProjectByIdWithMembers to get project with full member information
+    const project = await GetProjectByIdWithMembers(id);
+    
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+    
+    return NextResponse.json(project);
   } catch (error) {
-    console.error("Error in GET /api/hackathons/[id]:");
+    console.error("Error in GET /api/projects/[id]:", error);
     return NextResponse.json(
       { error: (error as Error).message },
       { status: 500 }

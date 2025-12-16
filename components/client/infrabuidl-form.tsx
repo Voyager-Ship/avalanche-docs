@@ -38,6 +38,8 @@ import {
   continents,
   countries,
 } from "@/types/infrabuidlForm";
+import { useSession } from "next-auth/react";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -50,6 +52,7 @@ export default function GrantApplicationForm({
   programType,
   headerComponent,
 }: GrantApplicationFormProps) {
+
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submissionStatus, setSubmissionStatus] = useState<
     "idle" | "success" | "error"
@@ -71,12 +74,50 @@ export default function GrantApplicationForm({
     useState<boolean>(false);
   const [showReferrer, setShowReferrer] = useState<boolean>(false);
   const [showGrantSource, setShowGrantSource] = useState<boolean>(false);
+  const [userProjects, setUserProjects] = useState<any[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(false);
+
+  const { data: session, status } = useSession();
+  const isProjectSelectionEnabled = useFeatureFlag("project-selection", false);
+
+  // LocalStorage key based on program type
+  const storageKey = `infrabuidl-form-${programType}`;
+
+  // Load saved data from localStorage before initializing form
+  const getInitialValues = (): Partial<FormValues> => {
+    if (typeof window === "undefined") {
+      return {};
+    }
+    
+    try {
+      const savedData = localStorage.getItem(storageKey);
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        
+        // Convert date strings back to Date objects
+        const processedData: any = { ...parsedData };
+        Object.keys(processedData).forEach((key) => {
+          if (key.includes("completion_date") || key.includes("date")) {
+            if (processedData[key] && typeof processedData[key] === "string") {
+              processedData[key] = new Date(processedData[key]);
+            }
+          }
+        });
+        
+        return processedData;
+      }
+    } catch (error) {
+      console.error("Error loading form data from localStorage:", error);
+    }
+    
+    return {};
+  };
+
+  const savedValues = getInitialValues();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      grant_program: programType,
-
       // Project Overview defaults
       project: "",
       project_type: "",
@@ -212,6 +253,13 @@ export default function GrantApplicationForm({
       // Legal Compliance defaults
       gdpr: false,
       marketing_consent: false,
+      
+      // Override with saved values from localStorage (excluding grant_program)
+      ...Object.fromEntries(
+        Object.entries(savedValues).filter(([key]) => key !== "grant_program")
+      ),
+      // Always use current programType
+      grant_program: programType,
     },
   });
 
@@ -232,7 +280,104 @@ export default function GrantApplicationForm({
   const watchGrantSource = form.watch("avalanche_grant_source");
   const watchReferralCheck = form.watch("program_referral_check");
 
+  // Track if we're loading from localStorage to avoid saving during initial load
+  const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(false);
+
+  // Update form values from localStorage if they exist (for Select components that need it)
   useEffect(() => {
+    if (typeof window === "undefined" || Object.keys(savedValues).length === 0) return;
+    
+    // Small delay to ensure form is fully initialized
+    const timer = setTimeout(() => {
+      form.reset({
+        ...form.getValues(),
+        ...savedValues,
+        grant_program: programType,
+      });
+      setIsLoadingFromStorage(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []); // Only run once on mount
+
+  // Save form data to localStorage whenever it changes (with debounce)
+  useEffect(() => {
+    if (typeof window === "undefined" || isLoadingFromStorage) return;
+    
+    let timeoutId: NodeJS.Timeout;
+    
+    const subscription = form.watch((value) => {
+      // Clear previous timeout
+      clearTimeout(timeoutId);
+      
+      // Debounce: save after 1 second of no changes
+      timeoutId = setTimeout(() => {
+        try {
+          // Only save if form has been interacted with (has meaningful values)
+          const hasData = Object.entries(value).some(([key, val]) => {
+            // Skip grant_program as it's always set
+            if (key === "grant_program") return false;
+            
+            if (Array.isArray(val)) return val.length > 0;
+            if (typeof val === "string") return val.trim() !== "";
+            if (typeof val === "number") return val !== 0;
+            if (typeof val === "boolean") return val === true;
+            if (val instanceof Date) return true;
+            return val !== null && val !== undefined;
+          });
+          
+          if (hasData) {
+            // Convert Date objects to ISO strings for JSON storage
+            const dataToSave = { ...value };
+            Object.keys(dataToSave).forEach((key) => {
+              if (dataToSave[key as keyof typeof dataToSave] instanceof Date) {
+                dataToSave[key as keyof typeof dataToSave] = (dataToSave[key as keyof typeof dataToSave] as Date).toISOString() as any;
+              }
+            });
+            localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+          }
+        } catch (error) {
+          console.error("Error saving form data to localStorage:", error);
+        }
+      }, 1000); // Wait 1 second after last change
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+    };
+  }, [form, storageKey, isLoadingFromStorage]);
+
+  // Load user projects when session is available
+  useEffect(() => {
+    if (!isProjectSelectionEnabled) return;
+
+    const loadUserProjects = async () => {
+      if (!session?.user?.id) return;
+      
+      setIsLoadingProjects(true);
+      try {
+        const response = await fetch(`/api/projects/member/${session.user.id}`);
+        if (response.ok) {
+          const projects = await response.json();
+          setUserProjects(projects || []);
+        } else {
+          console.error("Failed to load user projects");
+          setUserProjects([]);
+        }
+      } catch (error) {
+        console.error("Error loading user projects:", error);
+        setUserProjects([]);
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    };
+
+    loadUserProjects();
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+
     setShowTeamMembers(watchTeamSize !== "1" && watchTeamSize !== "");
     setShowProjectTypeOther(watchProjectType === "Other");
     setShowJobRoleOther(watchApplicantJobRole === "Other");
@@ -272,6 +417,161 @@ export default function GrantApplicationForm({
     watchReferralCheck,
   ]);
 
+  // Function to extract social media links
+  const extractSocialMedia = (socialMediaArray: string[] = []) => {
+    const socialMedia: { x?: string; linkedin?: string; telegram?: string; github?: string } = {};
+    
+    socialMediaArray.forEach((link) => {
+      if (!link) return;
+      const lowerLink = link.toLowerCase();
+      if (lowerLink.includes("x.com") || lowerLink.includes("twitter.com")) {
+        socialMedia.x = link;
+      } else if (lowerLink.includes("linkedin.com")) {
+        socialMedia.linkedin = link;
+      } else if (lowerLink.includes("t.me") || lowerLink.includes("telegram")) {
+        socialMedia.telegram = link;
+      } else if (lowerLink.includes("github.com")) {
+        socialMedia.github = link;
+      }
+    });
+    
+    return socialMedia;
+  };
+
+  // Function to split name into first and last name
+  const splitName = (name: string | null | undefined) => {
+    if (!name) return { firstName: "", lastName: "" };
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return { firstName: parts[0], lastName: "" };
+    const lastName = parts.slice(-1)[0];
+    const firstName = parts.slice(0, -1).join(" ");
+    return { firstName, lastName };
+  };
+
+  // Function to fill form with project data
+  const fillFormWithProjectData = async (projectId: string) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`);
+      if (!response.ok) {
+        console.error("Failed to load project details");
+        return;
+      }
+
+      const project = await response.json();
+      if (!project) return;
+
+      // Fill project basic information
+      if (project.project_name) {
+        form.setValue("project", project.project_name);
+      }
+      if (project.full_description || project.short_description) {
+        form.setValue("project_abstract_objective", project.full_description || project.short_description);
+      }
+      if (project.github_repository) {
+        form.setValue("project_company_github", project.github_repository);
+      }
+      if (project.demo_link) {
+        form.setValue("project_company_website", project.demo_link);
+      }
+
+      // Fill team members information
+      if (project.members && Array.isArray(project.members)) {
+        // Filter out removed members and sort by role (prioritize leaders)
+        const activeMembers = project.members
+          .filter((member: any) => member.status !== "Removed" && member.status !== "Removed")
+          .sort((a: any, b: any) => {
+            const rolePriority: { [key: string]: number } = {
+              "leader": 0,
+              "admin": 1,
+              "member": 2,
+            };
+            return (rolePriority[a.role?.toLowerCase()] ?? 3) - (rolePriority[b.role?.toLowerCase()] ?? 3);
+          });
+
+        // Fill first team member (index 0)
+        if (activeMembers[0]) {
+          const member1 = activeMembers[0];
+          const user1 = member1.user;
+          if (user1) {
+            const { firstName, lastName } = splitName(user1.name);
+            if (firstName) form.setValue("team_member_1_first_name", firstName);
+            if (lastName) form.setValue("team_member_1_last_name", lastName);
+            if (user1.email) form.setValue("team_member_1_email", user1.email);
+            if (user1.bio) form.setValue("team_member_1_bio", user1.bio);
+            
+            const social1 = extractSocialMedia(user1.social_media);
+            if (social1.x) form.setValue("team_member_1_x_account", social1.x);
+            if (social1.linkedin) form.setValue("team_member_1_linkedin", social1.linkedin);
+            if (social1.github) form.setValue("team_member_1_github", social1.github);
+            if (user1.telegram_user) {
+              form.setValue("team_member_1_telegram", user1.telegram_user.startsWith("http") 
+                ? user1.telegram_user 
+                : `https://t.me/${user1.telegram_user}`);
+            }
+            
+            // Try to match role with jobRoles
+            if (member1.role) {
+              const matchingRole = jobRoles.find(role => 
+                role.toLowerCase().includes(member1.role.toLowerCase()) ||
+                member1.role.toLowerCase().includes(role.toLowerCase().split(" ")[0])
+              );
+              if (matchingRole) {
+                form.setValue("job_role_team_member_1", matchingRole);
+              }
+            }
+          }
+        }
+
+        // Fill second team member (index 1)
+        if (activeMembers[1]) {
+          const member2 = activeMembers[1];
+          const user2 = member2.user;
+          if (user2) {
+            const { firstName, lastName } = splitName(user2.name);
+            if (firstName) form.setValue("team_member_2_first_name", firstName);
+            if (lastName) form.setValue("team_member_2_last_name", lastName);
+            if (user2.email) form.setValue("team_member_2_email", user2.email);
+            if (user2.bio) form.setValue("team_member_2_bio", user2.bio);
+            
+            const social2 = extractSocialMedia(user2.social_media);
+            if (social2.x) form.setValue("team_member_2_x_account", social2.x);
+            if (social2.linkedin) form.setValue("team_member_2_linkedin", social2.linkedin);
+            if (social2.github) form.setValue("team_member_2_github", social2.github);
+            if (user2.telegram_user) {
+              form.setValue("team_member_2_telegram", user2.telegram_user.startsWith("http") 
+                ? user2.telegram_user 
+                : `https://t.me/${user2.telegram_user}`);
+            }
+            
+            // Try to match role with jobRoles
+            if (member2.role) {
+              const matchingRole = jobRoles.find(role => 
+                role.toLowerCase().includes(member2.role.toLowerCase()) ||
+                member2.role.toLowerCase().includes(role.toLowerCase().split(" ")[0])
+              );
+              if (matchingRole) {
+                form.setValue("job_role_team_member_2", matchingRole);
+              }
+            }
+          }
+        }
+
+        // Update team size based on number of members
+        if (activeMembers.length > 1) {
+          if (activeMembers.length <= 5) {
+            form.setValue("team_size", "2-5");
+          } else if (activeMembers.length <= 10) {
+            form.setValue("team_size", "6-10");
+          } else {
+            form.setValue("team_size", "10+");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error filling form with project data:", error);
+    }
+  };
+
   // Function to handle form submission
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
@@ -309,6 +609,12 @@ export default function GrantApplicationForm({
         }
       });
 
+      const projectId = isProjectSelectionEnabled ? 
+        userProjects.find((p: any) => p.project_name === values.project)?.id : null;
+
+      hubspotFormData["projectId"] = projectId;
+      hubspotFormData["userId"] = session?.user.id ?? "";
+
       const response = await fetch("/api/infrabuidl", {
         method: "POST",
         headers: {
@@ -325,6 +631,12 @@ export default function GrantApplicationForm({
 
       setSubmissionStatus("success");
       alert("Your grant application has been successfully submitted!");
+      
+      // Clear localStorage after successful submission
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(storageKey);
+      }
+      
       form.reset();
       form.setValue("grant_program", programType);
     } catch (error) {
@@ -353,6 +665,10 @@ export default function GrantApplicationForm({
           <Button
             onClick={() => {
               setSubmissionStatus("idle");
+              // Clear localStorage when starting a new application
+              if (typeof window !== "undefined") {
+                localStorage.removeItem(storageKey);
+              }
               form.reset();
               form.setValue("grant_program", programType);
             }}
@@ -373,6 +689,71 @@ export default function GrantApplicationForm({
               </div>
 
               <div className="space-y-6">
+
+              {/* Projects belonged to */}
+              {isProjectSelectionEnabled && 
+                <FormField
+                  control={form.control}
+                  name="project"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="dark:text-gray-200 text-md">
+                        Project{" "}
+                      </FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          // Find the selected project
+                          const selectedProject = userProjects.find((p: any) => p.id === value);
+                          if (selectedProject) {
+                            // Set the project name in the field, not the ID
+                            field.onChange(selectedProject.project_name);
+                            // Fill form with project data using the project ID
+                            fillFormWithProjectData(value);
+                          }
+                        }}
+                        value={userProjects.find((p: any) => p.project_name === field.value)?.id || field.value}
+                        disabled={isLoadingProjects || status !== "authenticated" }
+                      >
+                        <FormControl>
+                          <SelectTrigger className="border-gray-300 dark:border-zinc-800 dark:bg-zinc-800 dark:text-gray-100">
+                            <SelectValue placeholder={isLoadingProjects ? "Loading projects..." : "Select project"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                          {userProjects.length > 0 ? (
+                            userProjects.map((project: any) => (
+                              <SelectItem
+                                key={project.id}
+                                value={project.id}
+                                className="dark:text-gray-200"
+                              >
+                                {project.project_name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem
+                              value="no-projects"
+                              disabled
+                              className="dark:text-gray-400"
+                            >
+                              {isLoadingProjects ? "Loading..." : "No projects found"}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-sm text-gray-500 dark:text-gray-400">
+                        {userProjects.length > 0 
+                          ? "Select a project to auto-fill the form with your project information"
+                          : session?.user?.id 
+                            ? "You don't have any projects yet. You can still fill the form manually."
+                            : "Please sign in to load your projects"}
+                      </FormDescription>
+                      <FormMessage className="dark:text-red-400" />
+                    </FormItem>
+                  )}
+                />
+              }
+
                 {/* Project/Company Name */}
                 <FormField
                   control={form.control}
@@ -409,7 +790,7 @@ export default function GrantApplicationForm({
                             field.onChange(value);
                             setShowProjectTypeOther(value === "Other");
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           {programType === "infraBUIDL()" ? (
@@ -797,7 +1178,7 @@ export default function GrantApplicationForm({
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -2355,7 +2736,7 @@ export default function GrantApplicationForm({
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -2406,7 +2787,7 @@ export default function GrantApplicationForm({
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -2461,7 +2842,7 @@ export default function GrantApplicationForm({
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -2509,7 +2890,7 @@ export default function GrantApplicationForm({
                             field.onChange(value);
                             setShowMultichainDetails(value === "Yes");
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -2567,7 +2948,7 @@ export default function GrantApplicationForm({
                             field.onChange(value);
                             setShowPreviousProjectDetails(value === "No");
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -2654,7 +3035,7 @@ export default function GrantApplicationForm({
                             field.onChange(value);
                             setShowBenefitDetails(value === "Yes");
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -2783,7 +3164,7 @@ export default function GrantApplicationForm({
                             field.onChange(value);
                             setShowSimilarProjects(value === "Yes");
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -2908,7 +3289,7 @@ export default function GrantApplicationForm({
                             field.onChange(value);
                             setShowCompetitors(value === "Yes");
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -3035,7 +3416,7 @@ export default function GrantApplicationForm({
                             field.onChange(value);
                             setShowTokenLaunchDetails(value === "No");
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -3321,7 +3702,7 @@ export default function GrantApplicationForm({
                       </FormLabel>
                       <RadioGroup
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         className="flex flex-col space-y-1"
                       >
                         <FormItem className="flex items-center space-x-3 space-y-0">
@@ -3489,7 +3870,7 @@ export default function GrantApplicationForm({
                             field.onChange(value);
                             setShowTeamMembers(value !== "1" && value !== "");
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">
@@ -4097,7 +4478,7 @@ export default function GrantApplicationForm({
                       </FormDescription>
                       <RadioGroup
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         className="flex flex-col space-y-1"
                       >
                         <FormItem className="flex items-center space-x-3 space-y-0">
@@ -4256,7 +4637,7 @@ export default function GrantApplicationForm({
                             field.onChange(value);
                             setShowReferrer(value === "Yes");
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-1"
                         >
                           <div className="flex items-center space-x-2">

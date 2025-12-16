@@ -22,6 +22,7 @@ export type Project = {
   members: Member[];
   prizes: ProjectPrize[];
   hackathon: HackathonHeader;
+  origin: string;
 };
 
 export type Member = {
