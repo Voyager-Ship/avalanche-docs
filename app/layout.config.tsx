@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { UserButtonWrapper } from '@/components/login/user-button/UserButtonWrapper';
+import NotificationBell from '@/components/notification/NotificationBell';
 
 export const integrationsMenu: LinkItemType = {
   type: 'menu',
@@ -510,6 +511,12 @@ export const userMenu: LinkItemType = {
   secondary: true,
 };
 
+export const notificationBell: LinkItemType = {
+  type: 'custom',
+  children: <NotificationBell />,
+  secondary: true,
+};
+
 export const baseOptions: BaseLayoutProps = {
   nav: {
     title: (
@@ -527,6 +534,7 @@ export const baseOptions: BaseLayoutProps = {
     grantsMenu,
     stats,
     integrationsMenu,
+    notificationBell,
     userMenu,
     blogMenu,
     universityMenu
