@@ -6,14 +6,11 @@ import Image from "next/image";
 import { useGetNotifications } from "@/hooks/use-get-notifications";
 import { cn } from "@/lib/utils";
 
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 
 export type DbNotification = {
   id: number;
@@ -50,7 +47,7 @@ export default function NotificationBell(): React.JSX.Element {
 
 
   const handleMarkAllAsRead = (): void => {
-    setOpen(false);
+    console.log("Mark all as read");
   };
 
   return (
@@ -92,9 +89,9 @@ export default function NotificationBell(): React.JSX.Element {
         <div className="w-full flex flex-col justify-between gap-1 py-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-zinc-50">Notifications</h2>
-            <Button className="bg-transparent p-0 hover:bg-transparent border-0" >
+            <PopoverClose>
               <Image src="/images/close-icon.svg" alt="close-icon" width={24} height={24} />
-            </Button>
+            </PopoverClose>
           </div>
           <p className="text-sm text-zinc-400">You have {notifications.length} unread messages.</p>
         </div>
@@ -107,10 +104,14 @@ export default function NotificationBell(): React.JSX.Element {
             )
           }
         </div>
-        <PopoverClose className="w-full! bg-zinc-50 py-2 px-4 h-10 text-sm text-zinc-900 flex items-center justify-center gap-0 rounded-md">
-          <Image src="/images/check.svg" alt="check-icon" className="mr-2" width={16} height={16} />
-          <p>Mark all as read</p>
-        </PopoverClose>
+        {
+          notifications.length > 0 && (
+            <PopoverClose onClick={() => handleMarkAllAsRead()} className="w-full! bg-zinc-50 py-2 px-4 h-10 text-sm text-zinc-900 flex items-center justify-center gap-0 rounded-md">
+              <Image src="/images/check.svg" alt="check-icon" className="mr-2" width={16} height={16} />
+              <p>Mark all as read</p>
+            </PopoverClose>
+          )
+        }
       </PopoverContent>
     </Popover>
   );
