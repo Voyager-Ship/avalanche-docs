@@ -6,12 +6,6 @@ import Image from "next/image";
 import { useGetNotifications } from "@/hooks/use-get-notifications";
 import { cn } from "@/lib/utils";
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
 export type DbNotification = {
   id: number;
   audience: string;
@@ -80,7 +74,7 @@ export default function NotificationBell(): React.JSX.Element {
         align="start"
         className={cn(
           "flex flex-col justify-between",
-          "translate-x-[-280px]",
+          "translate-x-[-38px] translate-y-3.5",
           "w-[378px] h-[591px] px-6 py-0 pb-6",
           "bg-zinc-950 border-red-600! border",
           "border border-border rounded-lg shadow-2xl"
@@ -89,24 +83,26 @@ export default function NotificationBell(): React.JSX.Element {
         <div className="w-full flex flex-col justify-between gap-1 py-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-zinc-50">Notifications</h2>
-            <PopoverClose>
+            <PopoverClose className="cursor-pointer">
               <Image src="/images/close-icon.svg" alt="close-icon" width={24} height={24} />
             </PopoverClose>
           </div>
-          <p className="text-sm text-zinc-400">You have {notifications.length} unread messages.</p>
+          <p className="text-sm text-zinc-400">You have {notifications.length} unread notifications.</p>
         </div>
         <div className="w-full flex-1 flex flex-col items-start p-y-6">
           {
             notifications.length > 0 && (
               notifications.map((notification: DbNotification) => (
-                <NotificationAccordionItem notification={notification} />
+                <div key={notification.id} className="w-full cursor-pointer">
+                  <NotificationAccordionItem notification={notification} />
+                </div>
               ))
             )
           }
         </div>
         {
           notifications.length > 0 && (
-            <PopoverClose onClick={() => handleMarkAllAsRead()} className="w-full! bg-zinc-50 py-2 px-4 h-10 text-sm text-zinc-900 flex items-center justify-center gap-0 rounded-md">
+            <PopoverClose onClick={() => handleMarkAllAsRead()} className="cursor-pointer w-full! bg-zinc-50 py-2 px-4 h-10 text-sm text-zinc-900 flex items-center justify-center gap-0 rounded-md">
               <Image src="/images/check.svg" alt="check-icon" className="mr-2" width={16} height={16} />
               <p>Mark all as read</p>
             </PopoverClose>
@@ -117,7 +113,7 @@ export default function NotificationBell(): React.JSX.Element {
   );
 }
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { PopoverClose } from "@radix-ui/react-popover";
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
 
 type NotificationAccordionItemProps = {
   notification: DbNotification;
@@ -126,10 +122,16 @@ type NotificationAccordionItemProps = {
 export function NotificationAccordionItem(
   props: NotificationAccordionItemProps
 ): React.JSX.Element {
+  const [openValue, setOpenValue] = React.useState<string>('');
   const notification: DbNotification = props.notification;
 
   return (
-    <Accordion type="single" className="w-full">
+    <Accordion type="single" className="w-full"
+      value={openValue}
+      onValueChange={setOpenValue}
+      onClick={() => setOpenValue(openValue ? '' : `notif-${notification.id}`)}
+    >
+
       <AccordionItem value={`notif-${notification.id}`} className="border-0 p-0 min-h-[87px]">
         <AccordionTrigger className="rounded-xl px-4 py-3 hover:no-underline hover:bg-accent p-0">
           <div className="flex w-full items-start gap-3">
@@ -147,11 +149,10 @@ export function NotificationAccordionItem(
         </AccordionTrigger>
 
         <AccordionContent className="px-4 pb-4 pt-2">
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Et rerum in exercitationem deserunt nulla, provident aspernatur nemo illum reiciendis magni. Beatae enim aut provident accusamus soluta numquam officia harum quibusdam.
+          {notification.content}
         </AccordionContent>
       </AccordionItem>
 
     </Accordion>
   );
 }
-

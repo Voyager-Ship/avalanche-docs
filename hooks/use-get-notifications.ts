@@ -48,12 +48,12 @@ export function useGetNotifications(users: string[]): UseNotificationsResult {
 
     try {
       const response: Response = await fetch(
-        `${'http://localhost:3000'}/notifications/get`,
+        `${process.env.NEXT_PUBLIC_AVALANCHE_METRICS_URL}/notifications/get`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-api-key": "59ebf96af28cda09aaaece1209d53ddf7c80561e4571d46c7e798f75320be689",
+            "x-api-key": process.env.NEXT_PUBLIC_AVALANCHE_METRICS_API_KEY || "",
           },
           body: JSON.stringify({ users }),
         }
