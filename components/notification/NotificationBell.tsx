@@ -1,10 +1,11 @@
 "use client";
 
-import * as React from "react";
 import Image from "next/image";
-
 import { useGetNotifications } from "@/hooks/use-get-notifications";
 import { cn } from "@/lib/utils";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
+import { useEffect, useMemo, useState } from "react";
 
 export type DbNotification = {
   id: number;
@@ -21,13 +22,14 @@ export type DbNotification = {
 type NotificationsResponse = Record<string, DbNotification[]>;
 
 export default function NotificationBell(): React.JSX.Element {
-  const [open, setOpen] = React.useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false);
+  const [readedNotifications, setReadedNotifications] = useState<number[]>([]);
   const users: string[] = ['team@voyagership.co'];
   const className: string | undefined = undefined;
 
-  const { data } = useGetNotifications(users);
+  const { data, refetch } = useGetNotifications(users);
 
-  const notifications: DbNotification[] = React.useMemo((): DbNotification[] => {
+  const notifications: DbNotification[] = useMemo((): DbNotification[] => {
     const payload: NotificationsResponse | null = (data ?? null) as NotificationsResponse | null;
     if (!payload) return [];
     const merged: DbNotification[] = users.flatMap((u: string): DbNotification[] => payload[u] ?? []);
@@ -36,23 +38,66 @@ export default function NotificationBell(): React.JSX.Element {
     return Array.from(uniqueById.values());
   }, [data, users]);
 
-  const hasUnread: boolean = notifications.length > 0;
-  const unreadCount: number = notifications.length;
+  useEffect((): void => {
+    console.log('readedNotifications', readedNotifications);
+    if (open) return;
+    if (readedNotifications.length === 0) return;
 
+    let data: { [key: number]: string[] } = {}
+    readedNotifications.forEach((id: number) => {
+      data[id] = ['team@voyagership.co'];
+    })
+    const fetchNotifications = async (): Promise<void> => {
+      try {
+        const response: Response = await fetch(
+          `${process.env.NEXT_PUBLIC_AVALANCHE_METRICS_URL}/notifications/read`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key":
+                process.env.NEXT_PUBLIC_AVALANCHE_METRICS_API_KEY ?? "",
+            },
+            body: JSON.stringify(data),
+          }
+        );
+
+        if (!response.ok) {
+          const text: string = await response.text();
+          throw new Error(text || "Failed to read notifications");
+        }
+
+      } catch (err: unknown) {
+        console.error(err);
+      } finally {
+        setReadedNotifications([])
+        refetch();
+      }
+    };
+
+    void fetchNotifications();
+  }, [open, readedNotifications.length, users]);
+
+  const readNotification = (id: number) => {
+    if (readedNotifications.includes(id)) return;
+    setReadedNotifications([...readedNotifications, id]);
+  }
 
   const handleMarkAllAsRead = (): void => {
-    console.log("Mark all as read");
+    setReadedNotifications(notifications.map((n: DbNotification) => n.id))
   };
 
+
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild >
         <button
           type="button"
           className={cn("relative inline-flex h-9 w-9 items-center justify-center", className)}
           aria-label="Open notifications"
         >
-          {hasUnread ? (
+          {notifications.length > 0 ? (
             <Image
               src="/images/bell-dot.svg"
               alt="notification bell"
@@ -94,7 +139,7 @@ export default function NotificationBell(): React.JSX.Element {
             notifications.length > 0 && (
               notifications.map((notification: DbNotification) => (
                 <div key={notification.id} className="w-full cursor-pointer">
-                  <NotificationAccordionItem notification={notification} />
+                  <NotificationAccordionItem notification={notification} readNotification={readNotification} />
                 </div>
               ))
             )
@@ -112,18 +157,23 @@ export default function NotificationBell(): React.JSX.Element {
     </Popover>
   );
 }
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
 
 type NotificationAccordionItemProps = {
   notification: DbNotification;
+  readNotification: (id: number) => void;
 };
 
 export function NotificationAccordionItem(
-  props: NotificationAccordionItemProps
+  { notification, readNotification }: NotificationAccordionItemProps
 ): React.JSX.Element {
-  const [openValue, setOpenValue] = React.useState<string>('');
-  const notification: DbNotification = props.notification;
+  const [openValue, setOpenValue] = useState<string>('');
+
+  useEffect(() => {
+    if (openValue && notification.status !== 'read') {
+      readNotification(notification.id);
+      notification.status = 'read';
+    }
+  }, [openValue])
 
   return (
     <Accordion type="single" className="w-full"

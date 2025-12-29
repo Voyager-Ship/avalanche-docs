@@ -75,8 +75,7 @@ export function useGetNotifications(users: string[]): UseNotificationsResult {
 
   useEffect(() => {
     fetchNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(users)]); // evita loops por referencia
+  }, [JSON.stringify(users)]);
 
   return {
     data,
