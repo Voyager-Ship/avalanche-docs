@@ -1238,3 +1238,15 @@ body[data-hide-sidebar-dropdown] #nd-sidebar-mobile button:has(> div > p.text-sm
   opacity: 0.5;
 }
 
+.custom-scroll::-webkit-scrollbar {
+  max-width: 8px;
+  background-color: #161617;
+  border-radius: 5px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #2F2F33;
+  border-radius: 5px;
+}
+
+
+

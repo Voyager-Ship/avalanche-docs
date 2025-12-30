@@ -134,11 +134,11 @@ export default function NotificationBell(): React.JSX.Element {
           </div>
           <p className="text-sm text-zinc-400">You have {notifications.length} unread notifications.</p>
         </div>
-        <div className="w-full flex-1 flex flex-col items-start p-y-6">
+        <div className="custom-scroll w-full max-h-[380px] overflow-y-auto overflow-x-hidden flex-1 flex flex-col items-start p-y-6">
           {
             notifications.length > 0 && (
               notifications.map((notification: DbNotification) => (
-                <div key={notification.id} className="w-full cursor-pointer">
+                <div key={notification.id} className="w-[95%] cursor-pointer">
                   <NotificationAccordionItem notification={notification} readNotification={readNotification} />
                 </div>
               ))
