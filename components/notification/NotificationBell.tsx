@@ -23,7 +23,7 @@ export type DbNotification = {
 type NotificationsResponse = Record<string, DbNotification[]>;
 
 export default function NotificationBell(): React.JSX.Element {
-  const {data: session}= useSession()
+  const { data: session } = useSession()
   const [open, setOpen] = useState<boolean>(false);
   const [readedNotifications, setReadedNotifications] = useState<number[]>([]);
   const users: string[] = [session?.user?.email || ''];
@@ -51,28 +51,20 @@ export default function NotificationBell(): React.JSX.Element {
     })
     const fetchNotifications = async (): Promise<void> => {
       try {
-        const response: Response = await fetch(
-          `${process.env.NEXT_PUBLIC_AVALANCHE_METRICS_URL}/notifications/read`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-api-key":
-                process.env.NEXT_PUBLIC_AVALANCHE_METRICS_API_KEY ?? "",
-            },
-            body: JSON.stringify(data),
-          }
-        );
+        const response: Response = await fetch("/api/notifications/read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
 
         if (!response.ok) {
           const text: string = await response.text();
           throw new Error(text || "Failed to read notifications");
         }
-
       } catch (err: unknown) {
         console.error(err);
       } finally {
-        setReadedNotifications([])
+        setReadedNotifications([]);
         refetch();
       }
     };

@@ -1,25 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export type DbNotification = {
   id: number;
-
-  audience: string; 
-
+  audience: string;
   type: string;
-
   title: string;
-
   content: string;
-
   content_type: string;
-
   short_description: string;
-
   template: string;
-
   status: string;
 };
-
 
 export type NotificationsResponse = {
   [user: string]: DbNotification[];
@@ -37,6 +28,9 @@ export function useGetNotifications(users: string[]): UseNotificationsResult {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Stable dependency without JSON.stringify in the effect directly
+  const usersKey: string = useMemo(() => JSON.stringify(users), [users]);
+
   const fetchNotifications = async (): Promise<void> => {
     if (users.length === 0) {
       setData({});
@@ -47,26 +41,21 @@ export function useGetNotifications(users: string[]): UseNotificationsResult {
     setError(null);
 
     try {
-      const response: Response = await fetch(
-        `${process.env.NEXT_PUBLIC_AVALANCHE_METRICS_URL}/notifications/get`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": process.env.NEXT_PUBLIC_AVALANCHE_METRICS_API_KEY || "",
-          },
-          body: JSON.stringify({ users }),
-        }
-      );
+      const response: Response = await fetch("/api/notifications/get", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ users }),
+        cache: "no-store",
+      });
 
       if (!response.ok) {
         const text: string = await response.text();
         throw new Error(text || "Failed to fetch notifications");
       }
 
-      const json: NotificationsResponse = await response.json();
+      const json: NotificationsResponse = (await response.json()) as NotificationsResponse;
       setData(json);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
@@ -74,13 +63,9 @@ export function useGetNotifications(users: string[]): UseNotificationsResult {
   };
 
   useEffect(() => {
-    fetchNotifications();
-  }, [JSON.stringify(users)]);
+    void fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usersKey]);
 
-  return {
-    data,
-    loading,
-    error,
-    refetch: fetchNotifications,
-  };
+  return { data, loading, error, refetch: fetchNotifications };
 }
