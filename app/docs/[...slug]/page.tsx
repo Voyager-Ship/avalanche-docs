@@ -5,6 +5,7 @@ import { BackToTop } from "@/components/ui/back-to-top";
 import { Feedback } from "@/components/ui/feedback";
 import { SidebarActions } from "@/components/ui/sidebar-actions";
 import { CChainAPIPage, DataAPIPage, MetricsAPIPage, PChainAPIPage, XChainAPIPage } from "@/components/api/api-pages";
+import AddNetworkButtonInline from "@/components/client/AddNetworkButtonInline";
 import { documentation } from "@/lib/source";
 import { createMetadata } from "@/utils/metadata";
 import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
@@ -28,7 +29,7 @@ import { notFound } from "next/navigation";
 import posthog from "posthog-js";
 import { type ComponentProps, type FC, type ReactElement, type ReactNode } from "react";
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 export const revalidate = false;
 
 export default async function Page(props: {
@@ -36,6 +37,7 @@ export default async function Page(props: {
 }): Promise<ReactElement> {
   const params = await props.params;
   const page = documentation.getPage(params.slug);
+
   if (!page) notFound();
 
   const { body: MDX, toc } = await page.data.load();
@@ -112,6 +114,7 @@ export default async function Page(props: {
             Steps,
             YouTube,
             Mermaid,
+            AddNetworkButtonInline,
             TypeTable,
             AutoTypeTable,
             Accordion,

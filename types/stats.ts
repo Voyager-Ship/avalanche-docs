@@ -56,15 +56,35 @@ export interface BlockExplorer {
   link: string;
 }
 
+export interface NetworkToken {
+  name: string;
+  symbol: string;
+  decimals: number;
+  logoUri?: string;
+  description?: string;
+}
+
 export interface L1Chain {
   chainId: string;
   chainName: string;
   chainLogoURI: string;
+  blockchainId?: string;
   subnetId: string;
   slug: string;
   color?: string;
   category?: string;
+  description?: string;
+  website?: string;
+  socials?: {
+    twitter?: string;
+    linkedin?: string;
+  };
   explorers?: BlockExplorer[];
+  rpcUrl?: string;
+  coingeckoId?: string;
+  networkToken?: NetworkToken;
+  sourcifySupport?: boolean;
+  isTestnet?: boolean;
 }
 
 export type TimeRange = "30d" | "90d" | "1y" | "all";
@@ -81,7 +101,11 @@ export const STATS_CONFIG = {
     '1y': { days: 365, pageSize: 1000, fetchAllPages: true },
     'all': { startTimestamp: 1600646400, pageSize: 2000, fetchAllPages: true }
   },
-  ACTIVE_ADDRESSES_INTERVALS: {'30d': 'day', '90d': 'day', '1y': 'day', 'all': 'day'}, // daily active addresses interval
+  ACTIVE_ADDRESSES_INTERVALS: {
+    'day': 'day',
+    'week': 'week', 
+    'month': 'month'
+  }, // active addresses intervals for different views
   AVALANCHE_GENESIS_TIMESTAMP: 1600646400,
   DATA_OFFSET_DAYS: 1,
 } as const;

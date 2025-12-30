@@ -1,7 +1,7 @@
 export interface BubbleNavItem {
     id: string;
     label: string;
-    href: string;
+    href?: string;
 }
 
 export interface BubbleNavigationConfig {
@@ -11,6 +11,7 @@ export interface BubbleNavigationConfig {
     focusRingColor: string;
     pulseColor: string;
     darkPulseColor: string;
+    darkTextColor?: string; // Text color for dark mode active items (e.g., "dark:text-zinc-900")
     buttonPadding?: string;
     buttonSpacing?: string;
     buttonScale?: string;

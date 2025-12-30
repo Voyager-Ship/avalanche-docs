@@ -9,7 +9,7 @@ export enum MemberStatus {
 
 export interface Project {
   id: string;
-  hackaton_id: string,
+  hackaton_id?: string,
   project_name: string;
   short_description: string;
   full_description?: string;

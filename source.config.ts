@@ -10,7 +10,6 @@ import rehypeKatex from 'rehype-katex';
 import { z } from 'zod';
 import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins';
 import { transformerTwoslash } from 'fumadocs-twoslash';
-import { createFileSystemTypesCache } from 'fumadocs-twoslash/cache-fs';
 
 export const { docs, meta } = defineDocs({
   docs: {
@@ -57,33 +56,6 @@ export const courseMeta = defineCollections({
   }),
 });
 
-export const codebaseEntrepreneur = defineCollections({
-  type: 'doc',
-  dir: 'content/codebase-entrepreneur',
-  schema: frontmatterSchema.extend({
-    preview: z.string().optional(),
-    index: z.boolean().default(false),
-    updated: z.string().or(z.date()).transform((value, context) => {
-      try {
-        return new Date(value);
-      } catch {
-        context.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid date" });
-        return z.NEVER;
-      }
-    }).optional(),
-    authors: z.array(z.string()).optional(),
-    comments: z.boolean().default(false),
-  }),
-});
-
-export const codebaseEntrepreneurMeta = defineCollections({
-  type: 'meta',
-  dir: 'content/codebase-entrepreneur',
-  schema: metaSchema.extend({
-    description: z.string().optional(),
-  }),
-});
-
 export const integrations = defineCollections({
   type: 'doc',
   async: true,
@@ -124,9 +96,7 @@ export default defineConfig({
       },
       transformers: [
         ...(rehypeCodeDefaultOptions.transformers ?? []),
-        transformerTwoslash({
-          typesCache: createFileSystemTypesCache(),
-        }),
+        transformerTwoslash(),
         {
           name: 'transformers:remove-notation-escape',
           code(hast) {

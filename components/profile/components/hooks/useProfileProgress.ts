@@ -24,124 +24,78 @@ interface ProfileValues {
  */
 export function useProfileProgress(
   values: ProfileValues,
-  delay: number = 300
+  delay: number = 500 // Aumentado el delay para mejor performance
 ): number {
-  // Crear una versión estable y segura de los valores
-  const stableValues = useMemo(() => {
+  // Serializar valores para crear una dependencia más estable
+  const valuesKey = useMemo(() => {
     try {
-      return {
-        name: typeof values?.name === "string" ? values.name : "",
-        username: typeof values?.username === "string" ? values.username : "",
-        bio: typeof values?.bio === "string" ? values.bio : "",
-        notification_email:
-          typeof values?.notification_email === "string"
-            ? values.notification_email
-            : "",
-        image: typeof values?.image === "string" ? values.image : "",
-        country: typeof values?.country === "string" ? values.country : "",
-        company_name:
-          typeof values?.company_name === "string" ? values.company_name : "",
-        role: typeof values?.role === "string" ? values.role : "",
-        github: typeof values?.github === "string" ? values.github : "",
-        wallet: typeof values?.wallet === "string" ? values.wallet : "",
-        socials: Array.isArray(values?.socials) ? values.socials : [],
-        skills: Array.isArray(values?.skills) ? values.skills : [],
-        telegram_user:
-          typeof values?.telegram_user === "string" ? values.telegram_user : "",
-      };
-    } catch (error) {
-      console.error("Error processing profile values:", error);
-      return {
-        name: "",
-        username: "",
-        bio: "",
-        notification_email: "",
-        image: "",
-        country: "",
-        company_name: "",
-        role: "",
-        github: "",
-        wallet: "",
-        socials: [],
-        skills: [],
-        telegram_user: "",
-      };
+      return JSON.stringify({
+        name: values?.name || "",
+        username: values?.username || "",
+        bio: values?.bio || "",
+        notification_email: values?.notification_email || "",
+        image: values?.image || "",
+        country: values?.country || "",
+        company_name: values?.company_name || "",
+        role: values?.role || "",
+        github: values?.github || "",
+        wallet: values?.wallet || "",
+        socialsCount: Array.isArray(values?.socials) ? values.socials.filter(s => s?.trim()).length : 0,
+        skillsCount: Array.isArray(values?.skills) ? values.skills.length : 0,
+        telegram_user: values?.telegram_user || "",
+      });
+    } catch {
+      return "";
     }
-  }, [
-    values?.name,
-    values?.username,
-    values?.bio,
-    values?.notification_email,
-    values?.image,
-    values?.country,
-    values?.company_name,
-    values?.role,
-    values?.github,
-    values?.wallet,
-    values?.socials,
-    values?.skills,
-    values?.telegram_user,
-  ]);
+  }, [values]);
 
-  // Aplicar debounce a los valores
-  const [debouncedValues, setDebouncedValues] = useState<ProfileValues>(stableValues);
+  // Aplicar debounce al cálculo
+  const [debouncedKey, setDebouncedKey] = useState<string>(valuesKey);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Limpiar timeout anterior si existe
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Configurar nuevo timeout
     timeoutRef.current = setTimeout(() => {
-      setDebouncedValues(stableValues);
+      setDebouncedKey(valuesKey);
     }, delay);
 
-    // Cleanup function
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [stableValues, delay]);
+  }, [valuesKey, delay]);
 
-  // Calcular el porcentaje de completitud del perfil
+  // Calcular el porcentaje de completitud del perfil (memoizado por el key)
   const progress = useMemo(() => {
     try {
+      const data = JSON.parse(debouncedKey || "{}");
+      
       const fields = [
-        debouncedValues.name?.trim() !== "", // Full name completado
-        debouncedValues.username?.trim() !== "" &&
-          debouncedValues.username !== "username", // Username completado
-        debouncedValues.bio?.trim() !== "", // Bio ingresada
-        debouncedValues.notification_email?.trim() !== "", // Notification email ingresado
-        debouncedValues.image?.trim() !== "", // Imagen subida
-        debouncedValues.country?.trim() !== "", // Country seleccionado
-        debouncedValues.company_name?.trim() !== "", // Company ingresada
-        debouncedValues.role?.trim() !== "", // Role ingresado
-        debouncedValues.github?.trim() !== "", // GitHub conectado
-        debouncedValues.wallet?.trim() !== "", // Wallet address ingresada
-        Array.isArray(debouncedValues.socials) &&
-          debouncedValues.socials.length > 0 &&
-          debouncedValues.socials.some((s) => s?.trim() !== ""), // Al menos un social
-        Array.isArray(debouncedValues.skills) &&
-          debouncedValues.skills.length > 0, // Al menos una skill
-        debouncedValues.telegram_user?.trim() !== "", // Telegram user ingresado
+        !!data.name?.trim(),
+        !!data.username?.trim() && data.username !== "username",
+        !!data.bio?.trim(),
+        !!data.notification_email?.trim(),
+        !!data.image?.trim(),
+        !!data.country?.trim(),
+        !!data.company_name?.trim(),
+        !!data.role?.trim(),
+        !!data.github?.trim(),
+        !!data.wallet?.trim(),
+        (data.socialsCount || 0) > 0,
+        (data.skillsCount || 0) > 0,
+        !!data.telegram_user?.trim(),
       ];
 
       const completedFields = fields.filter(Boolean).length;
-      const totalFields = fields.length;
-
-      if (totalFields === 0) {
-        return 0;
-      }
-
-      return Math.round((completedFields / totalFields) * 100);
-    } catch (error) {
-      console.error("Error calculating profile progress:", error);
+      return Math.round((completedFields / fields.length) * 100);
+    } catch {
       return 0;
     }
-  }, [debouncedValues]);
+  }, [debouncedKey]);
 
   return progress;
 }

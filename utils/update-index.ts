@@ -3,7 +3,16 @@ import { sync, DocumentRecord } from '../node_modules/fumadocs-core/dist/search/
 import * as fs from 'node:fs';
 
 async function main() {
-  if (process.env.VERCEL_ENV !== 'production') { return; } // only update index on prod deployments
+  // Skip if not production OR if no write key is provided
+  if (process.env.VERCEL_ENV !== 'production') {
+    console.log('Skipping Algolia sync: Not in production environment');
+    return;
+  }
+
+  if (!process.env.ALGOLIA_WRITE_KEY) {
+    console.warn('Skipping Algolia sync: ALGOLIA_WRITE_KEY not found');
+    return;
+  }
 
   const filePath = {
     next: '.next/server/app/static.json.body',
@@ -15,12 +24,14 @@ async function main() {
   try {
     const content = fs.readFileSync(filePath);
     const records = JSON.parse(content.toString()) as DocumentRecord[];
-    const client = algoliasearch('0T4ZBDJ3AF', process.env.ALGOLIA_WRITE_KEY || "");
+    const client = algoliasearch('0T4ZBDJ3AF', process.env.ALGOLIA_WRITE_KEY);
 
     await sync(client, {
       documents: records,
       indexName: 'builder-hub',
     });
+    
+    console.log('Algolia sync completed successfully');
   } catch (error) {
     console.error('Algolia sync failed:', error);
     process.exit(1);

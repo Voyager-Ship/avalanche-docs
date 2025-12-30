@@ -47,7 +47,7 @@ export default function NotificationBell(): React.JSX.Element {
 
     let data: { [key: number]: string[] } = {}
     readedNotifications.forEach((id: number) => {
-      data[id] = [session?.user?.email || ''];
+      data[id] = users;
     })
     const fetchNotifications = async (): Promise<void> => {
       try {

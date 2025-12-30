@@ -54,7 +54,7 @@ import ICMRelayer from "@/components/toolbox/console/icm/setup/ICMRelayer";
 import Faucet from "@/components/toolbox/console/primary-network/Faucet";
 import CreateManagedTestnetNode from "@/components/toolbox/console/testnet-infra/ManagedTestnetNodes/CreateManagedTestnetNode";
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 const toolboxComponents = {
   ToolboxMdxWrapper,
@@ -80,12 +80,16 @@ export default async function Page(props: {
 }) {
   const params = await props.params;
   const page = academy.getPage(params.slug);
+
   if (!page) notFound();
 
   const path = `content/academy${page.url.replace('/academy/', '/')}.mdx`;
   const editUrl = `https://github.com/ava-labs/builders-hub/edit/master/${path}`;
   const MDX = page.data.body;
-  const course = COURSES.official.find((c) => c.slug === page.slugs[0]);
+  // Check both official courses and entrepreneur courses
+  // page.slugs[1] contains the course slug (e.g., "avalanche-fundamentals", "foundations-web3-venture")
+  const course = COURSES.official.find((c) => c.slug === page.slugs[1]) 
+    || COURSES.avalancheEntrepreneur.find((c) => c.slug === page.slugs[1]);
 
   return (
     <DocsPage

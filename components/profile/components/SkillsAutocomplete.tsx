@@ -1,18 +1,24 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { usePopularSkills } from "./hooks/usePopularSkills";
 import { useDebounce } from "@/components/hackathons/project-submission/hooks/useDebounce";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 
 interface SkillsAutocompleteProps {
   value: string;
@@ -27,140 +33,122 @@ export function SkillsAutocomplete({
   onChange,
   onSelect,
   existingSkills,
-  placeholder = "Add skill",
+  placeholder = "Select skills...",
 }: SkillsAutocompleteProps) {
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [isFocused, setIsFocused] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const { searchSkills, isLoading } = usePopularSkills();
 
-  // Aplicar debounce al valor del input (300ms)
-  const debouncedValue = useDebounce(value, 300);
+  // Apply debounce to search value (300ms)
+  const debouncedValue = useDebounce(searchValue, 300);
 
-  // Obtener sugerencias: si está vacío pero enfocado, mostrar top skills
-  const suggestions = debouncedValue.length > 0 
-    ? searchSkills(debouncedValue, existingSkills)
-    : isFocused 
-      ? searchSkills("", existingSkills)
-      : [];
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-  };
-
-  // Actualizar estado open cuando cambian las sugerencias (usando debouncedValue)
-  useEffect(() => {
-    if (debouncedValue.length > 0) {
-      setOpen(suggestions.length > 0);
-    } else if (isFocused) {
-      // Si está enfocado pero vacío, mostrar top skills
-      setOpen(suggestions.length > 0);
-    } else {
-      setOpen(false);
-    }
-  }, [debouncedValue, suggestions.length, isFocused]);
+  // Get skill suggestions
+  const suggestions = searchSkills(debouncedValue, existingSkills);
 
   const handleSelectSkill = (skill: string) => {
     onSelect(skill);
-    onChange("");
-    setOpen(false);
-    inputRef.current?.focus();
+    setSearchValue("");
+    // Keep popover open to continue selecting
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && value.trim()) {
+    if (e.key === "Enter" && searchValue.trim()) {
       e.preventDefault();
       if (suggestions.length > 0) {
-        // Seleccionar la primera sugerencia
+        // Select the first suggestion
         handleSelectSkill(suggestions[0].name);
       } else {
-        // Agregar la skill escrita si no hay sugerencias
-        handleSelectSkill(value.trim());
+        // Add the custom skill if no suggestions found
+        handleSelectSkill(searchValue.trim());
       }
-    } else if (e.key === "Escape") {
-      setOpen(false);
     }
   };
 
-  // Mostrar sugerencias si está abierto y hay sugerencias, o si está vacío pero enfocado
-  const showSuggestions = open && suggestions.length > 0;
-
   return (
-    <div ref={containerRef} className="relative w-full">
-      <Input
-        ref={inputRef}
-        value={value}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onFocus={() => {
-          setIsFocused(true);
-          setOpen(true);
-        }}
-        onBlur={() => {
-          // Delay para permitir click en sugerencias
-          setTimeout(() => {
-            setIsFocused(false);
-            setOpen(false);
-          }, 200);
-        }}
-        placeholder={placeholder}
-        className="w-full"
-      />
-      {showSuggestions && (
-        <div className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border rounded-md shadow-md">
-          <Command shouldFilter={false}>
-            <CommandList>
-              {isLoading ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  Loading...
-                </div>
-              ) : suggestions.length === 0 ? (
-                <CommandEmpty>No skills found.</CommandEmpty>
-              ) : (
-                <CommandGroup>
-                  {suggestions.map((skill) => (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
+          {placeholder}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Search or add skills..."
+            value={searchValue}
+            onValueChange={setSearchValue}
+            onKeyDown={handleKeyDown}
+          />
+          <CommandList>
+            {isLoading ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                Loading...
+              </div>
+            ) : suggestions.length === 0 ? (
+              <CommandEmpty>
+                {searchValue.trim() ? (
+                  <div className="text-center py-2">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      No skill found.
+                    </p>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => {
+                        if (searchValue.trim()) {
+                          handleSelectSkill(searchValue.trim());
+                        }
+                      }}
+                    >
+                      Add "{searchValue.trim()}"
+                    </Button>
+                  </div>
+                ) : (
+                  "Start typing to search skills..."
+                )}
+              </CommandEmpty>
+            ) : (
+              <CommandGroup heading="Select skills">
+                {suggestions.map((skill) => {
+                  const isSelected = existingSkills.includes(skill.name);
+                  return (
                     <CommandItem
                       key={skill.name}
                       value={skill.name}
                       onSelect={() => handleSelectSkill(skill.name)}
                       className="cursor-pointer"
+                      disabled={isSelected}
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          debouncedValue.toLowerCase() === skill.name.toLowerCase()
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      <span>{skill.name}</span>
+                      <div className="flex items-center gap-2 flex-1">
+                        <div
+                          className={cn(
+                            "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                            isSelected
+                              ? "bg-primary text-primary-foreground"
+                              : "opacity-50"
+                          )}
+                        >
+                          {isSelected && <Check className="h-3 w-3" />}
+                        </div>
+                        <span className={isSelected ? "opacity-50" : ""}>
+                          {skill.name}
+                        </span>
+                      </div>
                     </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-            </CommandList>
-          </Command>
-        </div>
-      )}
-    </div>
+                  );
+                })}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 

@@ -111,6 +111,7 @@ export async function createProject(
           screenshots: projectData.screenshots ?? [],
           tracks: projectData.tracks ?? [],
           explanation: projectData.explanation ?? "",
+          origin: "Project submission",
           // Member created together with project
           members: {
             create: {
@@ -154,6 +155,11 @@ function normalizeUser(user: Partial<User>): User {
     social_media: user.social_media ?? [],
     notifications: user.notifications ?? null,
     created_at: user.created_at ?? new Date(),
+    country: user.country ?? null,
+    user_type: user.user_type ?? null,
+    github: user.github ?? null,
+    wallet: user.wallet ?? null,
+    skills: user.skills ?? [],
   };
 }
 export async function getProject(projectId: string): Promise<Project | null> {
@@ -175,7 +181,7 @@ export async function getProject(projectId: string): Promise<Project | null> {
 
   const project: Project = {
     id: projectData.id,
-    hackaton_id: projectData.hackaton_id,
+    hackaton_id: projectData.hackaton_id ?? undefined,
     project_name: projectData.project_name,
     short_description: projectData.short_description,
     full_description: projectData.full_description ?? undefined,

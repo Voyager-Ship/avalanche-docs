@@ -41,16 +41,16 @@ export function NavbarDropdown() {
       title: 'Academy',
       href: '/academy',
       items: [
-        { text: 'Avalanche Developer Academy', href: '/academy' },
-        { text: 'Codebase Entrepreneur Academy', href: '/codebase-entrepreneur-academy' },
-        { text: 'Avalanche Fundamentals', href: '/academy/avalanche-fundamentals' },
+        { text: 'Avalanche L1 Academy', href: '/academy' },
+        { text: 'Blockchain Academy', href: '/academy' },
+        { text: 'Entrepreneur Academy', href: '/academy' },
       ],
     },
     {
       title: 'Documentation',
-      href: '/docs/quick-start',
+      href: '/docs/primary-network',
       items: [
-        { text: 'Avalanche Protocol', href: '/docs/quick-start' },
+        { text: 'Primary Network', href: '/docs/primary-network' },
         { text: 'Avalanche L1s', href: '/docs/avalanche-l1s' },
         { text: 'Nodes & Validators', href: '/docs/nodes' },
         { text: 'Interoperability', href: '/docs/cross-chain' },

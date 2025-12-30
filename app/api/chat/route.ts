@@ -3,6 +3,70 @@ import { streamText } from 'ai';
 
 export const runtime = 'edge';
 
+// PostHog configuration for LLM analytics
+const POSTHOG_API_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
+
+// Capture LLM generation event to PostHog
+async function captureAIGeneration({
+  distinctId,
+  model,
+  input,
+  output,
+  inputTokens,
+  outputTokens,
+  latencyMs,
+  traceId,
+}: {
+  distinctId?: string;
+  model: string;
+  input: string;
+  output: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  latencyMs: number;
+  traceId?: string;
+}) {
+  if (!POSTHOG_API_KEY) return;
+
+  try {
+    // Estimate tokens if not provided (rough estimate: 1 token ≈ 4 chars)
+    const estimatedInputTokens = inputTokens ?? Math.ceil(input.length / 4);
+    const estimatedOutputTokens = outputTokens ?? Math.ceil(output.length / 4);
+
+    // GPT-4o-mini pricing: $0.15/1M input, $0.60/1M output
+    const inputCost = (estimatedInputTokens / 1000000) * 0.15;
+    const outputCost = (estimatedOutputTokens / 1000000) * 0.60;
+
+    await fetch(`${POSTHOG_HOST}/capture/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        api_key: POSTHOG_API_KEY,
+        event: '$ai_generation',
+        distinct_id: distinctId || 'anonymous',
+        properties: {
+          $ai_model: model,
+          $ai_provider: 'openai',
+          $ai_input: input,
+          $ai_output_choices: [{ message: { content: output } }],
+          $ai_input_tokens: estimatedInputTokens,
+          $ai_output_tokens: estimatedOutputTokens,
+          $ai_total_cost_usd: inputCost + outputCost,
+          $ai_latency: latencyMs / 1000, // Convert to seconds
+          $ai_trace_id: traceId,
+          $ai_http_status: 200,
+        },
+        timestamp: new Date().toISOString(),
+      }),
+    });
+  } catch (error) {
+    console.error('Failed to capture AI generation event:', error);
+  }
+}
+
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -134,7 +198,9 @@ function findRelevantSections(query: string, docs: string): string[] {
 }
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const { messages, id: visitorId } = await req.json();
+  const startTime = Date.now();
+  const traceId = `trace_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
   // Get the last user message to search for relevant docs
   const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop();
@@ -165,18 +231,35 @@ export async function POST(req: Request) {
     ? `\n\n=== VALID DOCUMENTATION URLS ===\nThese are ALL the valid URLs on the site. ONLY use URLs from this list:\n${validUrls.map(url => `https://build.avax.network${url}`).join('\n')}\n=== END VALID URLS ===\n`
     : '';
 
+  // Build the full input for analytics
+  const userInput = lastUserMessage?.content || '';
+
   const result = streamText({
     model: openai('gpt-4o-mini'),
     messages: messages,
+    onFinish: async ({ text, usage }) => {
+      // Capture LLM generation event to PostHog
+      const latencyMs = Date.now() - startTime;
+      await captureAIGeneration({
+        distinctId: visitorId,
+        model: 'gpt-4o-mini',
+        input: userInput,
+        output: text,
+        inputTokens: usage?.promptTokens,
+        outputTokens: usage?.completionTokens,
+        latencyMs,
+        traceId,
+      });
+    },
     system: `You are an expert AI assistant for Avalanche Builders Hub, specializing in helping developers build on Avalanche.
 
 CRITICAL URL RULES - MUST FOLLOW TO PREVENT 404 ERRORS:
 - **USE EXACT URLS ONLY** - NEVER shorten, truncate, or modify URLs from the context
-- **COMPLETE PATHS REQUIRED** - /academy/avalanche-fundamentals/04-creating-an-l1 is WRONG, use /academy/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1
+- **COMPLETE PATHS REQUIRED** - /academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1 is WRONG, use /academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1
 - Academy content is at /academy/... NOT /docs/academy/...
 - Documentation is at /docs/... 
 - NEVER prefix academy URLs with /docs/
-- When you see a page title with URL in parentheses like "Creating an L1 (/academy/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1)", use the FULL URL
+- When you see a page title with URL in parentheses like "Creating an L1 (/academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1)", use the FULL URL
 - Partial or shortened URLs WILL cause 404 errors - ALWAYS use the complete path from the context
 
 CORE RESPONSIBILITIES:
@@ -269,9 +352,9 @@ ALWAYS respond with: "You can get testnet AVAX from the [Console Faucet](https:/
 CITATION FORMAT - EXACT URLs REQUIRED:
 - **COPY URLS EXACTLY** from the documentation context - do NOT shorten or modify them
 - When you see "Page Title (/exact/path/to/page)", use the COMPLETE path: https://build.avax.network/exact/path/to/page
-- Example: "Creating an L1 (/academy/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1)" 
-  → Link as: https://build.avax.network/academy/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1
-  → NOT: https://build.avax.network/academy/avalanche-fundamentals/04-creating-an-l1 (missing final segment)
+- Example: "Creating an L1 (/academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1)" 
+  → Link as: https://build.avax.network/academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1
+  → NOT: https://build.avax.network/academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1 (missing final segment)
 - NEVER prefix academy with /docs/ - Academy URLs are /academy/... NOT /docs/academy/...
 - NEVER truncate URLs - missing segments cause 404 errors
 - Quote relevant sections when helpful
@@ -349,20 +432,20 @@ URL RULES - CRITICAL FOR PREVENTING 404 ERRORS:
 2. **NEVER shorten, truncate, or modify URLs** - Use the COMPLETE path exactly as shown
 3. **NEVER construct or guess URLs** - Only use URLs that appear in full in the context
 4. **NEVER mix prefixes** - Academy URLs use /academy/, NOT /docs/academy/
-5. **USE FULL PATHS** - /academy/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1 NOT /academy/avalanche-fundamentals/04-creating-an-l1
+5. **USE FULL PATHS** - /academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1 NOT /academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1
 6. Every URL you provide MUST be the complete path from the context or valid URLs list
 7. When you see "Page Title (/full/path/to/page)" in the context, use the ENTIRE path in parentheses
 8. Partial URLs WILL cause 404 errors - there is no auto-redirect to index pages
 
 Examples of what NOT to do:
 - ❌ https://build.avax.network/docs/academy/... (Never prefix academy with /docs/)
-- ❌ https://build.avax.network/academy/avalanche-fundamentals/04-creating-an-l1 (Truncated URL - missing /01-creating-an-l1)
+- ❌ https://build.avax.network/academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1 (Truncated URL - missing /01-creating-an-l1)
 - ❌ https://build.avax.network/docs/nodes/system-requirements (if not in valid URLs)
 - ❌ https://build.avax.network/academy/interchain-messaging/intro (if not in valid URLs)
 
 Examples of what TO do:
-- ✅ Use EXACT URLs: https://build.avax.network/academy/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1
-- ✅ Copy the FULL path from context: "Creating an L1 (/academy/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1)"
+- ✅ Use EXACT URLs: https://build.avax.network/academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1
+- ✅ Copy the FULL path from context: "Creating an L1 (/academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1)"
 - ✅ Never shorten URLs - use the complete path even if it seems long
 - ✅ Always verify the URL is complete by checking it matches what's in the context
 - ✅ Double-check the valid URLs list before every link
@@ -372,7 +455,7 @@ The complete list of valid URLs will be provided at the end of this prompt.
 FINAL REMINDER ABOUT URLS:
 - The documentation context shows pages like "Title (/full/path/to/page)" - USE THE ENTIRE PATH
 - Shortened URLs WILL NOT WORK - there are no automatic redirects to index pages
-- If you cite /academy/avalanche-fundamentals/04-creating-an-l1 instead of /academy/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1, it WILL 404
+- If you cite /academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1 instead of /academy/avalanche-l1/avalanche-fundamentals/04-creating-an-l1/01-creating-an-l1, it WILL 404
 - ALWAYS use the COMPLETE URL exactly as shown in the context or valid URLs list
 
 FOLLOW-UP QUESTIONS - CRITICAL FORMAT:
