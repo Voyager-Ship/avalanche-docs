@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
 import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 
 export type DbNotification = {
   id: number;
@@ -22,9 +23,10 @@ export type DbNotification = {
 type NotificationsResponse = Record<string, DbNotification[]>;
 
 export default function NotificationBell(): React.JSX.Element {
+  const {data: session}= useSession()
   const [open, setOpen] = useState<boolean>(false);
   const [readedNotifications, setReadedNotifications] = useState<number[]>([]);
-  const users: string[] = ['team@voyagership.co'];
+  const users: string[] = [session?.user?.email || ''];
   const className: string | undefined = undefined;
 
   const { data, refetch } = useGetNotifications(users);
@@ -45,7 +47,7 @@ export default function NotificationBell(): React.JSX.Element {
 
     let data: { [key: number]: string[] } = {}
     readedNotifications.forEach((id: number) => {
-      data[id] = ['team@voyagership.co'];
+      data[id] = [session?.user?.email || ''];
     })
     const fetchNotifications = async (): Promise<void> => {
       try {

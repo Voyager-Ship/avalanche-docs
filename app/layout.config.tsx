@@ -35,6 +35,7 @@ import {
 import Image from 'next/image';
 import { UserButtonWrapper } from '@/components/login/user-button/UserButtonWrapper';
 import NotificationBell from '@/components/notification/NotificationBell';
+import { SessionProvider } from 'next-auth/react';
 
 export const integrationsMenu: LinkItemType = {
   type: 'menu',
@@ -120,21 +121,21 @@ export const stats: LinkItemType = {
       text: "Avalanche L1s",
       url: "/stats/overview",
       description:
-      "View the latest metrics for all Avalanche L1s in the network.",
+        "View the latest metrics for all Avalanche L1s in the network.",
     },
     {
       icon: <Network />,
       text: "C-Chain",
       url: "/stats/primary-network/c-chain",
       description:
-      "View the latest metrics for the Avalanche C-Chain.",
+        "View the latest metrics for the Avalanche C-Chain.",
     },
     {
       icon: <Hexagon />,
       text: "Primary Network Validators",
       url: "/stats/validators",
       description:
-      "View the latest metrics for the Avalanche Primary Network validators.",
+        "View the latest metrics for the Avalanche Primary Network validators.",
     },
   ],
 };
@@ -149,10 +150,10 @@ export const docsMenu: LinkItemType = {
         banner: (
           <div className='-mx-3 -mt-3'>
             <Image
-               src="https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/course-banner/customizing-evm-DkMcINMgCwhkuHuumtAZtrPzROU74M.jpg"
-               alt='Preview'
-               width={900}
-               height={400}
+              src="https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/course-banner/customizing-evm-DkMcINMgCwhkuHuumtAZtrPzROU74M.jpg"
+              alt='Preview'
+              width={900}
+              height={400}
               className='rounded-t-lg object-cover  w-full h-auto'
               style={{
                 maskImage: 'linear-gradient(to bottom,white 60%,transparent)',
@@ -513,7 +514,11 @@ export const userMenu: LinkItemType = {
 
 export const notificationBell: LinkItemType = {
   type: 'custom',
-  children: <NotificationBell />,
+  children:
+    <SessionProvider>
+      <NotificationBell />
+    </SessionProvider>
+  ,
   secondary: true,
 };
 
