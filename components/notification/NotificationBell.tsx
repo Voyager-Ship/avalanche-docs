@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { read } from "node:fs";
 
 export type DbNotification = {
   id: number;
@@ -26,7 +27,7 @@ export default function NotificationBell(): React.JSX.Element {
   const { data: session } = useSession()
   const [open, setOpen] = useState<boolean>(false);
   const [readedNotifications, setReadedNotifications] = useState<number[]>([]);
-  const users: string[] = [session?.user?.email || ''];
+  const users: string[] = [session?.user?.id || 'cm9m0ywnu0000sbtezudjuret'];
   const className: string | undefined = undefined;
 
   const { data, refetch } = useGetNotifications(users);
@@ -41,20 +42,15 @@ export default function NotificationBell(): React.JSX.Element {
   }, [data, users]);
 
   useEffect((): void => {
-    console.log('readedNotifications', readedNotifications);
     if (open) return;
     if (readedNotifications.length === 0) return;
 
-    let data: { [key: number]: string[] } = {}
-    readedNotifications.forEach((id: number) => {
-      data[id] = users;
-    })
     const fetchNotifications = async (): Promise<void> => {
       try {
         const response: Response = await fetch("/api/notifications/read", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: JSON.stringify(readedNotifications),
         });
 
         if (!response.ok) {

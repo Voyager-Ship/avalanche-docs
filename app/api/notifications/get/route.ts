@@ -27,7 +27,7 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
-    const upstream: Response = await fetch(`${baseUrl}/notifications/get`, {
+    const upstream: Response = await fetch(`${baseUrl}/notifications/get/inbox`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
