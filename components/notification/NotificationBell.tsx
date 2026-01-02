@@ -197,6 +197,16 @@ export function NotificationAccordionItem(
 }
 
 export function NotificationBellWrapper() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Only render after the component is mounted and SessionProvider is available
+  if (!isMounted) {
+    return null;
+  }
   return <SessionProvider>
     <NotificationBell />
   </SessionProvider>
