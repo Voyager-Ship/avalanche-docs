@@ -575,12 +575,6 @@ export const userMenu: LinkItemType = {
   secondary: true,
 };
 
-export const notificationBell: LinkItemType = {
-  type: 'custom',
-  children: <NotificationBellWrapper/>,
-  secondary: true,
-};
-
 export const baseOptions: BaseLayoutProps = {
   nav: {
     title: (
@@ -600,7 +594,6 @@ export const baseOptions: BaseLayoutProps = {
     grantsMenu,
     integrationsMenu,
     stats,
-    notificationBell,
     userMenu
   ],
 };

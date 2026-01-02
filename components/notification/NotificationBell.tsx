@@ -26,7 +26,7 @@ export default function NotificationBell(): React.JSX.Element {
   const { data: session } = useSession() ?? {}
   const [open, setOpen] = useState<boolean>(false);
   const [readedNotifications, setReadedNotifications] = useState<number[]>([]);
-  const users: string[] = [session?.user?.email || ''];
+  const users: string[] = [session?.user?.id || ''];
   const className: string | undefined = undefined;
 
   const { data, refetch } = useGetNotifications(users);
@@ -194,19 +194,4 @@ export function NotificationAccordionItem(
 
     </Accordion>
   );
-}
-
-export function NotificationBellWrapper() {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return null;
-  }
-  return <SessionProvider>
-    <NotificationBell />
-  </SessionProvider>
 }
