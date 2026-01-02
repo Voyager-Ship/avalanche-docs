@@ -3,39 +3,38 @@ import { NextResponse } from "next/server";
 type GetNotificationsBody = {
   users: string[];
 };
+export const runtime: "nodejs" = "nodejs";
+
+const baseUrl: string | undefined = process.env.AVALANCHE_METRICS_URL;
+const apiKey: string | undefined = process.env.AVALANCHE_METRICS_API_KEY;
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const body: GetNotificationsBody = (await req.json()) as GetNotificationsBody;
+    const body: GetNotificationsBody =
+      (await req.json()) as GetNotificationsBody;
 
     const users: string[] = Array.isArray(body?.users) ? body.users : [];
 
-    const baseUrl: string | undefined = process.env.AVALANCHE_METRICS_URL;
-    const apiKey: string | undefined = process.env.AVALANCHE_METRICS_API_KEY;
-
     if (!baseUrl) {
-      return NextResponse.json(
-        { error: "Missing AVALANCHE_METRICS_URL" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed" }, { status: 500 });
     }
 
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "Missing AVALANCHE_METRICS_API_KEY" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed" }, { status: 500 });
     }
 
-    const upstream: Response = await fetch(`${baseUrl}/notifications/get/inbox`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-      },
-      body: JSON.stringify({ users }),
-      cache: "no-store",
-    });
+    const upstream: Response = await fetch(
+      `${baseUrl}/notifications/get/inbox`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({ users }),
+        cache: "no-store",
+      }
+    );
 
     if (!upstream.ok) {
       const text: string = await upstream.text();
