@@ -26,7 +26,7 @@ export default function NotificationBell(): React.JSX.Element {
   const { data: session } = useSession() ?? {}
   const [open, setOpen] = useState<boolean>(false);
   const [readedNotifications, setReadedNotifications] = useState<number[]>([]);
-  const users: string[] = [session?.user?.id || ''];
+  const users: string[] = [session?.user?.id || 'cm9m0ywnu0000sbtezudjuret'];
   const className: string | undefined = undefined;
 
   const { data, refetch } = useGetNotifications(users);
@@ -174,8 +174,7 @@ export function NotificationAccordionItem(
       <AccordionItem value={`notif-${notification.id}`} className="border-0 p-0 min-h-[87px]">
         <AccordionTrigger className="rounded-xl px-4 py-3 hover:no-underline hover:bg-accent p-0">
           <div className="flex w-full items-start gap-3">
-            <span className="mt-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
-
+            <span className={`mt-2 inline-flex h-2.5 w-2.5 rounded-full ${ notification.status === 'sent' ? 'bg-red-500' : 'bg-zinc-800'}`} />
             <div className="flex-1 text-lef gap-4">
               <div className="font-medium text-sm">{notification.title}</div>
               {notification.short_description ? (
