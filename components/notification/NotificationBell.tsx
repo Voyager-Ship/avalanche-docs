@@ -23,7 +23,7 @@ export type DbNotification = {
 type NotificationsResponse = Record<string, DbNotification[]>;
 
 export default function NotificationBell(): React.JSX.Element {
-  const { data: session } = useSession()
+  const { data: session } = useSession() ?? {}
   const [open, setOpen] = useState<boolean>(false);
   const [readedNotifications, setReadedNotifications] = useState<number[]>([]);
   const users: string[] = [session?.user?.id || ''];
@@ -203,7 +203,6 @@ export function NotificationBellWrapper() {
     setIsMounted(true);
   }, []);
 
-  // Only render after the component is mounted and SessionProvider is available
   if (!isMounted) {
     return null;
   }
