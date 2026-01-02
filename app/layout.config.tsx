@@ -33,8 +33,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { UserButtonWrapper } from '@/components/login/user-button/UserButtonWrapper';
-import NotificationBell from '@/components/notification/NotificationBell';
-import { SessionProvider } from 'next-auth/react';
+import NotificationBellWrapper from '@/components/notification/NotificationBell';
 
 export const integrationsMenu: LinkItemType = {
   type: 'menu',
@@ -156,14 +155,14 @@ export const stats: LinkItemType = {
       text: "Playground",
       url: "/stats/playground",
       description:
-      "Create and customize multiple charts with real-time chain metrics.",
+        "Create and customize multiple charts with real-time chain metrics.",
     },
     {
       icon: <Logs />,
       text: "Avalanche L1s",
       url: "/stats/overview",
       description:
-      "View the latest metrics for all Avalanche L1s in the network.",
+        "View the latest metrics for all Avalanche L1s in the network.",
       menu: {
         className: 'lg:col-start-2 lg:row-start-1',
       },
@@ -173,7 +172,7 @@ export const stats: LinkItemType = {
       text: "C-Chain",
       url: "/stats/l1/c-chain",
       description:
-      "View the latest metrics for the Avalanche C-Chain.",
+        "View the latest metrics for the Avalanche C-Chain.",
       menu: {
         className: 'lg:col-start-2 lg:row-start-2',
       },
@@ -183,7 +182,7 @@ export const stats: LinkItemType = {
       text: "Primary Network Validators",
       url: "/stats/validators",
       description:
-      "View the latest metrics for the Avalanche Primary Network validators.",
+        "View the latest metrics for the Avalanche Primary Network validators.",
       menu: {
         className: 'lg:col-start-3 lg:row-start-1',
       },
@@ -207,10 +206,10 @@ export const docsMenu: LinkItemType = {
         banner: (
           <div className='-mx-3 -mt-3'>
             <Image
-               src="https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/course-banner/multi-chain-architecture-lFotxOCNkXx0jUw9EGIaxnfdyuTb9G.jpg"
-               alt='Preview'
-               width={900}
-               height={400}
+              src="https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/course-banner/multi-chain-architecture-lFotxOCNkXx0jUw9EGIaxnfdyuTb9G.jpg"
+              alt='Preview'
+              width={900}
+              height={400}
               className='rounded-t-lg object-cover  w-full h-auto'
               style={{
                 maskImage: 'linear-gradient(to bottom,white 60%,transparent)',
@@ -578,11 +577,7 @@ export const userMenu: LinkItemType = {
 
 export const notificationBell: LinkItemType = {
   type: 'custom',
-  children:
-    <SessionProvider>
-      <NotificationBell />
-    </SessionProvider>
-  ,
+  children: <NotificationBellWrapper/>,
   secondary: true,
 };
 

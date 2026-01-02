@@ -6,8 +6,7 @@ import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
 import { useEffect, useMemo, useState } from "react";
-import { useSession } from "next-auth/react";
-import { read } from "node:fs";
+import { SessionProvider, useSession } from "next-auth/react";
 
 export type DbNotification = {
   id: number;
@@ -195,4 +194,10 @@ export function NotificationAccordionItem(
 
     </Accordion>
   );
+}
+
+export function NotificationBellWrapper() {
+  return <SessionProvider>
+    <NotificationBell />
+  </SessionProvider>
 }
