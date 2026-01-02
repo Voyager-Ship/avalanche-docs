@@ -26,7 +26,7 @@ export default function NotificationBell(): React.JSX.Element {
   const { data: session } = useSession() ?? {}
   const [open, setOpen] = useState<boolean>(false);
   const [readedNotifications, setReadedNotifications] = useState<number[]>([]);
-  const users: string[] = [session?.user?.id || ''];
+  const users: string[] = [session?.user?.email || ''];
   const className: string | undefined = undefined;
 
   const { data, refetch } = useGetNotifications(users);
