@@ -37,6 +37,7 @@ export default function GeneralSecureComponent({
   const currentUser = session?.user;
   const hackathonId = searchParams?.hackathon ?? "";
   const invitationLink = searchParams?.invitation;
+  const projectIdParam = searchParams?.project as string | undefined;
   const { toast } = useToast();
   const router = useRouter();
 
@@ -61,6 +62,30 @@ export default function GeneralSecureComponent({
     hackathonId as string,
     invitationLink as string
   );
+  
+  // Load project by ID if projectIdParam exists and project is not already loaded
+  useEffect(() => {
+    const loadProjectById = async () => {
+      if (projectIdParam && !project && isEditing && projectState.status === 'editing') {
+        try {
+          const response = await fetch(`/api/projects/${projectIdParam}`);
+          if (response.ok) {
+            const projectData = await response.json();
+            if (projectData) {
+              setFormData(projectData);
+              dispatch({ type: "SET_PROJECT_ID", payload: projectData.id || "" });
+              if (projectData.hackaton_id) {
+                dispatch({ type: "SET_HACKATHON_ID", payload: projectData.hackaton_id });
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error loading project by ID:", error);
+        }
+      }
+    };
+    loadProjectById();
+  }, [projectIdParam, project, isEditing, projectState.status, setFormData, dispatch]);
   const getAllFields = () => {
     return [
       "project_name",
@@ -130,10 +155,16 @@ export default function GeneralSecureComponent({
   useEffect(() => {
     if (project && isEditing) {
       setFormData(project);
-    
       dispatch({ type: "SET_PROJECT_ID", payload: project.id || "" });
     }
-  }, [project, isEditing, setFormData, dispatch]); 
+  }, [project, isEditing, setFormData, dispatch]);
+  
+  // Load project data from context when loaded by ID
+  useEffect(() => {
+    if (projectState.projectData && isEditing && !project) {
+      setFormData(projectState.projectData);
+    }
+  }, [projectState.projectData, isEditing, project, setFormData]);
 
   const handleStepChange = (newStep: number) => {
     if (newStep >= 1 && newStep <= 3) {
@@ -145,14 +176,25 @@ export default function GeneralSecureComponent({
     try {
       const success = await saveProject(data);
       if (success) {
-        toast({
-          title: "Project submitted",
-          description:
-            "Your project has been successfully submitted. You will be redirected to the project showcase page.",
-        });
-        setTimeout(() => {
-          router.push(`/showcase/${projectId}`);
-        }, 3000);
+        if (hackathonId) {
+          toast({
+            title: "Project submitted",
+            description:
+              "Your project has been successfully submitted. You will be redirected to the project showcase page.",
+          });
+          setTimeout(() => {
+            router.push(`/showcase/${projectId}`);
+          }, 3000);
+        } else {
+          toast({
+            title: "Project submitted",
+            description:
+              "Your project has been successfully submitted. You will be redirected to your profile.",
+          });
+          setTimeout(() => {
+            router.push('/profile#projects');
+          }, 3000);
+        }
       }
     } catch (error) {
       console.error("Error submitting project:", error);
@@ -195,11 +237,13 @@ export default function GeneralSecureComponent({
       {/* Header */}
       <div className="mb-4">
         <h2 className="text-lg sm:text-xl font-semibold break-words">
-          Submit Your Project {hackathon?.title ? " - " + hackathon?.title : ""}
+          {hackathon?.title ? `Submit Your Project - ${hackathon.title}` : "Create New Project"}
         </h2>
         <p className="text-xs sm:text-sm text-gray-400">
-          Finalize and submit your project for review before the deadline.
-          Complete all sections to ensure eligibility.
+          {hackathon?.title 
+            ? "Finalize and submit your project for review before the deadline. Complete all sections to ensure eligibility."
+            : "Fill in all the details to create your project. Complete all sections to save your project."
+          }
         </p>
       </div>
 

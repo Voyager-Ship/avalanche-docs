@@ -110,7 +110,7 @@ export const FormSchema = z
         },
         { message: 'Please enter a valid YouTube or Loom URL' }
       ),
-    tracks: z.array(z.string()).min(1, 'track are required'),
+    tracks: z.array(z.string()).optional().default([]),
     logo_url: z.string().optional(),
     cover_url: z.string().optional(),
     hackaton_id: z.string().optional(),
@@ -187,7 +187,8 @@ export const useSubmissionFormSecure = () => {
     },
   });
 
-  const canSubmit = state.isEditing && state.hackathonId;
+  // Allow submission even without hackathon - projects can be standalone
+  const canSubmit = state.isEditing;
 
   useEffect(() => {
     const step1Fields: (keyof SubmissionForm)[] = [
@@ -248,13 +249,12 @@ export const useSubmissionFormSecure = () => {
   }, [form]);
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
-    if (!state.hackathonId) {
-      throw new Error('No hackathon selected');
-    }
-
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('hackaton_id', state.hackathonId);
+    // hackaton_id is optional - only include if exists
+    if (state.hackathonId) {
+      formData.append('hackaton_id', state.hackathonId);
+    }
     formData.append('user_id', session?.user?.id || '');
 
     try {
@@ -279,9 +279,6 @@ export const useSubmissionFormSecure = () => {
     oldImageUrl: string,
     newFile: File
   ): Promise<string> => {
-    if (!state.hackathonId) {
-      throw new Error('No hackathon selected');
-    }
 
     const fileName = oldImageUrl.split('/').pop();
     if (!fileName) throw new Error('Invalid old image URL');
@@ -290,7 +287,7 @@ export const useSubmissionFormSecure = () => {
       await axios.delete('/api/file', {
         params: {
           fileName,
-          hackaton_id: state.hackathonId,
+          ...(state.hackathonId && { hackaton_id: state.hackathonId }),
           user_id: session?.user?.id
         }
       });
@@ -313,15 +310,18 @@ export const useSubmissionFormSecure = () => {
   }, [state.hackathonId, session?.user?.id, uploadFile, toast]);
 
   const deleteImage = useCallback(async (oldImageUrl: string): Promise<void> => {
-    if (!state.hackathonId) {
-      throw new Error('No hackathon selected');
-    }
-
     const fileName = oldImageUrl.split('/').pop();
     if (!fileName) throw new Error('Invalid old image URL');
 
     try {
-      await fetch(`/api/file?fileName=${encodeURIComponent(fileName)}&hackathon_id=${state.hackathonId}&user_id=${session?.user?.id}`, {
+      const params = new URLSearchParams({
+        fileName: encodeURIComponent(fileName),
+        user_id: session?.user?.id || ''
+      });
+      if (state.hackathonId) {
+        params.append('hackathon_id', state.hackathonId);
+      }
+      await fetch(`/api/file?${params.toString()}`, {
         method: 'DELETE',
       });
 
@@ -416,7 +416,7 @@ export const useSubmissionFormSecure = () => {
         github_repository: data.github_repository?.join(',') ?? "",
         demo_link: data.demo_link?.join(',') ?? "",
         is_winner: false,
-        hackaton_id: state.hackathonId,
+        ...(state.hackathonId && { hackaton_id: state.hackathonId }),
         user_id: session?.user?.id,
       };
       const success = await actions.saveProject(finalData);
@@ -455,22 +455,37 @@ export const useSubmissionFormSecure = () => {
         title: 'Project saved',
         description: 'Your project has been saved successfully.',
       });
+      
+      // Redirect to profile projects section if no hackathon
+      if (!state.hackathonId) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        router.push('/profile#projects');
+      }
     } catch (error) {
       console.error('Error in handleSaveWithoutRoute:', error);
       throw error;
     }
-  }, [form, saveProject, toast]);
+  }, [form, saveProject, toast, router, state.hackathonId]);
 
 
   const handleSave = useCallback(async (): Promise<void> => {
     try {
       await handleSaveWithoutRoute();
-      toast({
-        title: 'Project saved',
-        description: 'Your project has been successfully saved. You will be redirected to the hackathon page.',
-      });
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      router.push(`/hackathons/${state.hackathonId}`);
+      if (state.hackathonId) {
+        toast({
+          title: 'Project saved',
+          description: 'Your project has been successfully saved. You will be redirected to the hackathon page.',
+        });
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        router.push(`/hackathons/${state.hackathonId}`);
+      } else {
+        toast({
+          title: 'Project saved',
+          description: 'Your project has been successfully saved. You will be redirected to your profile.',
+        });
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        router.push('/profile#projects');
+      }
     } catch (error) {
       console.error('Error in handleSave:', error);
       toast({

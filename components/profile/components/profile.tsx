@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -27,7 +27,6 @@ import { countries } from "@/constants/countries";
 import { hsEmploymentRoles } from "@/constants/hs_employment_role";
 import { Github, X, Link2, Wallet, User, FileText, Zap } from "lucide-react";
 import { WalletConnectButton } from "./WalletConnectButton";
-import { UploadModal } from "@/components/ui/upload-modal";
 import { useProfileProgress } from "@/components/profile/components/hooks/useProfileProgress";
 import { SkillsAutocomplete } from "./SkillsAutocomplete";
 import { useProfileForm } from "./hooks/useProfileForm";
@@ -36,11 +35,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { signIn } from "next-auth/react";
 import { ProfileChecklist } from "./ProfileChecklist";
 import { ProfileHeader } from "./ProfileHeader";
+import { NounAvatarConfig } from "./NounAvatarConfig";
+import { NounSeed } from "./NounAvatar";
 
 export default function Profile() {
   const [newSkill, setNewSkill] = useState("");
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isNounAvatarConfigOpen, setIsNounAvatarConfigOpen] = useState(false);
   const [isConnectingGithub, setIsConnectingGithub] = useState(false);
+  const [nounAvatarSeed, setNounAvatarSeed] = useState<NounSeed | null>(null);
+  const [nounAvatarEnabled, setNounAvatarEnabled] = useState(false);
 
   // Use custom hook for all profile logic
   const {
@@ -58,6 +61,30 @@ export default function Profile() {
 
   // Calculate profile completion percentage with debounce (optimized)
   const profileProgress = useProfileProgress(watchedValues, 800);
+
+  // Load Noun avatar data
+  useEffect(() => {
+    async function loadNounAvatar() {
+      try {
+        const response = await fetch("/api/user/noun-avatar");
+        if (response.ok) {
+          const data = await response.json();
+          setNounAvatarSeed(data.seed);
+          setNounAvatarEnabled(data.enabled ?? false);
+        }
+      } catch (error) {
+        console.error("Error loading Noun avatar:", error);
+      }
+    }
+    loadNounAvatar();
+  }, []);
+
+  // Handle Noun avatar save
+  const handleNounAvatarSave = async (seed: NounSeed, enabled: boolean) => {
+    setNounAvatarSeed(seed);
+    setNounAvatarEnabled(enabled);
+    // Optionally refresh the page or update state
+  };
 
   if (isLoading) {
     return (
@@ -92,7 +119,9 @@ export default function Profile() {
             country={watchedValues.country}
             image={form.watch("image")}
             profileProgress={profileProgress}
-            onEditAvatar={() => setIsUploadModalOpen(true)}
+            onEditAvatar={() => setIsNounAvatarConfigOpen(true)}
+            nounAvatarSeed={nounAvatarSeed}
+            nounAvatarEnabled={nounAvatarEnabled}
           />
 
           {/* Right side - Profile Checklist */}
@@ -624,10 +653,12 @@ export default function Profile() {
         </Form>
       </div>
 
-      <UploadModal
-        isOpen={isUploadModalOpen}
-        onOpenChange={setIsUploadModalOpen}
-        onFileSelect={(file) => file && handleFileSelect(file)}
+      <NounAvatarConfig
+        isOpen={isNounAvatarConfigOpen}
+        onOpenChange={setIsNounAvatarConfigOpen}
+        currentSeed={nounAvatarSeed}
+        nounAvatarEnabled={nounAvatarEnabled}
+        onSave={handleNounAvatarSave}
       />
       <Toaster />
     </>

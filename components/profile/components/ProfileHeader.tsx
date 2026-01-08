@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Pencil } from "lucide-react";
-import { AvatarWithProgress } from "./AvatarWithProgress";
+import { NounAvatar, NounSeed } from "./NounAvatar";
 
 interface ProfileHeaderProps {
   name?: string;
@@ -11,6 +11,8 @@ interface ProfileHeaderProps {
   image?: string;
   profileProgress: number;
   onEditAvatar: () => void;
+  nounAvatarSeed?: NounSeed | null;
+  nounAvatarEnabled?: boolean;
 }
 
 export function ProfileHeader({
@@ -20,6 +22,8 @@ export function ProfileHeader({
   image,
   profileProgress,
   onEditAvatar,
+  nounAvatarSeed,
+  nounAvatarEnabled = false,
 }: ProfileHeaderProps) {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
 
@@ -59,14 +63,23 @@ export function ProfileHeader({
           onMouseLeave={() => setIsHoveringAvatar(false)}
           onClick={onEditAvatar}
         >
-          <AvatarWithProgress
-            image={image}
+          {nounAvatarEnabled && nounAvatarSeed ? (
+            <NounAvatar
+              seed={nounAvatarSeed}
+              name={name}
+              profileProgress={profileProgress}
+              size="large"
+              showProgress={true}
+            />
+          ) : (
+            <NounAvatar
+              seed={null}
             name={name}
             profileProgress={profileProgress}
             size="large"
-            showHover={true}
-            onEdit={onEditAvatar}
+              showProgress={true}
           />
+          )}
           {isHoveringAvatar && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity z-30">
               <Pencil className="h-5 w-5 text-white" />

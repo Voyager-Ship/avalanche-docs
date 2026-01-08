@@ -27,13 +27,18 @@ export function ProjectCard({ project, isFromProfile = false }: Props) {
   const [isAssignBadgeOpen, setIsAssignBadgeOpen] = useState(false);
   
   const handleCardClick = (e: React.MouseEvent) => {
-    if (isFromProfile) return;
     if (confirmOpen || isAssignBadgeOpen) return;
     const isInteractive = (e.target as HTMLElement).closest(
       '[data-interactive="true"]'
     );
     if (isInteractive) return;
-    router.push(`/showcase/${project.id}`);
+    
+    if (isFromProfile) {
+      // Redirect to project submission form with project ID
+      router.push(`/hackathons/project-submission?project=${project.id}`);
+    } else {
+      router.push(`/showcase/${project.id}`);
+    }
   };
   return (
     <Card
