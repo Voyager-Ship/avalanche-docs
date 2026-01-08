@@ -188,7 +188,9 @@ function normalizeUser(user: Partial<User>): User {
     github: user.github ?? null,
     wallet: user.wallet ?? null,
     skills: user.skills ?? [],
-  };
+    noun_avatar_seed: (user as any).noun_avatar_seed ?? null,
+    noun_avatar_enabled: (user as any).noun_avatar_enabled ?? false,
+  } as User;
 }
 export async function getProject(projectId: string): Promise<Project | null> {
   const projectData = await prisma.project.findUnique({
