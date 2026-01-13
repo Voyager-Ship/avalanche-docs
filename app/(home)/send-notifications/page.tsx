@@ -13,6 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const hackathons = ['Hackathon A', 'Hackathon B', 'Hackathon C', 'Hackathon D', 'Hackathon E', 'Hackathon F', 'Hackathon G', 'Hackathon H'];
 
 export default function SendNotificationsPage() {
 
@@ -45,7 +49,7 @@ export default function SendNotificationsPage() {
             <h1 className="text-zinc-50 text-xl font-medium">
               Description
             </h1>
-            <Input placeholder="Type a description" />
+            <Textarea placeholder="Type a description" />
           </div>
           <div className="flex flex-col gap-2">
             <h2 className="text-zinc-50 text-xl font-medium">Audience</h2>
@@ -66,8 +70,31 @@ export default function SendNotificationsPage() {
                         <TabsTrigger value="custom">Custom</TabsTrigger>
                       </TabsList>
                       <TabsContent value="all">With this option, the notification will be sent to all users</TabsContent>
-                      <TabsContent value="hackathons">With this option, the notification will be sent to all users registered in the selected hackathons.</TabsContent>
-                      <TabsContent value="custom">With this option, the notification will be sent to the users corresponding to the emails you add.</TabsContent>
+                      <TabsContent value="hackathons">
+                        <div className="flex flex-col gap-4">
+                          <p>
+                            With this option, the notification will be sent to all users registered in the selected hackathons.
+                          </p>
+                          <div className="custom-scroll max-h-[160px] overflow-x-hidden overflow-y-auto flex flex-col gap-2">
+                            {
+                              hackathons.map((hackathon, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <Checkbox onCheckedChange={() => { }} />
+                                  <p>{hackathon}</p>
+                                </div>
+                              ))
+                            }
+                          </div>
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="custom">
+                        <div className="flex flex-col gap-2">
+                          <p>
+                            Enter the email addresses of the users you wish to send notifications to, separated by commas.
+                          </p>
+                          <Input type="email" placeholder="Type emails" />
+                        </div>
+                      </TabsContent>
                     </Tabs>
                   </DialogDescription>
                 </DialogHeader>
