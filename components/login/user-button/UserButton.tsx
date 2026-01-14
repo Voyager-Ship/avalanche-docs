@@ -14,10 +14,12 @@ import SignOutComponent from '../sign-out/SignOut';
 import { useState, useMemo } from 'react';
 import { CircleUserRound } from 'lucide-react';
 import { Separator } from '@radix-ui/react-dropdown-menu';
+import { useLoginModalTrigger } from '@/hooks/useLoginModal';
 export function UserButton() {
   const { data: session, status } = useSession() ?? {};
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const isAuthenticated = status === 'authenticated';
+  const { openLoginModal } = useLoginModalTrigger();
   
   // Dividir el correo por @ para evitar cortes no deseados
   const formattedEmail = useMemo(() => {
@@ -126,13 +128,15 @@ export function UserButton() {
           size='icon'
           variant='ghost'
           className='rounded-full h-10 w-10 ml-4 cursor-pointer p-0'
+          onClick={() => {
+            const currentUrl = typeof window !== 'undefined' ? window.location.href : '/';
+            openLoginModal(currentUrl);
+          }}
         >
-          <Link href='/login'>
-            <CircleUserRound
-              className='!h-8 !w-8 stroke-zinc-900 dark:stroke-white'
-              strokeWidth={0.85}
-            />
-          </Link>
+          <CircleUserRound
+            className='!h-8 !w-8 stroke-zinc-900 dark:stroke-white'
+            strokeWidth={0.85}
+          />
         </Button>
       )}
 

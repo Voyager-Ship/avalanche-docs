@@ -6,9 +6,15 @@ import { createGlacierJWT } from "@/lib/glacier-jwt";
 export default async function Page() {
   const session = await getAuthSession();
 
-  // If not authenticated, redirect to login
+  // If not authenticated, the middleware and AutoLoginModalTrigger will handle showing the login modal
+  // This page will still render but TokenManagement will need the session
   if (!session) {
-    redirect("/login?callbackUrl=/console/utilities/data-api-keys");
+    // Return a placeholder - the login modal will be shown by AutoLoginModalTrigger
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   // Generate asymmetric JWT for Glacier API

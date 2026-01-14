@@ -12,6 +12,8 @@ import { LayoutWrapper } from "@/app/layout-wrapper.client";
 import { NavbarDropdownInjector } from "@/components/navigation/navbar-dropdown-injector";
 import { WalletProvider } from "@/components/toolbox/providers/WalletProvider";
 import { Terms } from "@/components/login/terms";
+import { LoginModal } from "@/components/login/LoginModal";
+import { AutoLoginModalTrigger } from "@/components/login/AutoLoginModalTrigger";
 
 export default function Layout({
   children,
@@ -22,7 +24,9 @@ export default function Layout({
     <SessionProvider>
       <Suspense fallback={null}>
         <RedirectIfNewUser />
+        <AutoLoginModalTrigger />
       </Suspense>
+      <LoginModal />
       <NavbarDropdownInjector />
       <WalletProvider>
         <LayoutWrapper baseOptions={baseOptions}>

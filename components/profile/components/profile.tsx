@@ -447,31 +447,31 @@ export default function Profile() {
                           <div className="space-y-2">
                             {field.value?.map((walletAddress, index) => (
                               <div key={index} className="flex items-center gap-2">
-                                <FormControl>
-                                  <Input
+                        <FormControl>
+                          <Input
                                     value={walletAddress}
                                     readOnly
-                                    className="font-mono text-sm"
+                            className="font-mono text-sm"
                                     placeholder="0x... (Wallet address)"
-                                  />
-                                </FormControl>
-                                <Button
-                                  type="button"
+                          />
+                        </FormControl>
+                          <Button
+                            type="button"
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => handleRemoveWallet(index)}
-                                >
+                          >
                                   <X className="h-4 w-4" />
-                                </Button>
+                          </Button>
                               </div>
                             ))}
-                            <div className="flex-shrink-0">
-                              <WalletConnectButton
-                                onWalletConnected={(address) => {
+                          <div className="flex-shrink-0">
+                            <WalletConnectButton
+                              onWalletConnected={(address) => {
                                   handleAddWallet(address);
-                                }}
+                              }}
                                 currentAddress={field.value?.[field.value.length - 1]}
-                              />
+                            />
                             </div>
                           </div>
                         </FormControl>
