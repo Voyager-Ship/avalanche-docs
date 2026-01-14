@@ -30,7 +30,7 @@ export default function NotificationBell(): React.JSX.Element {
   const users: string[] = [session?.user?.id || ''];
   const className: string | undefined = undefined;
 
-  const { data, refetch } = useGetNotifications(users, session?.accessToken ?? '');
+  const { data, refetch } = useGetNotifications(users, '');
 
   const notifications: DbNotification[] = useMemo((): DbNotification[] => {
     const payload: NotificationsResponse | null = (data ?? null) as NotificationsResponse | null;
@@ -51,7 +51,7 @@ export default function NotificationBell(): React.JSX.Element {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "authorization": session?.accessToken ?? ''
+            "authorization": ''
           },
           body: JSON.stringify(readedNotifications),
         });

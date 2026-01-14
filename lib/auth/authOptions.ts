@@ -1,4 +1,4 @@
-import { NextAuthOptions, DefaultSession, Session, User, Account } from 'next-auth';
+import { NextAuthOptions, DefaultSession, Session, User } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import GithubProvider from 'next-auth/providers/github';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -13,7 +13,6 @@ import { BadgeCategory } from '@/server/services/badge';
 
 declare module 'next-auth' {
   export interface Session {
-    accessToken?: string;
     user: {
       id: string;
       avatar?: string;
@@ -164,7 +163,7 @@ export const AuthOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user, account }): Promise<JWT> {
+    async jwt({ token, user }: { token: JWT; user?: User }): Promise<JWT> {
       let dbUser = null;
 
       if (user?.email) {
@@ -175,10 +174,6 @@ export const AuthOptions: NextAuthOptions = {
         dbUser = await prisma.user.findUnique({
           where: { email: token.email },
         });
-      }
-
-      if (account) {
-        token.accessToken = account.access_token
       }
 
       if (dbUser) {
@@ -192,11 +187,10 @@ export const AuthOptions: NextAuthOptions = {
       } else if (user?.email) {
         token.email = user.email;
         token.name = user.name ?? '';
-        token.access
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (!session.user) {
         session.user = { name: '', email: '', image: '', id: '', custom_attributes: [], is_new_user: true };
       }
@@ -207,7 +201,7 @@ export const AuthOptions: NextAuthOptions = {
       session.user.name = token.name ?? '';
       session.user.email = token.email ?? '';
       session.user.is_new_user = token.is_new_user ? true : false;
-      return { ...session, accessToken: token.accessToken };
+      return session
     },
     async redirect({ url, baseUrl }) {
       // If the URL is relative, convert it to absolute
