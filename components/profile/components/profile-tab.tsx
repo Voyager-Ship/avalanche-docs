@@ -139,10 +139,10 @@ export default function ProfileTab({ achievements }: ProfileTabProps) {
               <div className="border-t border-zinc-200 dark:border-zinc-800"></div>
 
               {/* Tabs Navigation */}
-              <TabsList className="flex flex-col h-auto w-full  p-1">
+              <TabsList className="flex flex-col h-auto w-full p-1 bg-zinc-50 dark:bg-zinc-900">
                 <TabsTrigger 
                   value="personal" 
-                  className="w-full justify-start dark:data-[state=active]:bg-zinc-950"
+                  className="w-full justify-start  dark:data-[state=active]:bg-zinc-950"
                 >
                   Personal
                 </TabsTrigger>
@@ -154,13 +154,13 @@ export default function ProfileTab({ achievements }: ProfileTabProps) {
                 </TabsTrigger>
                 <TabsTrigger 
                   value="achievements" 
-                  className="w-full justify-start dark:data-[state=active]:bg-zinc-950"
+                  className="w-full justify-start  dark:data-[state=active]:bg-zinc-950"
                 >
                   Achievements
                 </TabsTrigger>
                 <TabsTrigger 
                   value="settings" 
-                  className="w-full justify-start dark:data-[state=active]:bg-zinc-950"
+                  className="w-full justify-start  dark:data-[state=active]:bg-zinc-950"
                 >
                   Settings
                 </TabsTrigger>
@@ -170,19 +170,19 @@ export default function ProfileTab({ achievements }: ProfileTabProps) {
 
           {/* Right Content - Tab Content */}
           <div className="flex-1 min-w-0">
-            <TabsContent value="personal" className="mt-0">
+            <TabsContent value="personal" className="mt-1">
               <Profile />
             </TabsContent>
 
-            <TabsContent value="projects" className="mt-0">
+            <TabsContent value="projects" className="mt-1">
               <Projects />
             </TabsContent>
 
-            <TabsContent value="achievements" className="mt-0">
+            <TabsContent value="achievements" className="mt-1">
               {achievements}
             </TabsContent>
 
-            <TabsContent value="settings" className="mt-0">
+            <TabsContent value="settings" className="mt-1">
               <Settings />
             </TabsContent>
           </div>
