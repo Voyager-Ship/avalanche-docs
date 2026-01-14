@@ -1,4 +1,4 @@
-import { NextAuthOptions, DefaultSession, Session, User } from 'next-auth';
+import { NextAuthOptions, DefaultSession, Session, User, Account } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import GithubProvider from 'next-auth/providers/github';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -13,6 +13,7 @@ import { BadgeCategory } from '@/server/services/badge';
 
 declare module 'next-auth' {
   export interface Session {
+    accessToken?: string;
     user: {
       id: string;
       avatar?: string;
@@ -109,21 +110,21 @@ export const AuthOptions: NextAuthOptions = {
           //   },
           // }
           user = {
-            email, 
-            notification_email: email, 
-            name: '', 
-            image: '', 
-            last_login: new Date(), 
-            authentication_mode: '', 
+            email,
+            notification_email: email,
+            name: '',
+            image: '',
+            last_login: new Date(),
+            authentication_mode: '',
             bio: '',
-            custom_attributes: [], 
-            id: '', 
-            integration: '', 
-            notifications: null, 
-            profile_privacy: null, 
-            social_media: [], 
-            telegram_user: '', 
-            user_name: '', 
+            custom_attributes: [],
+            id: '',
+            integration: '',
+            notifications: null,
+            profile_privacy: null,
+            social_media: [],
+            telegram_user: '',
+            user_name: '',
             created_at: new Date(),
             country: null,
             user_type: null,
@@ -145,23 +146,23 @@ export const AuthOptions: NextAuthOptions = {
       try {
         const dbUser = await upsertUser(user, account, profile);
         user.id = dbUser.id;
- 
+
         if (account?.provider == 'github') {
           await badgeAssignmentService.assignBadge({
             userId: dbUser.id,
             requirementId: 'GitHub',
             category: BadgeCategory.requirement,
           });
-         
+
         }
-        
+
         return true;
       } catch (error) {
         console.error('Error processing user:', error);
         return false;
       }
     },
-    async jwt({ token, user }: { token: JWT; user?: User }): Promise<JWT> {
+    async jwt({ token, user, account }): Promise<JWT> {
       let dbUser = null;
 
       if (user?.email) {
@@ -172,6 +173,10 @@ export const AuthOptions: NextAuthOptions = {
         dbUser = await prisma.user.findUnique({
           where: { email: token.email },
         });
+      }
+
+      if (account) {
+        token.accessToken = account.access_token
       }
 
       if (dbUser) {
@@ -185,11 +190,11 @@ export const AuthOptions: NextAuthOptions = {
       } else if (user?.email) {
         token.email = user.email;
         token.name = user.name ?? '';
+        token.access
       }
-
       return token;
     },
-    async session({ session, token }: { session: Session; token: JWT }) {
+    async session({ session, token }) {
       if (!session.user) {
         session.user = { name: '', email: '', image: '', id: '', custom_attributes: [], is_new_user: true };
       }
@@ -200,7 +205,7 @@ export const AuthOptions: NextAuthOptions = {
       session.user.name = token.name ?? '';
       session.user.email = token.email ?? '';
       session.user.is_new_user = token.is_new_user ? true : false;
-      return session;
+      return { ...session, accessToken: token.accessToken };
     },
     async redirect({ url, baseUrl }) {
       // If the URL is relative, convert it to absolute
