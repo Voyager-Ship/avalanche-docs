@@ -21,6 +21,38 @@ const hackathons = ['Hackathon A', 'Hackathon B', 'Hackathon C', 'Hackathon D', 
 export default function SendNotificationsPage() {
 
   const [audienceTab, setAudienceTab] = useState<string>("all");
+  const [selectedHackathons, setSelectedHackathons] = useState<string[]>([]);
+  const send = async (): Promise<void> => {
+    try {
+      const response: Response = await fetch("/api/notifications/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notifications: [
+            {
+              "audience": {
+                "all": audienceTab === "all",
+                "hackathons": selectedHackathons,
+                "users": ''
+              },
+              "type": "n",
+              "title": "",
+              "short_description": "",
+              "content": "",
+              "content_type": ""
+            }
+          ]
+        }),
+      });
+
+      if (!response.ok) {
+        const text: string = await response.text();
+        throw new Error(text || "Failed to create notifications");
+      }
+    } catch (err: unknown) {
+      console.error(err);
+    }
+  };
 
   return (
     <main className='container py-8 mx-auto min-h-[calc(100vh-92px)] lg:min-h-0 flex items-center justify-center relative px-2 pb-6 lg:px-14 '>
@@ -47,9 +79,9 @@ export default function SendNotificationsPage() {
           </div>
           <div className="flex flex-col gap-2">
             <h1 className="text-zinc-50 text-xl font-medium">
-              Description
+              Content
             </h1>
-            <Textarea placeholder="Type a description" />
+            <Textarea placeholder="Type a content" />
           </div>
           <div className="flex flex-col gap-2">
             <h2 className="text-zinc-50 text-xl font-medium">Audience</h2>
@@ -63,7 +95,7 @@ export default function SendNotificationsPage() {
                 <DialogHeader>
                   <DialogTitle>Select your notification audience</DialogTitle>
                   <DialogDescription>
-                    <Tabs defaultValue="all" className="w-full flex items-center my-2">
+                    <Tabs value={audienceTab} onValueChange={setAudienceTab} className="w-full flex items-center my-2">
                       <TabsList>
                         <TabsTrigger value="all">All</TabsTrigger>
                         <TabsTrigger value="hackathons">Hackathons</TabsTrigger>
@@ -79,7 +111,7 @@ export default function SendNotificationsPage() {
                             {
                               hackathons.map((hackathon, index) => (
                                 <div key={index} className="flex items-center gap-2">
-                                  <Checkbox onCheckedChange={() => { }} />
+                                  <Checkbox onCheckedChange={() => setSelectedHackathons(prev => prev.includes(hackathon) ? prev.filter(h => h !== hackathon) : [...prev, hackathon])} />
                                   <p>{hackathon}</p>
                                 </div>
                               ))

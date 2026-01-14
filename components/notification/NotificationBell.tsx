@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
 import { useEffect, useMemo, useState } from "react";
-import { SessionProvider, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 export type DbNotification = {
   id: number;
@@ -19,7 +19,8 @@ export type DbNotification = {
   template: string;
   status: string;
 };
-
+const metricsBaseUrl: string | undefined =
+  process.env.NEXT_PUBLIC_AVALANCHE_METRICS_URL;
 type NotificationsResponse = Record<string, DbNotification[]>;
 
 export default function NotificationBell(): React.JSX.Element {
@@ -29,7 +30,7 @@ export default function NotificationBell(): React.JSX.Element {
   const users: string[] = [session?.user?.id || 'cm9m0ywnu0000sbtezudjuret'];
   const className: string | undefined = undefined;
 
-  const { data, refetch } = useGetNotifications(users);
+  const { data, refetch } = useGetNotifications(users, session?.accessToken ?? '');
 
   const notifications: DbNotification[] = useMemo((): DbNotification[] => {
     const payload: NotificationsResponse | null = (data ?? null) as NotificationsResponse | null;
@@ -46,9 +47,12 @@ export default function NotificationBell(): React.JSX.Element {
 
     const fetchNotifications = async (): Promise<void> => {
       try {
-        const response: Response = await fetch("/api/notifications/read", {
+        const response: Response = await fetch(`${metricsBaseUrl}/notifications/read`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "authorization": session?.accessToken ?? ''
+          },
           body: JSON.stringify(readedNotifications),
         });
 
