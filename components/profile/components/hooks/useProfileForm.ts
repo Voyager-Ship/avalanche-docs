@@ -29,7 +29,7 @@ export const profileSchema = z.object({
   company_name: z.string().optional(),
   role: z.string().optional(),
   github: z.string().optional(),
-  wallet: z.string().optional(),
+  wallet: z.array(z.string()).optional().default([]),
   socials: z.array(z.string()).default([]),
   skills: z.array(z.string()).default([]),
   notifications: z.boolean().default(false),
@@ -71,7 +71,7 @@ export function useProfileForm() {
       company_name: "",
       role: "",
       github: "",
-      wallet: "",
+      wallet: [],
       socials: [],
       skills: [],
       notifications: false,
@@ -117,7 +117,7 @@ export function useProfileForm() {
             company_name: profile.user_type?.company_name || "",
             role: profile.user_type?.role || "",
             github: profile.github || "",
-            wallet: profile.wallet || "",
+            wallet: Array.isArray(profile.wallet) ? profile.wallet : (profile.wallet ? [profile.wallet] : []),
             socials: profile.socials || [],
             skills: profile.skills || [],
             notifications: profile.notifications || false,
@@ -228,12 +228,19 @@ export function useProfileForm() {
         employee_role,
         student_institution, 
         company_name, 
-        role, 
+        role,
+        wallet,
         ...restData 
       } = data;
       
+      // Clean wallet array: remove empty strings and duplicates
+      const cleanedWallets = Array.isArray(wallet) 
+        ? [...new Set(wallet.filter(w => w && w.trim() !== ""))] 
+        : [];
+      
       const profileData = {
         ...restData,
+        wallet: cleanedWallets.length > 0 ? cleanedWallets : [],
         image: imageUrl,
         user_type: {
           is_student,
@@ -322,13 +329,19 @@ export function useProfileForm() {
     // Only format validations - no required fields
     let hasErrors = false;
 
-    // Validate wallet format if provided
-    if (data.wallet && data.wallet.trim() !== "" && !/^0x[a-fA-F0-9]{40}$/.test(data.wallet)) {
-      form.setError("wallet", {
-        type: "manual",
-        message: "Invalid Ethereum address format (must be 0x + 40 hex characters)",
-      });
-      hasErrors = true;
+    // Validate wallet format if provided (validate each wallet in the array)
+    if (data.wallet && Array.isArray(data.wallet) && data.wallet.length > 0) {
+      const invalidWallets = data.wallet.filter(
+        (wallet) => wallet && wallet.trim() !== "" && !/^0x[a-fA-F0-9]{40}$/.test(wallet.trim())
+      );
+      
+      if (invalidWallets.length > 0) {
+        form.setError("wallet", {
+          type: "manual",
+          message: `Invalid Ethereum address format: ${invalidWallets.length} wallet(s) are invalid (must be 0x + 40 hex characters)`,
+        });
+        hasErrors = true;
+      }
     }
 
     if (hasErrors) {
@@ -380,12 +393,19 @@ export function useProfileForm() {
         employee_role,
         student_institution, 
         company_name, 
-        role, 
+        role,
+        wallet,
         ...restData 
       } = data;
       
+      // Clean wallet array: remove empty strings and duplicates
+      const cleanedWallets = Array.isArray(wallet) 
+        ? [...new Set(wallet.filter(w => w && w.trim() !== ""))] 
+        : [];
+      
       const profileData = {
         ...restData,
+        wallet: cleanedWallets.length > 0 ? cleanedWallets : [],
         image: imageUrl, // Use uploaded image or existing one
         user_type: {
           is_student,
@@ -443,7 +463,7 @@ export function useProfileForm() {
         company_name: updatedProfile.user_type?.company_name || "",
         role: updatedProfile.user_type?.role || "",
         github: updatedProfile.github || "",
-        wallet: updatedProfile.wallet || "",
+        wallet: Array.isArray(updatedProfile.wallet) ? updatedProfile.wallet : (updatedProfile.wallet ? [updatedProfile.wallet] : []),
         socials: updatedProfile.socials || [],
         skills: updatedProfile.skills || [],
         notifications: updatedProfile.notifications || false,
@@ -492,6 +512,24 @@ export function useProfileForm() {
     setValue("socials", currentSocials.filter((_, i) => i !== index), { shouldDirty: true });
   };
 
+  // Wallet handlers
+  const handleAddWallet = (address: string) => {
+    const currentWallets = watchedValues.wallet || [];
+    // Validar formato antes de agregar
+    if (address && address.trim() !== "" && /^0x[a-fA-F0-9]{40}$/.test(address.trim())) {
+      const trimmedAddress = address.trim();
+      // Evitar duplicados
+      if (!currentWallets.includes(trimmedAddress)) {
+        setValue("wallet", [...currentWallets, trimmedAddress], { shouldDirty: true });
+      }
+    }
+  };
+
+  const handleRemoveWallet = (index: number) => {
+    const currentWallets = watchedValues.wallet || [];
+    setValue("wallet", currentWallets.filter((_, i) => i !== index), { shouldDirty: true });
+  };
+
   return {
     form,
     watchedValues,
@@ -503,6 +541,8 @@ export function useProfileForm() {
     handleRemoveSkill,
     handleAddSocial,
     handleRemoveSocial,
+    handleAddWallet,
+    handleRemoveWallet,
     onSubmit: form.handleSubmit(onSubmit),
   };
 }

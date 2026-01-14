@@ -49,6 +49,8 @@ export default function Profile() {
     handleRemoveSkill,
     handleAddSocial,
     handleRemoveSocial,
+    handleAddWallet,
+    handleRemoveWallet,
     onSubmit,
   } = useProfileForm();
 
@@ -69,7 +71,7 @@ export default function Profile() {
     profilePicture: !!watchedValues.image,
     country: !!watchedValues.country,
     company: !!(watchedValues.founder_company_name || watchedValues.employee_company_name),
-    wallet: !!watchedValues.wallet,
+    wallet: Array.isArray(watchedValues.wallet) ? watchedValues.wallet.length > 0 : !!watchedValues.wallet,
     teamName: false, // TODO: Agregar campo team_name cuando esté disponible
   };
 
@@ -433,44 +435,50 @@ export default function Profile() {
                   }}
                 />
 
-                {/* Wallet */}
+                {/* Wallets */}
                 <FormField
                   control={form.control}
                   name="wallet"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center gap-4">
-                      <FormLabel className="w-32 flex-shrink-0">Wallet</FormLabel>
-                      <div className="flex-1 flex items-center gap-2">
+                    <FormItem className="flex flex-row items-start gap-4">
+                      <FormLabel className="w-32 flex-shrink-0 pt-2">Wallets</FormLabel>
+                      <div className="flex-1">
                         <FormControl>
-                          <Input
-                            placeholder="0x... (Paste your 0x wallet for rewards)"
-                            {...field}
-                            className="font-mono text-sm"
-                            readOnly={true}
-                          />
-                        </FormControl>
-                        {field.value ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="default"
-                            className="flex-shrink-0"
-                            onClick={() => {
-                              field.onChange("");
-                            }}
-                          >
-                            Disconnect
-                          </Button>
-                        ) : (
-                          <div className="flex-shrink-0">
-                            <WalletConnectButton
-                              onWalletConnected={(address) => {
-                                field.onChange(address);
-                              }}
-                              currentAddress={field.value}
-                            />
+                          <div className="space-y-2">
+                            {field.value?.map((walletAddress, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <FormControl>
+                                  <Input
+                                    value={walletAddress}
+                                    readOnly
+                                    className="font-mono text-sm"
+                                    placeholder="0x... (Wallet address)"
+                                  />
+                                </FormControl>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleRemoveWallet(index)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <div className="flex-shrink-0">
+                              <WalletConnectButton
+                                onWalletConnected={(address) => {
+                                  handleAddWallet(address);
+                                }}
+                                currentAddress={field.value?.[field.value.length - 1]}
+                              />
+                            </div>
                           </div>
-                        )}
+                        </FormControl>
+                        <FormMessage />
+                        <FormDescription className="text-sm text-zinc-500 dark:text-zinc-400">
+                          Connect multiple wallets to receive rewards. Each wallet address must be a valid Ethereum address (0x + 40 hex characters).
+                        </FormDescription>
                       </div>
                     </FormItem>
                   )}
