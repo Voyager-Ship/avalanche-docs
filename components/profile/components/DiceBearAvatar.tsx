@@ -134,7 +134,7 @@ export function DiceBearAvatar({
   const sizeConfig = {
     small: {
       container: "h-10 w-10",
-      avatar: "h-8 w-8",
+      avatar: "h-12 w-12",
       textSize: "text-lg",
       svg: 40,
       center: 20,

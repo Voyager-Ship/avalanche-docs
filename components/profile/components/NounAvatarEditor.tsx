@@ -117,10 +117,7 @@ export function NounAvatarEditor({
       }
 
       await onSave(seed, true);
-      toast({
-        title: "Avatar saved!",
-        description: "Your Noun avatar has been updated.",
-      });
+
     } catch (error) {
       console.error("Error saving avatar:", error);
       toast({

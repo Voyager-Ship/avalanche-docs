@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -44,7 +44,11 @@ export function useProfileForm() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
   const formData = useRef(new FormData());
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialLoadRef = useRef(true);
+  const lastSavedDataRef = useRef<string>("");
 
   // Initialize form with react-hook-form and Zod
   const form = useForm<ProfileFormValues>({
@@ -76,7 +80,7 @@ export function useProfileForm() {
     },
   });
 
-  const { watch, setValue } = form;
+  const { watch, setValue, formState } = form;
   const watchedValues = watch();
 
   // Load profile data on component mount
@@ -122,6 +126,14 @@ export function useProfileForm() {
           };
 
           form.reset(formData);
+          
+          // Update last saved data reference
+          lastSavedDataRef.current = JSON.stringify(formData);
+          
+          // Mark initial load as complete after a short delay
+          setTimeout(() => {
+            isInitialLoadRef.current = false;
+          }, 500);
         }
       } catch (error) {
         console.error('Error loading profile:', error);
@@ -132,6 +144,10 @@ export function useProfileForm() {
         });
       } finally {
         setIsLoading(false);
+        // Mark initial load as complete even on error
+        setTimeout(() => {
+          isInitialLoadRef.current = false;
+        }, 500);
       }
     }
 
@@ -154,6 +170,143 @@ export function useProfileForm() {
     const imageUrl = URL.createObjectURL(file);
     form.setValue("image", imageUrl, { shouldDirty: true });
   };
+
+  // Auto-save function (silent, no toast notifications)
+  const autoSave = useCallback(async (data: ProfileFormValues, skipImageUpload = false) => {
+    if (!session?.user?.id || isInitialLoadRef.current) {
+      return;
+    }
+
+    // Serialize current data for comparison
+    const currentDataString = JSON.stringify(data);
+    
+    // Skip if data hasn't changed (compare serialized data)
+    if (currentDataString === lastSavedDataRef.current) {
+      return;
+    }
+
+    // Skip if form is not dirty (check after data comparison to avoid unnecessary checks)
+    if (!formState.isDirty) {
+      return;
+    }
+
+    setIsAutoSaving(true);
+
+    try {
+      // Only handle image upload if explicitly requested (for manual saves)
+      let imageUrl = data.image;
+
+      if (!skipImageUpload) {
+        const hasImageChanged = formData.current.has("file");
+        if (hasImageChanged) {
+          try {
+            const imageResponse = await fetch("/api/file", {
+              method: "POST",
+              body: formData.current,
+            });
+
+            if (imageResponse.ok) {
+              const imageData = await imageResponse.json();
+              imageUrl = imageData.url;
+              formData.current = new FormData();
+            }
+          } catch (imageError) {
+            console.error("Image upload error during auto-save:", imageError);
+            // Continue with existing image URL if upload fails
+          }
+        }
+      }
+
+      // Build user_type object to send as JSON
+      const { 
+        is_student, 
+        is_founder, 
+        is_employee, 
+        is_enthusiast, 
+        founder_company_name,
+        employee_company_name,
+        employee_role,
+        student_institution, 
+        company_name, 
+        role, 
+        ...restData 
+      } = data;
+      
+      const profileData = {
+        ...restData,
+        image: imageUrl,
+        user_type: {
+          is_student,
+          is_founder,
+          is_employee,
+          is_enthusiast,
+          ...(founder_company_name && { founder_company_name }),
+          ...(employee_company_name && { employee_company_name }),
+          ...(employee_role && { employee_role }),
+          ...(student_institution && { student_institution }),
+          ...(company_name && { company_name }),
+          ...(role && { role }),
+        }
+      };
+
+      const response = await fetch(`/api/profile/extended/${session.user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to auto-save profile');
+      }
+      
+      const updatedProfile = await response.json();
+      
+      // Update last saved data reference with the data we just sent
+      // This ensures we track what was actually saved without resetting the form
+      lastSavedDataRef.current = currentDataString;
+      
+      // DO NOT reset the form during auto-save - this would cause the form to "reload"
+      // and lose the user's current edits (like checkboxes being unchecked)
+      // The form will remain "dirty" but that's okay - it will auto-save again if needed
+    } catch (error) {
+      console.error("Error auto-saving profile:", error);
+      // Silently fail - don't show toast for auto-save errors
+    } finally {
+      setIsAutoSaving(false);
+    }
+  }, [session?.user?.id, session?.user?.email, form, formState.isDirty]);
+
+  // Debounced auto-save effect - watches form values and triggers save after user stops editing
+  useEffect(() => {
+    // Skip auto-save during initial load
+    if (isInitialLoadRef.current || !formState.isDirty || isLoading || isAutoSaving) {
+      return;
+    }
+
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Set new timeout for auto-save (1.5 seconds after user stops typing)
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      // Get current values at the time of save (not from watchedValues to avoid stale closures)
+      // This ensures we get the latest values without causing re-renders
+      const currentValues = form.getValues();
+      // Run auto-save asynchronously without blocking
+      autoSave(currentValues, true).catch((error) => {
+        // Silently handle errors - don't interrupt user
+        console.error("Auto-save error:", error);
+      });
+    }, 1500);
+
+    // Cleanup timeout on unmount or when values change again
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [watchedValues, formState.isDirty, isLoading, isAutoSaving, autoSave, form]);
 
   // Handle form submission
   const onSubmit = async (data: ProfileFormValues) => {
@@ -299,6 +452,9 @@ export function useProfileForm() {
       };
 
       form.reset(newFormData);
+      
+      // Update last saved data reference
+      lastSavedDataRef.current = JSON.stringify(newFormData);
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
@@ -341,6 +497,7 @@ export function useProfileForm() {
     watchedValues,
     isLoading,
     isSaving,
+    isAutoSaving,
     handleFileSelect,
     handleAddSkill,
     handleRemoveSkill,

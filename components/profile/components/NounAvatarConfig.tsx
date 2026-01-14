@@ -209,10 +209,7 @@ export function NounAvatarConfig({
       }
 
       await onSave(seedToSave, true);
-      toast({
-        title: "Avatar saved!",
-        description: "Your Noun avatar has been updated.",
-      });
+
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving avatar:", error);

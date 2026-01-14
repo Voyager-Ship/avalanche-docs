@@ -7,10 +7,11 @@ import { DiceBearAvatar, AvatarSeed } from "./DiceBearAvatar";
 interface ProfileHeaderProps {
   name?: string;
   username?: string;
+  email?: string;
   country?: string;
   image?: string;
-  profileProgress: number;
   onEditAvatar: () => void;
+  onEditName?: () => void;
   nounAvatarSeed?: AvatarSeed | null;
   nounAvatarEnabled?: boolean;
 }
@@ -18,47 +19,24 @@ interface ProfileHeaderProps {
 export function ProfileHeader({
   name,
   username,
+  email,
   country,
   image,
-  profileProgress,
   onEditAvatar,
+  onEditName,
   nounAvatarSeed,
   nounAvatarEnabled = false,
 }: ProfileHeaderProps) {
   const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
-
-  // Get progress color based on percentage for the horizontal progress bar
-  const getProgressColor = () => {
-    if (profileProgress < 40) {
-      return {
-        tailwindClass: "bg-red-500"
-      };
-    } else if (profileProgress <= 80) {
-      return {
-        tailwindClass: "bg-[#FCD34D]"
-      };
-    } else {
-      return {
-        tailwindClass: "bg-[#4D7C0F]"
-      };
-    }
-  };
-
-  const progressColor = getProgressColor();
+  const [isHoveringName, setIsHoveringName] = useState(false);
 
   return (
-    <div className="flex flex-col items-center lg:items-start rounded-lg p-4">
-      {/* Title Section */}
-      <div className="mb-6">
-        <h2>Profile</h2>
-        <span className="text-sm text-zinc-400">Complete your profile to unlock badges, grants and tailored opportunities</span>
-      </div>
-
-      {/* Avatar and User Info - Horizontal Layout */}
-      <div className="flex items-start gap-6 mb-6">
-        {/* Profile Picture with Progress Circle */}
+    <div className="flex flex-col rounded-lg">
+      {/* Avatar and Name Section - Horizontal Layout */}
+      <div className="flex items-start gap-3 mb-4">
+        {/* Small Avatar */}
         <div
-          className="relative cursor-pointer flex-shrink-0"
+          className="relative cursor-pointer pt-2"
           onMouseEnter={() => setIsHoveringAvatar(true)}
           onMouseLeave={() => setIsHoveringAvatar(false)}
           onClick={onEditAvatar}
@@ -67,52 +45,48 @@ export function ProfileHeader({
             <DiceBearAvatar
               seed={nounAvatarSeed}
               name={name}
-              profileProgress={profileProgress}
-              size="large"
-              showProgress={true}
+              size="small"
+              showProgress={false}
             />
           ) : (
             <DiceBearAvatar
               seed={null}
               name={name}
-              profileProgress={profileProgress}
-              size="large"
-              showProgress={true}
+              size="small"
+              showProgress={false}
             />
           )}
           {isHoveringAvatar && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity z-30">
-              <Pencil className="h-5 w-5 text-white" />
+            <div className="absolute pt-2 inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity z-30">
+              <Pencil className="h-4 w-4 text-white" />
             </div>
           )}
         </div>
 
-        {/* User Info - Right Side (left-aligned text) */}
-        <div className="flex flex-col justify-center pt-8">
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-            {name || "Your Name"}
-          </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">
-            {country || "Add your country"}
-          </p>
-          <p className="text-sm text-zinc-400 dark:text-zinc-500">
-            @{username || "username"}
-          </p>
-        </div>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="w-full max-w-md">
-        <div className="mb-2">
-          <span className="text-sm text-zinc-900 dark:text-zinc-100">
-            {profileProgress}% complete - Finish your profile to unlock more opportunities.
-          </span>
-        </div>
-        <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+        {/* Name with Edit Icon */}
+        <div className="flex-1 min-w-0">
           <div 
-            className={`h-full ${progressColor.tailwindClass} transition-all duration-500`}
-            style={{ width: `${profileProgress}%` }}
-          />
+            className="flex items-center gap-2 group"
+            onMouseEnter={() => setIsHoveringName(true)}
+            onMouseLeave={() => setIsHoveringName(false)}
+          >
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+              {name || "Your Name"}
+            </h2>
+            {onEditName && (
+              <button
+                onClick={onEditName}
+                className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                type="button"
+              >
+                <Pencil className="h-4 w-4 text-zinc-500 dark:text-zinc-400 pt-2" />
+              </button>
+            )}
+          </div>
+          {/* Email below name */}
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 truncate">
+            {email || "your@email.com"}
+          </p>
         </div>
       </div>
     </div>
