@@ -33,7 +33,6 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { UserButtonWrapper } from '@/components/login/user-button/UserButtonWrapper';
-import NotificationBellWrapper from '@/components/notification/NotificationBell';
 
 export const integrationsMenu: LinkItemType = {
   type: 'menu',
