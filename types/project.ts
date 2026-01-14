@@ -26,6 +26,8 @@ export interface Project {
   demo_video_link?: string;
   screenshots?: string[];
   tracks: string[];
+  categories?: string[];
+  other_category?: string;
   members?:Member[]
   user_id?:string
   isDraft?:boolean

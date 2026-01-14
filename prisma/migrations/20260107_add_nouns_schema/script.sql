@@ -1,6 +1,5 @@
 DO $$
 BEGIN
-    -- Verificar y agregar noun_avatar_seed (JSONB)
     IF NOT EXISTS (
         SELECT 1 
         FROM information_schema.columns 
@@ -11,12 +10,11 @@ BEGIN
         ALTER TABLE "User" 
         ADD COLUMN "noun_avatar_seed" JSONB;
         
-        RAISE NOTICE 'Columna noun_avatar_seed agregada exitosamente';
+        RAISE NOTICE 'Columna noun_avatar_seed added successfully';
     ELSE
-        RAISE NOTICE 'Columna noun_avatar_seed ya existe, omitiendo...';
+        RAISE NOTICE 'Columna noun_avatar_seed already exists, skipping...';
     END IF;
 
-    -- Verificar y agregar noun_avatar_enabled (BOOLEAN)
     IF NOT EXISTS (
         SELECT 1 
         FROM information_schema.columns 
@@ -27,9 +25,9 @@ BEGIN
         ALTER TABLE "User" 
         ADD COLUMN "noun_avatar_enabled" BOOLEAN NOT NULL DEFAULT false;
         
-        RAISE NOTICE 'Columna noun_avatar_enabled agregada exitosamente';
+        RAISE NOTICE 'Columna noun_avatar_enabled added successfully';
     ELSE
-        RAISE NOTICE 'Columna noun_avatar_enabled ya existe, omitiendo...';
+        RAISE NOTICE 'Columna noun_avatar_enabled already exists, skipping...';
     END IF;
 
 END $$;

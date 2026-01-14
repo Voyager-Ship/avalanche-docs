@@ -75,7 +75,7 @@ export default function ProfileTab({ achievements }: ProfileTabProps) {
         <TabsList className="mb-8 flex dark:bg-zinc-800">
           <TabsTrigger value="personal" className="flex-1  dark:data-[state=active]:bg-zinc-950!">Personal</TabsTrigger>
           <TabsTrigger value="projects" className="flex-1  dark:data-[state=active]:bg-zinc-950!">Projects</TabsTrigger>
-          <TabsTrigger value="achievements" className="flex-1  dark:data-[state=active]:bg-zinc-950!">Achievement</TabsTrigger>
+          <TabsTrigger value="achievements" className="flex-1  dark:data-[state=active]:bg-zinc-950!">Achievements</TabsTrigger>
           <TabsTrigger value="settings" className="flex-1  dark:data-[state=active]:bg-zinc-950!">Settings</TabsTrigger>
         </TabsList>
 

@@ -16,6 +16,8 @@ export type Project = {
   demo_video_link?: string;
   screenshots: string[];
   tracks: string[];
+  categories?: string[];
+  other_category?: string;
   tags: string[];
   created_at: string;
   updated_at: string;

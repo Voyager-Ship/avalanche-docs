@@ -106,6 +106,10 @@ export async function createProject(
           demo_video_link: projectData.demo_video_link ?? "",
           screenshots: projectData.screenshots ?? [],
           tracks: projectData.tracks ?? [],
+          categories: Array.isArray(projectData.categories) 
+            ? projectData.categories 
+            : (projectData.categories ? projectData.categories.split(',').filter(Boolean) : []),
+          other_category: projectData.other_category ?? null,
         },
       });
 
@@ -127,6 +131,10 @@ export async function createProject(
         demo_video_link: projectData.demo_video_link ?? "",
         screenshots: projectData.screenshots ?? [],
         tracks: projectData.tracks ?? [],
+        categories: Array.isArray(projectData.categories) 
+          ? projectData.categories 
+          : (projectData.categories ? projectData.categories.split(',').filter(Boolean) : []),
+        other_category: projectData.other_category ?? null,
         explanation: projectData.explanation ?? "",
         origin: "Project submission",
         hackaton_id: projectData.hackaton_id ?? null,
@@ -224,6 +232,10 @@ export async function getProject(projectId: string): Promise<Project | null> {
     demo_video_link: projectData.demo_video_link ?? undefined,
     screenshots: projectData.screenshots ?? undefined,
     tracks: projectData.tracks,
+    categories: Array.isArray(projectData.categories) 
+      ? projectData.categories 
+      : (projectData.categories ? projectData.categories.split(',').filter(Boolean) : []),
+    other_category: projectData.other_category ?? undefined,
     is_winner: false,
 
     members: projectData.members?.map((member) => {
