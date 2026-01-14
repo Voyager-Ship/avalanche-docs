@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { UserButtonWrapper } from '@/components/login/user-button/UserButtonWrapper';
-import NotificationBell from '@/components/notification/NotificationBell';
+import NotificationBell from '@/components/notification/notification-bell';
 import { SessionProvider } from 'next-auth/react';
 
 export const integrationsMenu: LinkItemType = {
