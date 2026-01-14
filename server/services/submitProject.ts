@@ -188,6 +188,8 @@ function normalizeUser(user: Partial<User>): User {
     github: user.github ?? null,
     wallet: user.wallet ?? null,
     skills: user.skills ?? [],
+    noun_avatar_seed: user.noun_avatar_seed ?? null,
+    noun_avatar_enabled: user.noun_avatar_enabled ?? false,
   };
 }
 export async function getProject(projectId: string): Promise<Project | null> {

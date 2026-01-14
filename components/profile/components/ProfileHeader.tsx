@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Pencil } from "lucide-react";
-import { NounAvatar, NounSeed } from "./NounAvatar";
+import { DiceBearAvatar, AvatarSeed } from "./DiceBearAvatar";
 
 interface ProfileHeaderProps {
   name?: string;
@@ -11,7 +11,7 @@ interface ProfileHeaderProps {
   image?: string;
   profileProgress: number;
   onEditAvatar: () => void;
-  nounAvatarSeed?: NounSeed | null;
+  nounAvatarSeed?: AvatarSeed | null;
   nounAvatarEnabled?: boolean;
 }
 
@@ -64,7 +64,7 @@ export function ProfileHeader({
           onClick={onEditAvatar}
         >
           {nounAvatarEnabled && nounAvatarSeed ? (
-            <NounAvatar
+            <DiceBearAvatar
               seed={nounAvatarSeed}
               name={name}
               profileProgress={profileProgress}
@@ -72,13 +72,13 @@ export function ProfileHeader({
               showProgress={true}
             />
           ) : (
-            <NounAvatar
+            <DiceBearAvatar
               seed={null}
-            name={name}
-            profileProgress={profileProgress}
-            size="large"
+              name={name}
+              profileProgress={profileProgress}
+              size="large"
               showProgress={true}
-          />
+            />
           )}
           {isHoveringAvatar && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity z-30">

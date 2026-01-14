@@ -36,13 +36,13 @@ import { signIn } from "next-auth/react";
 import { ProfileChecklist } from "./ProfileChecklist";
 import { ProfileHeader } from "./ProfileHeader";
 import { NounAvatarConfig } from "./NounAvatarConfig";
-import { NounSeed } from "./NounAvatar";
+import { AvatarSeed } from "./DiceBearAvatar";
 
 export default function Profile() {
   const [newSkill, setNewSkill] = useState("");
   const [isNounAvatarConfigOpen, setIsNounAvatarConfigOpen] = useState(false);
   const [isConnectingGithub, setIsConnectingGithub] = useState(false);
-  const [nounAvatarSeed, setNounAvatarSeed] = useState<NounSeed | null>(null);
+  const [nounAvatarSeed, setNounAvatarSeed] = useState<AvatarSeed | null>(null);
   const [nounAvatarEnabled, setNounAvatarEnabled] = useState(false);
 
   // Use custom hook for all profile logic
@@ -79,8 +79,8 @@ export default function Profile() {
     loadNounAvatar();
   }, []);
 
-  // Handle Noun avatar save
-  const handleNounAvatarSave = async (seed: NounSeed, enabled: boolean) => {
+  // Handle avatar save
+  const handleNounAvatarSave = async (seed: AvatarSeed, enabled: boolean) => {
     setNounAvatarSeed(seed);
     setNounAvatarEnabled(enabled);
     // Optionally refresh the page or update state
