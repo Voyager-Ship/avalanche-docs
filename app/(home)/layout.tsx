@@ -47,7 +47,7 @@ function RedirectIfNewUser() {
       session.user.is_new_user &&
       pathname !== "/profile"
     ) {
-      // Store the original URL with search params (including UTM) in localStorage
+      // Store the original URL with search params (including UTM) in localStorage 
       const originalUrl = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
       if (typeof window !== "undefined") {
         localStorage.setItem("redirectAfterProfile", originalUrl);
