@@ -97,23 +97,39 @@ export function useProfileForm() {
         if (response.ok) {
           const profile = await response.json();
           
+          // Check if there's basic profile data from the modal in localStorage
+          let basicProfileData = null;
+          if (typeof window !== "undefined") {
+            const savedBasicProfile = localStorage.getItem('basicProfileData');
+            if (savedBasicProfile) {
+              try {
+                basicProfileData = JSON.parse(savedBasicProfile);
+                // Clear it after reading
+                localStorage.removeItem('basicProfileData');
+              } catch (e) {
+                console.error('Error parsing basic profile data:', e);
+              }
+            }
+          }
+
           // Decompose user_type from JSON to individual form fields
+          // Merge with basic profile data if available
           const formData = {
-            name: profile.name || "",
+            name: basicProfileData?.name || profile.name || "",
             username: profile.username || "",
             bio: profile.bio || "",
             email: profile.email || session.user.email || "",
             notification_email: profile.notification_email || "",
             image: profile.image || "",
-            country: profile.country || "",
-            is_student: profile.user_type?.is_student || false,
-            is_founder: profile.user_type?.is_founder || false,
-            is_employee: profile.user_type?.is_employee || false,
-            is_enthusiast: profile.user_type?.is_enthusiast || false,
-            founder_company_name: profile.user_type?.founder_company_name || "",
-            employee_company_name: profile.user_type?.employee_company_name || "",
-            employee_role: profile.user_type?.employee_role || "",
-            student_institution: profile.user_type?.student_institution || "",
+            country: basicProfileData?.country || profile.country || "",
+            is_student: basicProfileData?.is_student ?? profile.user_type?.is_student ?? false,
+            is_founder: basicProfileData?.is_founder ?? profile.user_type?.is_founder ?? false,
+            is_employee: basicProfileData?.is_employee ?? profile.user_type?.is_employee ?? false,
+            is_enthusiast: basicProfileData?.is_enthusiast ?? profile.user_type?.is_enthusiast ?? false,
+            founder_company_name: basicProfileData?.founder_company_name || profile.user_type?.founder_company_name || "",
+            employee_company_name: basicProfileData?.employee_company_name || profile.user_type?.employee_company_name || "",
+            employee_role: basicProfileData?.employee_role || profile.user_type?.employee_role || "",
+            student_institution: basicProfileData?.student_institution || profile.user_type?.student_institution || "",
             company_name: profile.user_type?.company_name || "",
             role: profile.user_type?.role || "",
             github: profile.github || "",

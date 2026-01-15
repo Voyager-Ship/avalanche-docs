@@ -44,8 +44,6 @@ export default function Profile() {
     isLoading,
     isSaving,
     isAutoSaving,
-    handleFileSelect,
-    handleAddSkill,
     handleRemoveSkill,
     handleAddSocial,
     handleRemoveSocial,

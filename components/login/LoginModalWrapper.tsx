@@ -7,12 +7,14 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogOverlay, DialogContent, DialogTitle } from '../toolbox/components/ui/dialog';
 import { LoginModal } from './LoginModal';
 import { Terms } from './terms';
+import { BasicProfileSetup } from './BasicProfileSetup';
 import { useLoginModalState } from '@/hooks/useLoginModal';
 
 export function LoginModalWrapper() {
   const { data: session, status } = useSession();
   const { isOpen, closeLoginModal } = useLoginModalState();
   const [showTerms, setShowTerms] = useState(false);
+  const [showBasicProfile, setShowBasicProfile] = useState(false);
   const router = useRouter();
 
   // Initialize showTerms from localStorage to persist across page reloads
@@ -96,8 +98,20 @@ export function LoginModalWrapper() {
     if (typeof window !== "undefined") {
       localStorage.setItem("shouldShowTerms", "false");
     }
-    // Then close modal
+    // Close terms modal and show basic profile setup
     setShowTerms(false);
+    setShowBasicProfile(true);
+  };
+
+  const handleBasicProfileSuccess = () => {
+    // Close basic profile modal
+    setShowBasicProfile(false);
+    closeLoginModal();
+  };
+
+  const handleCompleteProfile = () => {
+    // Close basic profile modal and close login modal
+    setShowBasicProfile(false);
     closeLoginModal();
   };
 
@@ -143,8 +157,9 @@ export function LoginModalWrapper() {
     }
   };
 
-  // Render both modals independently
-  // Terms modal should show when user is new, regardless of login modal state
+  // Render all modals independently
+  // Terms modal should show when user is new and hasn't accepted terms
+  // Basic profile modal should show after accepting terms
   // Login modal should show when isOpen is true
   return (
     <>
@@ -176,7 +191,38 @@ export function LoginModalWrapper() {
         </>
       )}
 
-      {/* Login Modal - Independent from Terms Modal */}
+      {/* Basic Profile Modal - Shows after accepting terms */}
+      {showBasicProfile && session?.user?.id && (
+        <>
+          <Dialog.Root open={true} onOpenChange={(open) => {
+            if (!open) {
+              setShowBasicProfile(false);
+              closeLoginModal();
+            }
+          }}>
+            <Dialog.Portal>
+              <DialogOverlay />
+              <DialogContent 
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl focus:outline-none w-[90vw] max-w-[500px] max-h-[90vh] overflow-hidden z-[10000] p-0"
+                showCloseButton={false}
+              >
+                <VisuallyHidden>
+                  <DialogTitle>Basic Profile Setup</DialogTitle>
+                </VisuallyHidden>
+                <div className="px-5 py-5 overflow-y-auto" style={{ maxHeight: '90vh' }}>
+                  <BasicProfileSetup 
+                    userId={session.user.id} 
+                    onSuccess={handleBasicProfileSuccess}
+                    onCompleteProfile={handleCompleteProfile}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog.Portal>
+          </Dialog.Root>
+        </>
+      )}
+
+      {/* Login Modal - Independent from other modals */}
       <LoginModal />
     </>
   );
