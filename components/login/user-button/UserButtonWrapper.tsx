@@ -3,7 +3,7 @@
 import { SessionProvider } from "next-auth/react";
 import { UserButton } from "./UserButton";
 import { useEffect, useState } from "react";
-import NotificationBell from "@/components/notification/NotificationBell";
+import NotificationBell from "@/components/notification/notification-bell";
 
 export function UserButtonWrapper() {
   const [isMounted, setIsMounted] = useState(false);

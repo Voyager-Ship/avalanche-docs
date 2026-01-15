@@ -24,7 +24,7 @@ type CreateNotificationBody = {
     audience: {
       all: boolean;
       hackathons: string[];
-      users: string[]; // emails
+      users: string[];
     };
     type: string;
     title: string;
@@ -34,7 +34,7 @@ type CreateNotificationBody = {
   }>;
 };
 
-export default function SendNotificationsForm({ jwtToken }: { jwtToken: string }) {
+export default function SendNotificationsForm() {
   // Fields
   const [title, setTitle] = useState<string>("");
   const [shortDescription, setShortDescription] = useState<string>("");
@@ -86,11 +86,10 @@ export default function SendNotificationsForm({ jwtToken }: { jwtToken: string }
     try {
       const body: CreateNotificationBody = buildBody();
 
-      const response: Response = await fetch(`${process.env.NEXT_PUBLIC_AVALANCHE_METRICS_URL}/notifications/create`, {
+      const response: Response = await fetch(`/api/notifications/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "authorization": jwtToken
         },
         body: JSON.stringify(body),
       });
@@ -110,7 +109,7 @@ export default function SendNotificationsForm({ jwtToken }: { jwtToken: string }
       <div className="w-full flex flex-col gap-4 items-end">
         <div className='w-full border shadow-sm rounded-md flex flex-col gap-8 py-14 px-8'>
           <div>
-            <h1 className="text-zinc-50 text-2xl font-medium">Send notifications</h1>
+            <h1 className="text-2xl font-medium">Send notifications</h1>
             <p className="text-zinc-400">
               Create and send notifications to users. Make sure to complete all required information before sending them.
             </p>
@@ -118,7 +117,7 @@ export default function SendNotificationsForm({ jwtToken }: { jwtToken: string }
           </div>
 
           <div className="flex flex-col gap-2">
-            <h1 className="text-zinc-50 text-xl font-medium">Title</h1>
+            <h1 className="text-xl font-medium">Title</h1>
             <Input
               value={title}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
@@ -127,7 +126,7 @@ export default function SendNotificationsForm({ jwtToken }: { jwtToken: string }
           </div>
 
           <div className="flex flex-col gap-2">
-            <h1 className="text-zinc-50 text-xl font-medium">Short description</h1>
+            <h1 className="text-xl font-medium">Short description</h1>
             <Input
               value={shortDescription}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setShortDescription(e.target.value)}
@@ -136,7 +135,7 @@ export default function SendNotificationsForm({ jwtToken }: { jwtToken: string }
           </div>
 
           <div className="flex flex-col gap-2">
-            <h1 className="text-zinc-50 text-xl font-medium">Content</h1>
+            <h1 className="text-xl font-medium">Content</h1>
             <Textarea
               value={content}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
@@ -145,7 +144,7 @@ export default function SendNotificationsForm({ jwtToken }: { jwtToken: string }
           </div>
 
           <div className="flex flex-col gap-2">
-            <h1 className="text-zinc-50 text-xl font-medium">Content type</h1>
+            <h1 className="text-xl font-medium">Content type</h1>
             <Input
               value={contentType}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setContentType(e.target.value)}
@@ -157,11 +156,11 @@ export default function SendNotificationsForm({ jwtToken }: { jwtToken: string }
               Por ahora lo estás capturando con estado (default "n"). */}
 
           <div className="flex flex-col gap-2">
-            <h2 className="text-zinc-50 text-xl font-medium">Audience</h2>
+            <h2 className="text-xl font-medium">Audience</h2>
 
             <Dialog>
-              <DialogTrigger className="bg-white rounded-md px-2 py-1 w-20">
-                <p className="text-zinc-900 text-sm font-medium">Select</p>
+              <DialogTrigger className="bg-black dark:bg-white rounded-md px-2 py-1 w-20">
+                <p className="text-zinc-50 dark:text-zinc-900 text-sm font-medium">Select</p>
               </DialogTrigger>
 
               <DialogContent>
@@ -226,8 +225,8 @@ export default function SendNotificationsForm({ jwtToken }: { jwtToken: string }
           </div>
         </div>
 
-        <Button onClick={send} className="bg-white px-2 py-1 w-16 ">
-          <p className="text-zinc-900 text-sm font-medium">Send</p>
+        <Button onClick={send} className="bg-black dark:bg-white px-2 py-1 w-16 ">
+          <p className="text-zinc-50 dark:text-zinc-900 text-sm font-medium">Send</p>
         </Button>
       </div>
     </main>

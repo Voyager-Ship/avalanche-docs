@@ -113,6 +113,9 @@ export function UserButton() {
             <DropdownMenuItem asChild className='cursor-pointer'>
               <Link href='/profile#settings'>Settings</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild className='cursor-pointer'>
+              <Link href='/send-notifications'>Send notifications</Link>
+            </DropdownMenuItem>
 
            
             <DropdownMenuItem

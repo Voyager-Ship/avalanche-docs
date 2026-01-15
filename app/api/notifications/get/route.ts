@@ -1,3 +1,4 @@
+import { getToken, encode } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 
 type GetNotificationsBody = {
@@ -6,32 +7,25 @@ type GetNotificationsBody = {
 export const runtime: "nodejs" = "nodejs";
 
 const baseUrl: string | undefined = process.env.AVALANCHE_METRICS_URL;
-const apiKey: string | undefined = process.env.AVALANCHE_METRICS_API_KEY;
 
-export async function POST(req: Request): Promise<Response> {
+export async function POST(req: any): Promise<Response> {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET ?? '' })
+  if (!token) return new Response("Unauthorized", { status: 401 });
+  const encodedToken = await encode({token: token, secret: process.env.NEXTAUTH_SECRET ?? ''})
+  if (!encodedToken) return new Response("Error at get notifications", { status: 500});
+
   try {
-    const body: GetNotificationsBody =
-      (await req.json()) as GetNotificationsBody;
-
-    const users: string[] = Array.isArray(body?.users) ? body.users : [];
-
     if (!baseUrl) {
       return NextResponse.json({ error: "Failed" }, { status: 500 });
     }
-
-    if (!apiKey) {
-      return NextResponse.json({ error: "Failed" }, { status: 500 });
-    }
-
     const upstream: Response = await fetch(
       `${baseUrl}/notifications/get/inbox`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
+          "authorization": encodedToken
         },
-        body: JSON.stringify({ users }),
         cache: "no-store",
       }
     );

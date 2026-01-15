@@ -39,6 +39,7 @@ export function useGetNotifications(
       return;
     }
 
+    console.log('Fetching notifications for users:', jwt);
     if (!jwt) {
       setError("Missing authorization token");
       return;
@@ -48,20 +49,12 @@ export function useGetNotifications(
     setError(null);
 
     try {
-      const baseUrl: string | undefined =
-        process.env.NEXT_PUBLIC_AVALANCHE_METRICS_URL;
-
-      if (!baseUrl) {
-        throw new Error("Error at get notifications");
-      }
-
       const response: Response = await fetch(
-        `${baseUrl}/notifications/get/inbox`,
+        `/api/notifications/get`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            'authorization': `${jwt}`,
           },
           cache: "no-store",
         }
