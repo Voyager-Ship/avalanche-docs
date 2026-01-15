@@ -26,23 +26,21 @@ export async function middleware(req: NextRequest) {
   const isShowCase = pathname.startsWith("/showcase");
   const custom_attributes = token?.custom_attributes as string[] ?? []
 
-  if (!isAuthenticated && !isLoginPage) {
-    const protectedPaths = [
-      "/hackathons/registration-form",
-      "/hackathons/project-submission",
-      "/showcase",
-      "/profile",
-      "/student-launchpad"
-    ];
+  const protectedPaths = [
+    "/hackathons/registration-form",
+    "/hackathons/project-submission",
+    "/showcase",
+    "/profile",
+    "/student-launchpad",
+    "/console/utilities/data-api-keys"
+  ];
 
-    const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
+  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
 
-    if (isProtectedPath) {
-      const currentUrl = req.url;
-      const loginUrl = new URL("/login", req.url);
-      loginUrl.searchParams.set("callbackUrl", currentUrl);
-      return NextResponse.redirect(loginUrl);
-    }
+  // If user is not authenticated and trying to access a protected path, allow the request
+  // The client-side component (AutoLoginModalTrigger) will detect this and show the login modal
+  if (!isAuthenticated && !isLoginPage && isProtectedPath) {
+    return NextResponse.next();
   }
 
   if (isAuthenticated) {
@@ -61,7 +59,12 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL("/", req.url));
       }
     }
-
+  }
+  
+  // For non-protected paths or authenticated users, use withAuth normally
+  // But skip withAuth for unauthenticated users on protected paths (already handled above)
+  if (!isAuthenticated && isProtectedPath) {
+    return NextResponse.next();
   }
   
   return withAuth(

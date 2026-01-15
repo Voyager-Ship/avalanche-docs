@@ -56,6 +56,9 @@ export const Terms = ({
     },
   });
 
+  // Watch accepted_terms to enable/disable the submit button
+  const acceptedTerms = form.watch("accepted_terms");
+
   const onSubmit = async (data: TermsFormValues) => {
     try {
       // Save to API
@@ -189,7 +192,7 @@ export const Terms = ({
                 type="submit"
                 variant="default" 
                 className="flex-1" 
-                disabled={form.formState.isSubmitting}
+                disabled={form.formState.isSubmitting || !acceptedTerms}
               >
                 {form.formState.isSubmitting ? (
                   <>

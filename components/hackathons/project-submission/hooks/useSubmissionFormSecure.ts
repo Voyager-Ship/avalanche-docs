@@ -111,6 +111,8 @@ export const FormSchema = z
         { message: 'Please enter a valid YouTube or Loom URL' }
       ),
     tracks: z.array(z.string()).optional().default([]),
+    categories: z.array(z.string()).optional().default([]),
+    other_category: z.string().optional(),
     logo_url: z.string().optional(),
     cover_url: z.string().optional(),
     hackaton_id: z.string().optional(),
@@ -129,6 +131,32 @@ export const FormSchema = z
       message: 'explanation is required when the idea is pre-existing',
       path: ['explanation'],
     }
+  )
+  .refine(
+    (data) => {
+      // Si hay hackathon_id, tracks es requerido
+      if (data.hackaton_id) {
+        return data.tracks && data.tracks.length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'At least one track is required when submitting to a hackathon',
+      path: ['tracks'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Si se selecciona "Other (Specify)", other_category es requerido
+      if (data.categories && data.categories.includes('Other (Specify)')) {
+        return data.other_category && data.other_category.trim().length >= 2;
+      }
+      return true;
+    },
+    {
+      message: 'Please specify the other category',
+      path: ['other_category'],
+    }
   );
 
 export type SubmissionForm = z.infer<typeof FormSchema>;
@@ -137,6 +165,32 @@ export const Step1Schema = FormSchema.pick({
   short_description: true,
   full_description: true,
   tracks: true,
+  categories: true,
+  other_category: true,
+  hackaton_id: true,
+}).superRefine((data, ctx) => {
+  // Validación condicional para tracks cuando hay hackathon_id
+  if (data.hackaton_id) {
+    if (!data.tracks || data.tracks.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'At least one track is required when submitting to a hackathon',
+        path: ['tracks'],
+      });
+    }
+  }
+  
+  // Validación para other_category si se selecciona "Other (Specify)"
+  // Categories es opcional, pero si se selecciona "Other (Specify)", other_category es requerido
+  if (data.categories && data.categories.includes('Other (Specify)')) {
+    if (!data.other_category || data.other_category.trim().length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please specify the other category',
+        path: ['other_category'],
+      });
+    }
+  }
 });
 
 export const Step2Schema = FormSchema.pick({
@@ -179,6 +233,8 @@ export const useSubmissionFormSecure = () => {
       full_description: '',
       tech_stack: '',
       tracks: [],
+      categories: [],
+      other_category: '',
       is_preexisting_idea: false,
       github_repository: [],
       demo_link: [],
@@ -196,6 +252,8 @@ export const useSubmissionFormSecure = () => {
       "short_description",
       "full_description",
       "tracks",
+      "categories",
+      "other_category",
     ];
 
     const step2Fields: (keyof SubmissionForm)[] = [
@@ -415,6 +473,7 @@ export const useSubmissionFormSecure = () => {
         screenshots: uploadedFiles.screenshotsUrls,
         github_repository: data.github_repository?.join(',') ?? "",
         demo_link: data.demo_link?.join(',') ?? "",
+        categories: data.categories?.join(',') ?? "",
         is_winner: false,
         ...(state.hackathonId && { hackaton_id: state.hackathonId }),
         user_id: session?.user?.id,
@@ -516,7 +575,11 @@ export const useSubmissionFormSecure = () => {
       demo_link: project.demo_link ? project.demo_link.split(',').filter(Boolean) : [],
       is_preexisting_idea: !!project.is_preexisting_idea,
       demo_video_link: project.demo_video_link ?? '',
-      tracks: project.tracks ?? [],
+      tracks: project.tracks ?? (typeof project.tracks === 'string' ? project.tracks.split(',').filter(Boolean) : []),
+      categories: Array.isArray(project.categories) 
+        ? project.categories 
+        : (project.categories ? project.categories.split(',').filter(Boolean) : []),
+      other_category: project.other_category ?? '',
       logoFile: project.logo_url ?? undefined,
       coverFile: project.cover_url ?? undefined,
       screenshots: project.screenshots ?? [],

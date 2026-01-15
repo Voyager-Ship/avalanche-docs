@@ -259,7 +259,7 @@ export default function ProfileForm({
     return <ProfileTab achievements={achievements} />;
   }
 
-  // Versión antigua del formulario
+  // Old profile form
   return (
     <div className="container mx-auto py-8 flex flex-col gap-4">
       <Toaster />

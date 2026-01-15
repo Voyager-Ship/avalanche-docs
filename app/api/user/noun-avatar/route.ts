@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/protectedRoute';
 import { prisma } from '@/prisma/prisma';
 
-interface NounSeed {
-  background: number;
-  body: number;
-  accessory: number;
-  head: number;
-  glasses: number;
+interface AvatarSeed {
+  backgroundColor: string;
+  hair: string;
+  eyes: string;
+  eyebrows: string;
+  nose: string;
+  mouth: string;
+  glasses: string;
+  earrings: string;
+  beard: string;
+  hairAccessories: string;
+  freckles: string;
 }
 
 /**
@@ -29,7 +35,7 @@ export const PUT = withAuth(async (
     }
 
     const body = await req.json();
-    const { seed, enabled } = body as { seed: NounSeed; enabled: boolean };
+    const { seed, enabled } = body as { seed: AvatarSeed; enabled: boolean };
 
     if (!seed) {
       return NextResponse.json(
@@ -40,11 +46,17 @@ export const PUT = withAuth(async (
 
     // Validate seed structure
     if (
-      typeof seed.background !== 'number' ||
-      typeof seed.body !== 'number' ||
-      typeof seed.accessory !== 'number' ||
-      typeof seed.head !== 'number' ||
-      typeof seed.glasses !== 'number'
+      typeof seed.backgroundColor !== 'string' ||
+      typeof seed.hair !== 'string' ||
+      typeof seed.eyes !== 'string' ||
+      typeof seed.eyebrows !== 'string' ||
+      typeof seed.nose !== 'string' ||
+      typeof seed.mouth !== 'string' ||
+      typeof seed.glasses !== 'string' ||
+      typeof seed.earrings !== 'string' ||
+      typeof seed.beard !== 'string' ||
+      typeof seed.hairAccessories !== 'string' ||
+      typeof seed.freckles !== 'string'
     ) {
       return NextResponse.json(
         { error: 'Invalid seed structure' },
@@ -116,7 +128,7 @@ export const GET = withAuth(async (
     }
 
     return NextResponse.json({
-      seed: user.noun_avatar_seed as NounSeed | null,
+      seed: user.noun_avatar_seed as AvatarSeed | null,
       enabled: user.noun_avatar_enabled ?? false,
     });
   } catch (error) {

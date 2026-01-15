@@ -2,19 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { NounAvatar, NounSeed } from "./NounAvatar";
+import { DiceBearAvatar, AvatarSeed, AVATAR_OPTIONS } from "./DiceBearAvatar";
 import Modal from "@/components/ui/Modal";
 import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { useToast } from "@/hooks/use-toast";
-import { ImageData } from "@nouns/assets";
 
 interface NounAvatarConfigProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  currentSeed?: NounSeed | null;
+  currentSeed?: AvatarSeed | null;
   nounAvatarEnabled?: boolean;
-  onSave: (seed: NounSeed, enabled: boolean) => Promise<void>;
+  onSave: (seed: AvatarSeed, enabled: boolean) => Promise<void>;
 }
 
 export function NounAvatarConfig({
@@ -24,7 +23,7 @@ export function NounAvatarConfig({
   nounAvatarEnabled = false,
   onSave,
 }: NounAvatarConfigProps) {
-  const [seed, setSeed] = useState<NounSeed | null>(currentSeed || null);
+  const [seed, setSeed] = useState<AvatarSeed | null>(currentSeed || null);
   const [enabled, setEnabled] = useState(nounAvatarEnabled);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -32,23 +31,35 @@ export function NounAvatarConfig({
 
   // Get max values for each trait
   const maxValues = {
-    background: ImageData.bgcolors.length,
-    body: ImageData.images.bodies.length,
-    accessory: ImageData.images.accessories.length,
-    head: ImageData.images.heads.length,
-    glasses: ImageData.images.glasses.length,
+    backgroundColor: AVATAR_OPTIONS.backgroundColor.length,
+    hair: AVATAR_OPTIONS.hair.length,
+    eyes: AVATAR_OPTIONS.eyes.length,
+    eyebrows: AVATAR_OPTIONS.eyebrows.length,
+    nose: AVATAR_OPTIONS.nose.length,
+    mouth: AVATAR_OPTIONS.mouth.length,
+    glasses: AVATAR_OPTIONS.glasses.length,
+    earrings: AVATAR_OPTIONS.earrings.length,
+    beard: AVATAR_OPTIONS.beard.length,
+    hairAccessories: AVATAR_OPTIONS.hairAccessories.length,
+    freckles: AVATAR_OPTIONS.freckles.length,
   };
 
   // Initialize seed if not exists
   useEffect(() => {
     if (isOpen && !seed) {
       // Generate a default seed
-      const defaultSeed: NounSeed = {
-        background: 0,
-        body: 0,
-        accessory: 0,
-        head: 0,
-        glasses: 0,
+      const defaultSeed: AvatarSeed = {
+        backgroundColor: AVATAR_OPTIONS.backgroundColor[0],
+        hair: AVATAR_OPTIONS.hair[0],
+        eyes: AVATAR_OPTIONS.eyes[0],
+        eyebrows: AVATAR_OPTIONS.eyebrows[0],
+        nose: AVATAR_OPTIONS.nose[0],
+        mouth: AVATAR_OPTIONS.mouth[0],
+        glasses: AVATAR_OPTIONS.glasses[0],
+        earrings: AVATAR_OPTIONS.earrings[0],
+        beard: AVATAR_OPTIONS.beard[0],
+        hairAccessories: AVATAR_OPTIONS.hairAccessories[0],
+        freckles: AVATAR_OPTIONS.freckles[0],
       };
       setSeed(defaultSeed);
     }
@@ -58,31 +69,62 @@ export function NounAvatarConfig({
   useEffect(() => {
     if (isOpen) {
       setSeed(currentSeed || {
-        background: 0,
-        body: 0,
-        accessory: 0,
-        head: 0,
-        glasses: 0,
+        backgroundColor: AVATAR_OPTIONS.backgroundColor[0],
+        hair: AVATAR_OPTIONS.hair[0],
+        eyes: AVATAR_OPTIONS.eyes[0],
+        eyebrows: AVATAR_OPTIONS.eyebrows[0],
+        nose: AVATAR_OPTIONS.nose[0],
+        mouth: AVATAR_OPTIONS.mouth[0],
+        glasses: AVATAR_OPTIONS.glasses[0],
+        earrings: AVATAR_OPTIONS.earrings[0],
+        beard: AVATAR_OPTIONS.beard[0],
+        hairAccessories: AVATAR_OPTIONS.hairAccessories[0],
+        freckles: AVATAR_OPTIONS.freckles[0],
       });
       setEnabled(nounAvatarEnabled);
     }
   }, [isOpen, currentSeed, nounAvatarEnabled]);
 
   // Trait adjustment functions
-  const adjustTrait = (trait: keyof NounSeed, direction: 'prev' | 'next') => {
+  const adjustTrait = (trait: keyof AvatarSeed, direction: 'prev' | 'next') => {
     if (!seed) return;
     
-    const currentValue = seed[trait];
-    const maxValue = maxValues[trait];
+    const options = AVATAR_OPTIONS[trait];
+    const currentValue = seed[trait] || options[0];
+    let currentIndex = options.indexOf(currentValue);
     
-    let newValue: number;
-    if (direction === 'next') {
-      newValue = (currentValue + 1) % maxValue;
-    } else {
-      newValue = currentValue === 0 ? maxValue - 1 : currentValue - 1;
+    // If current value is not in options, use first option
+    if (currentIndex === -1) {
+      currentIndex = 0;
     }
     
-    setSeed({ ...seed, [trait]: newValue });
+    let newIndex: number;
+    if (direction === 'next') {
+      newIndex = (currentIndex + 1) % options.length;
+    } else {
+      newIndex = currentIndex === 0 ? options.length - 1 : currentIndex - 1;
+    }
+    
+    setSeed({ ...seed, [trait]: options[newIndex] });
+  };
+
+  // Get current position for a trait (1-indexed)
+  const getTraitPosition = (trait: keyof AvatarSeed): { current: number; total: number } => {
+    if (!seed) return { current: 0, total: 0 };
+    
+    const options = AVATAR_OPTIONS[trait];
+    const currentValue = seed[trait] || options[0];
+    let currentIndex = options.indexOf(currentValue);
+    
+    // If current value is not in options, use first option
+    if (currentIndex === -1) {
+      currentIndex = 0;
+    }
+    
+    return {
+      current: currentIndex + 1,
+      total: options.length,
+    };
   };
 
   // Generate random seed
@@ -138,26 +180,19 @@ export function NounAvatarConfig({
   };
 
   const handleSave = async () => {
-    if (!seed) {
-      // Initialize default seed if none exists
-      const defaultSeed: NounSeed = {
-        background: 0,
-        body: 0,
-        accessory: 0,
-        head: 0,
-        glasses: 0,
-      };
-      setSeed(defaultSeed);
-      // Continue with default seed
-    }
-
     // Ensure seed is not null before proceeding
     const seedToSave = seed || {
-      background: 0,
-      body: 0,
-      accessory: 0,
-      head: 0,
-      glasses: 0,
+      backgroundColor: AVATAR_OPTIONS.backgroundColor[0],
+      hair: AVATAR_OPTIONS.hair[0],
+      eyes: AVATAR_OPTIONS.eyes[0],
+      eyebrows: AVATAR_OPTIONS.eyebrows[0],
+      nose: AVATAR_OPTIONS.nose[0],
+      mouth: AVATAR_OPTIONS.mouth[0],
+      glasses: AVATAR_OPTIONS.glasses[0],
+      earrings: AVATAR_OPTIONS.earrings[0],
+      beard: AVATAR_OPTIONS.beard[0],
+      hairAccessories: AVATAR_OPTIONS.hairAccessories[0],
+      freckles: AVATAR_OPTIONS.freckles[0],
     };
 
     setIsSaving(true);
@@ -174,10 +209,7 @@ export function NounAvatarConfig({
       }
 
       await onSave(seedToSave, true);
-      toast({
-        title: "Avatar saved!",
-        description: "Your Noun avatar has been updated.",
-      });
+
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving avatar:", error);
@@ -194,28 +226,37 @@ export function NounAvatarConfig({
   const renderContent = () => {
     // Trait labels
     const traitLabels = {
-      head: "Head",
+      hair: "Hair",
+      eyes: "Eyes",
+      eyebrows: "Eyebrows",
+      nose: "Nose",
+      mouth: "Mouth",
       glasses: "Glasses",
-      body: "Body",
-      accessory: "Accessory",
-      background: "Background",
+      earrings: "Earrings",
+      beard: "Beard",
+      hairAccessories: "Hair Accessories",
+      freckles: "Freckles",
+      backgroundColor: "Background",
     };
 
-    // Trait order as shown in the image
-    const traitOrder: (keyof NounSeed)[] = ['head', 'glasses', 'body', 'accessory', 'background'];
+    // Trait order - lorelei style
+    const traitOrder: (keyof AvatarSeed)[] = [
+      'hair', 'eyes', 'eyebrows', 'nose', 'mouth', 'glasses', 
+      'earrings', 'beard', 'hairAccessories', 'freckles', 'backgroundColor'
+    ];
 
     return (
       <div className="flex flex-col items-center gap-6">
         {/* Avatar Preview - Centered */}
         <div className="flex flex-col items-center justify-center">
           <div className="rounded-lg flex items-center justify-center p-6">
-            <NounAvatar seed={seed} size="xlarge" />
+            <DiceBearAvatar seed={seed} size="xlarge" />
           </div>
         </div>
 
-        {/* Trait Controls - 2 Columns */}
+        {/* Trait Controls - 3 Columns */}
         {seed && (
-          <div className="grid grid-cols-2 gap-3 w-full max-w-md">
+          <div className="grid grid-cols-3 gap-3 w-full max-w-3xl">
             {traitOrder.map((trait) => (
               <div
                 key={trait}
@@ -226,14 +267,21 @@ export function NounAvatarConfig({
                   variant="ghost"
                   size="icon"
                   onClick={() => adjustTrait(trait, 'prev')}
-                  className="h-4 w-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 p-0"
+                  className="h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 p-0"
                 >
                   <ChevronLeft className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
                 </Button>
                 
-                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex-1 text-center">
-                  {traitLabels[trait]}
-                </span>
+                <div className="flex flex-col items-center flex-1 text-center">
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                    {traitLabels[trait]}
+                  </span>
+                  {seed && (
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      ({getTraitPosition(trait).current}/{getTraitPosition(trait).total})
+                    </span>
+                  )}
+                </div>
                 
                 <Button
                   type="button"

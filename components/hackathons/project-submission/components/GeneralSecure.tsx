@@ -87,7 +87,8 @@ export default function GeneralSecureComponent({
     loadProjectById();
   }, [projectIdParam, project, isEditing, projectState.status, setFormData, dispatch]);
   const getAllFields = () => {
-    return [
+    const hackathonId = searchParams?.hackathon ?? "";
+    const baseFields = [
       "project_name",
       "short_description",
       "full_description",
@@ -99,17 +100,51 @@ export default function GeneralSecureComponent({
       "coverFile",
       "screenshots",
       "demo_video_link",
-      "tracks",
     ];
+    
+    // Si hay hackathon_id, incluir tracks; si no, incluir categories (opcional)
+    // other_category solo se cuenta si "Other (Specify)" está seleccionado
+    if (hackathonId) {
+      return [...baseFields, "tracks"];
+    } else {
+      // categories es opcional, pero lo incluimos para el cálculo
+      // other_category se maneja de forma especial en calculateProgress
+      return [...baseFields, "categories"];
+    }
   };
   
   const calculateProgress = () => {
     const formValues = form.getValues();
+    const hackathonId = searchParams?.hackathon ?? "";
     const allFields = getAllFields();
-    const totalFields = allFields.length;
+    let totalFields = allFields.length;
     let completedFields = 0;
 
     allFields.forEach((field) => {
+      // categories es opcional: solo contar si tiene al menos una seleccionada
+      if (field === "categories" && !hackathonId) {
+        const fieldValue = formValues[field as keyof typeof formValues];
+        const categories = Array.isArray(fieldValue) ? fieldValue : [];
+        
+        if (categories.length > 0) {
+          // Verificar si se selecciona "Other (Specify)" y si other_category está completo
+          const hasOtherSelected = categories.includes("Other (Specify)");
+          if (hasOtherSelected) {
+            const otherCategory = formValues.other_category as string || "";
+            if (otherCategory.trim().length >= 2) {
+              // Todo está completo: categories + other_category
+              completedFields++;
+            }
+            // Si "Other (Specify)" está seleccionado pero other_category está vacío, no contar
+          } else {
+            // Categories tiene valores y no incluye "Other (Specify)", contar como completo
+            completedFields++;
+          }
+        }
+        // Si categories está vacío, no cuenta (es opcional)
+        return;
+      }
+
       const fieldValue = formValues[field as keyof typeof formValues];
       if (Array.isArray(fieldValue)) {
         if (fieldValue && fieldValue.length > 0) {

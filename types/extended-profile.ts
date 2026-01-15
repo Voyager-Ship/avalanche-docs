@@ -26,7 +26,7 @@ export type ExtendedProfile = {
     country?: string | null;
     user_type: UserType;
     github?: string | null;
-    wallet?: string | null;
+    wallet?: string[] | null;
     socials: string[];
     skills: string[];
     notifications: boolean | null;

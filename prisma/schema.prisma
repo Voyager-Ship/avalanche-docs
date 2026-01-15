@@ -54,10 +54,10 @@ model User {
   country                  String?
   user_type                Json?
   github                   String?
-  wallet                   String?
   skills                   String[]                  @default([])
   noun_avatar_seed         Json?
   noun_avatar_enabled      Boolean                   @default(false)
+  wallet                   String[]                  @default([])
   consoleLog               ConsoleLog[]
   hackathons               Hackathon[]
   updated_hackathons       Hackathon[]               @relation("HackathonUpdatedBy")
@@ -128,6 +128,8 @@ model Project {
   tags                String[]       @default([])
   is_winner           Boolean?       @default(false)
   origin              String
+  categories          String[]       @default([])
+  other_category      String?
   formData            FormData[]
   members             Member[]
   prizes              Prize[]

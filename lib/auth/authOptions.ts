@@ -128,10 +128,10 @@ export const AuthOptions: NextAuthOptions = {
             country: null,
             user_type: null,
             github: null,
-            wallet: null,
+            wallet: [],
             skills: [],
             noun_avatar_seed: null,
-            noun_avatar_enabled: false
+            noun_avatar_enabled: false,
           }
         }
 
