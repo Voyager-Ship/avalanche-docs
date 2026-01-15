@@ -29,6 +29,17 @@ export const projectValidations: Validation[] = [
 export const validateProject = (projectData: Partial<Project>): Validation[] =>
   validateEntity(projectValidations, projectData);
 
+// Helper function to normalize categories from string or string[] to string[]
+function normalizeCategories(categories: string | string[] | undefined): string[] {
+  if (Array.isArray(categories)) {
+    return categories;
+  }
+  if (typeof categories === 'string') {
+    return categories.split(',').filter(Boolean);
+  }
+  return [];
+}
+
 export async function createProject(
   projectData: Partial<Project>
 ): Promise<Project> {
@@ -106,9 +117,7 @@ export async function createProject(
           demo_video_link: projectData.demo_video_link ?? "",
           screenshots: projectData.screenshots ?? [],
           tracks: projectData.tracks ?? [],
-          categories: Array.isArray(projectData.categories) 
-            ? projectData.categories 
-            : (projectData.categories ? projectData.categories.split(',').filter(Boolean) : []),
+          categories: normalizeCategories(projectData.categories),
           other_category: projectData.other_category ?? null,
         },
       });
@@ -131,9 +140,7 @@ export async function createProject(
         demo_video_link: projectData.demo_video_link ?? "",
         screenshots: projectData.screenshots ?? [],
         tracks: projectData.tracks ?? [],
-        categories: Array.isArray(projectData.categories) 
-          ? projectData.categories 
-          : (projectData.categories ? projectData.categories.split(',').filter(Boolean) : []),
+        categories: normalizeCategories(projectData.categories),
         other_category: projectData.other_category ?? null,
         explanation: projectData.explanation ?? "",
         origin: "Project submission",
@@ -194,7 +201,7 @@ function normalizeUser(user: Partial<User>): User {
     country: user.country ?? null,
     user_type: user.user_type ?? null,
     github: user.github ?? null,
-    wallet: user.wallet ?? null,
+    wallet: user.wallet ?? [],
     skills: user.skills ?? [],
     noun_avatar_seed: user.noun_avatar_seed ?? null,
     noun_avatar_enabled: user.noun_avatar_enabled ?? false,
@@ -232,9 +239,7 @@ export async function getProject(projectId: string): Promise<Project | null> {
     demo_video_link: projectData.demo_video_link ?? undefined,
     screenshots: projectData.screenshots ?? undefined,
     tracks: projectData.tracks,
-    categories: Array.isArray(projectData.categories) 
-      ? projectData.categories 
-      : (projectData.categories ? projectData.categories.split(',').filter(Boolean) : []),
+    categories: normalizeCategories(projectData.categories),
     other_category: projectData.other_category ?? undefined,
     is_winner: false,
 
