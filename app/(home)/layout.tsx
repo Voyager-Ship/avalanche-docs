@@ -12,7 +12,7 @@ import { LayoutWrapper } from "@/app/layout-wrapper.client";
 import { NavbarDropdownInjector } from "@/components/navigation/navbar-dropdown-injector";
 import { WalletProvider } from "@/components/toolbox/providers/WalletProvider";
 import { Terms } from "@/components/login/terms";
-import { LoginModal } from "@/components/login/LoginModal";
+import { LoginModalWrapper } from "@/components/login/LoginModalWrapper";
 import { AutoLoginModalTrigger } from "@/components/login/AutoLoginModalTrigger";
 
 export default function Layout({
@@ -23,10 +23,9 @@ export default function Layout({
   return (
     <SessionProvider>
       <Suspense fallback={null}>
-        <RedirectIfNewUser />
         <AutoLoginModalTrigger />
       </Suspense>
-      <LoginModal />
+      <LoginModalWrapper />
       <NavbarDropdownInjector />
       <WalletProvider>
         <LayoutWrapper baseOptions={baseOptions}>
@@ -38,46 +37,3 @@ export default function Layout({
   );
 }
 
-function RedirectIfNewUser() {
-  const { data: session, status } = useSession();
-  const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [showModal, setShowModal] = useState(false);
-
-  useEffect(() => {
-    if (
-      status === "authenticated" &&
-      session.user.is_new_user &&
-      pathname !== "/profile"
-    ) {
-      // Store the original URL with search params (including UTM) in localStorage 
-      const originalUrl = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("redirectAfterProfile", originalUrl);
-      }
-      
-      // Show confirmation modal and redirect immediately
-      setShowModal(true);
-      router.replace("/profile");
-    }
-  }, [session, status, pathname, router, searchParams]);
-
-  const handleContinue = () => {
-    setShowModal(false);
-  };
-
-  return (
-    <>
-      {showModal && (
-        <Modal
-          className="border border-red-500"
-          isOpen={showModal}
-          onOpenChange={setShowModal}
-          title=""
-          content={<Terms userId={session?.user?.id ?? ""} onSuccess={handleContinue} onDecline={handleContinue} />}
-        />
-      )}
-    </>
-  );
-}

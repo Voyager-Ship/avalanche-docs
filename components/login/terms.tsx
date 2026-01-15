@@ -37,12 +37,16 @@ interface TermsProps {
   userId: string;
   onSuccess?: () => void;
   onDecline?: () => void;
+  skipRedirect?: boolean;
+  compact?: boolean;
 }
 
 export const Terms = ({
   userId,
   onSuccess,
-  onDecline
+  onDecline,
+  skipRedirect = false,
+  compact = false
 }: TermsProps) => {
   const router = useRouter();
   const { toast } = useToast();
@@ -71,16 +75,19 @@ export const Terms = ({
       // Execute success callback if provided
       onSuccess?.();
 
-      // Navigate to home or redirect URL
-      const redirectUrl = typeof window !== "undefined" 
-        ? localStorage.getItem("redirectAfterProfile") 
-        : null;
-      
-      if (redirectUrl) {
-        localStorage.removeItem("redirectAfterProfile");
-        router.push(redirectUrl);
-      } else {
-        router.push("/");
+      // Only redirect if skipRedirect is false
+      if (!skipRedirect) {
+        // Navigate to home or redirect URL
+        const redirectUrl = typeof window !== "undefined" 
+          ? localStorage.getItem("redirectAfterProfile") 
+          : null;
+        
+        if (redirectUrl) {
+          localStorage.removeItem("redirectAfterProfile");
+          router.push(redirectUrl);
+        } else {
+          router.push("/");
+        }
       }
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -96,12 +103,12 @@ export const Terms = ({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card
-          className="
-            w-full max-w-2xl mx-auto
+          className={`
+            w-full ${compact ? '' : 'max-w-2xl mx-auto'}
             rounded-md
             text-black dark:bg-zinc-800 dark:text-white
             border
-          "
+          `}
         >
           <CardHeader className="text-center">
             <p className="text-sm text-muted-foreground">
