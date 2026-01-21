@@ -22,8 +22,6 @@ export async function POST(req: any): Promise<Response> {
       );
     }
 
-    console.log('Notifications create: ')
-
     const upstream: Response = await fetch(`${baseUrl}/notifications/create`, {
       method: "POST",
       headers: {

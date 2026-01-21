@@ -9,6 +9,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -40,20 +47,31 @@ export default function SendNotificationsForm() {
   const [shortDescription, setShortDescription] = useState<string>("");
   const [content, setContent] = useState<string>("");
   const [contentType, setContentType] = useState<string>("");
-  const [type, setType] = useState<string>("n");
+  const [type, setType] = useState<string>("default");
+  const [openAudienceDialog, setOpenAudienceDialog] = useState<boolean>(false);
 
   // Audience
   const [audienceTab, setAudienceTab] = useState<AudienceTab>("custom");
   const [selectedHackathons, setSelectedHackathons] = useState<string[]>([]);
   const [customUsersRaw, setCustomUsersRaw] = useState<string>("");
-  const { data: hackathons } = useGetHackathons()
-
   const customUsersParsed: string[] = useMemo((): string[] => {
     return customUsersRaw
       .split(",")
       .map((s: string) => s.trim())
       .filter((s: string) => s.length > 0);
   }, [customUsersRaw]);
+
+  const { data: hackathons } = useGetHackathons()
+
+  const isValidForm = useMemo(() => {
+    return (
+      title &&
+      content &&
+      contentType &&
+      (audienceTab == 'all' || selectedHackathons.length > 0 || customUsersParsed.length > 0)
+    )
+  }, [title, content, contentType, selectedHackathons, audienceTab, customUsersParsed]);
+
 
   const toggleHackathon = (hackathon: string): void => {
     setSelectedHackathons((prev: string[]) => {
@@ -69,8 +87,8 @@ export default function SendNotificationsForm() {
         {
           audience: {
             all: audienceTab === "all",
-            hackathons: selectedHackathons,
-            users: customUsersParsed,
+            hackathons: audienceTab == 'all' ? [] : selectedHackathons,
+            users: audienceTab == 'all' ? [] : customUsersParsed,
           },
           type,
           title,
@@ -135,6 +153,20 @@ export default function SendNotificationsForm() {
           </div>
 
           <div className="flex flex-col gap-2">
+            <h1 className="text-xl font-medium">Content type</h1>
+            <Select value={contentType} onValueChange={(e) => setContentType(e)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Content type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="text/plain">text/plain</SelectItem>
+                <SelectItem value="text/markdown">text/markdown</SelectItem>
+                <SelectItem value="text/html">text/html</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
             <h1 className="text-xl font-medium">Content</h1>
             <Textarea
               value={content}
@@ -143,14 +175,6 @@ export default function SendNotificationsForm() {
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <h1 className="text-xl font-medium">Content type</h1>
-            <Input
-              value={contentType}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setContentType(e.target.value)}
-              placeholder='e.g. "text/plain" or "text/markdown"'
-            />
-          </div>
 
           {/* Si quieres cambiar "type" desde UI, agrega otro input/select aquí.
               Por ahora lo estás capturando con estado (default "n"). */}
@@ -158,7 +182,7 @@ export default function SendNotificationsForm() {
           <div className="flex flex-col gap-2">
             <h2 className="text-xl font-medium">Audience</h2>
 
-            <Dialog>
+            <Dialog open={openAudienceDialog} onOpenChange={() => setOpenAudienceDialog(!openAudienceDialog)}>
               <DialogTrigger className="bg-black dark:bg-white rounded-md px-2 py-1 w-20">
                 <p className="text-zinc-50 dark:text-zinc-900 text-sm font-medium">Select</p>
               </DialogTrigger>
@@ -179,42 +203,58 @@ export default function SendNotificationsForm() {
                       </TabsList>
 
                       <TabsContent value="all">
-                        With this option, the notification will be sent to all users
+                        <div className="flex flex-col gap-4 items-center">
+
+                          With this option, the notification will be sent to all users
+                          <Button onClick={() => setOpenAudienceDialog(false)} className="bg-black dark:bg-white px-2 py-1 w-20 ">
+                            <p className="text-zinc-50 dark:text-zinc-900 text-sm font-medium">Apply</p>
+                          </Button>
+                        </div>
                       </TabsContent>
 
                       <TabsContent value="hackathons">
-                        <div className="flex flex-col gap-4">
-                          <p>
-                            With this option, the notification will be sent to all users registered in the selected hackathons.
-                          </p>
-                          <div className="custom-scroll max-h-[160px] overflow-x-hidden overflow-y-auto flex flex-col gap-2">
-                            {hackathons?.map((hackathon: {id: string, title: string}, index: number) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={selectedHackathons.includes(hackathon.id)}
-                                  onCheckedChange={() => toggleHackathon(hackathon.id)}
-                                />
-                                <p>{hackathon.title}</p>
-                              </div>
-                            ))}
+                        <div className="flex flex-col gap-4 items-center">
+                          <div className="flex flex-col gap-4">
+                            <p>
+                              With this option, the notification will be sent to all users registered in the selected hackathons.
+                            </p>
+                            <div className="custom-scroll max-h-[160px] overflow-x-hidden overflow-y-auto flex flex-col gap-2">
+                              {hackathons?.map((hackathon: { id: string, title: string }, index: number) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={selectedHackathons.includes(hackathon.id)}
+                                    onCheckedChange={() => toggleHackathon(hackathon.id)}
+                                  />
+                                  <p>{hackathon.title}</p>
+                                </div>
+                              ))}
+                            </div>
                           </div>
+                          <Button onClick={() => setOpenAudienceDialog(false)} className="bg-black dark:bg-white px-2 py-1 w-20 ">
+                            <p className="text-zinc-50 dark:text-zinc-900 text-sm font-medium">Apply</p>
+                          </Button>
                         </div>
                       </TabsContent>
 
                       <TabsContent value="custom">
-                        <div className="flex flex-col gap-2">
-                          <p>
-                            Enter the email addresses of the users you wish to send notifications to, separated by commas.
-                          </p>
-                          <Input
-                            type="email"
-                            value={customUsersRaw}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomUsersRaw(e.target.value)}
-                            placeholder="email1@x.com, email2@x.com"
-                          />
-                          <p className="text-xs text-zinc-500">
-                            Parsed: {customUsersParsed.length} email(s)
-                          </p>
+                        <div className="flex flex-col gap-4 items-center">
+                          <div className="flex flex-col gap-2">
+                            <p>
+                              Enter the email addresses of the users you wish to send notifications to, separated by commas.
+                            </p>
+                            <Input
+                              type="email"
+                              value={customUsersRaw}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomUsersRaw(e.target.value)}
+                              placeholder="email1@x.com, email2@x.com"
+                            />
+                            <p className="text-xs text-zinc-500">
+                              Parsed: {customUsersParsed.length} email(s)
+                            </p>
+                          </div>
+                          <Button onClick={() => setOpenAudienceDialog(false)} className="bg-black dark:bg-white px-2 py-1 w-20 ">
+                            <p className="text-zinc-50 dark:text-zinc-900 text-sm font-medium">Apply</p>
+                          </Button>
                         </div>
                       </TabsContent>
                     </Tabs>
@@ -225,7 +265,7 @@ export default function SendNotificationsForm() {
           </div>
         </div>
 
-        <Button onClick={send} className="bg-black dark:bg-white px-2 py-1 w-16 ">
+        <Button onClick={send} disabled={!isValidForm} className="bg-black dark:bg-white px-2 py-1 w-16 ">
           <p className="text-zinc-50 dark:text-zinc-900 text-sm font-medium">Send</p>
         </Button>
       </div>
