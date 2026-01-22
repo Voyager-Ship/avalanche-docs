@@ -73,6 +73,7 @@ export interface IDataMain {
     banner: string;
     icon: string;
     small_banner: string;
+    event: string;
   }
   
   export const initialData = {
@@ -137,5 +138,6 @@ export interface IDataMain {
           banner: '',
           icon: '',
           small_banner: '',
+          event: 'hackathon',
       }
   }
