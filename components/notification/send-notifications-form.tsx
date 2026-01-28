@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +31,11 @@ import { Spinner } from "@/components/ui/spinner"
 
 type AudienceTab = "all" | "hackathons" | "custom";
 
+const notificationsTypeOptions = [
+  { value: "courseCompleted", label: "Course completed" },
+  { value: "message", label: "Message" },
+]
+
 
 export default function SendNotificationsForm() {
   // Fields
@@ -38,7 +43,7 @@ export default function SendNotificationsForm() {
   const [shortDescription, setShortDescription] = useState<string>("");
   const [content, setContent] = useState<string>("");
   const [contentType, setContentType] = useState<string>("");
-  const [type, setType] = useState<string>("default");
+  const [type, setType] = useState<string>("");
   const [loading, setLoading] = useState(false)
   const [openAudienceDialog, setOpenAudienceDialog] = useState<boolean>(false);
 
@@ -52,14 +57,15 @@ export default function SendNotificationsForm() {
       .map((s: string) => s.trim())
       .filter((s: string) => s.length > 0);
   }, [customUsersRaw]);
-
   const { toast } = useToast();
-
   const { data: hackathons } = useGetHackathons()
+  const [sessionPayload, setSessionPayload] = useState<{ id: string, custom_attributes: string[] } | undefined>()
 
   const isValidForm = useMemo(() => {
     return (
       title &&
+      type &&
+      shortDescription &&
       content &&
       contentType &&
       (audienceTab == 'all' || selectedHackathons.length > 0 || customUsersParsed.length > 0)
@@ -94,14 +100,26 @@ export default function SendNotificationsForm() {
 
   const send = async (): Promise<void> => {
     setLoading(true)
-    await sendNotifications(buildBody())
-    setLoading(false)
+    const response = await sendNotifications(buildBody())
     toast({
-      title: 'Notification created',
-      description:
-        'Your notification has been successfully created.',
+      title: response.success ? 'Notification created' : 'Error at create notification',
+      description: response.success ? 'Your notification has been successfully created.' : '',
     });
+    setLoading(false)
   };
+
+  useEffect(() => {
+    const raw: string | null = localStorage.getItem("session_payload");
+
+    if (raw === null) {
+      setSessionPayload(undefined);
+      return;
+    }
+
+    const payload: { id: string; custom_attributes: string[] } = JSON.parse(raw);
+    setSessionPayload(payload);
+  }, [openAudienceDialog]);
+
 
   return (
     <main className='container py-8 mx-auto min-h-[calc(100vh-92px)] lg:min-h-0 flex items-center justify-center relative px-2 pb-6 lg:px-14 '>
@@ -135,15 +153,30 @@ export default function SendNotificationsForm() {
           </div>
 
           <div className="flex flex-col gap-2">
+            <h1 className="text-xl font-medium">Type</h1>
+            <Select value={type} onValueChange={(e) => setType(e)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select notification type" />
+              </SelectTrigger>
+              <SelectContent>
+                {
+                  notificationsTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))
+                }
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
             <h1 className="text-xl font-medium">Content type</h1>
             <Select value={contentType} onValueChange={(e) => setContentType(e)}>
               <SelectTrigger>
-                <SelectValue placeholder="Content type" />
+                <SelectValue placeholder="Select content type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="text/plain">text/plain</SelectItem>
-                <SelectItem value="text/markdown">text/markdown</SelectItem>
-                <SelectItem value="text/html">text/html</SelectItem>
+                <SelectItem value="application/json">application/json</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -179,7 +212,7 @@ export default function SendNotificationsForm() {
                       className="w-full flex items-center my-2"
                     >
                       <TabsList>
-                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger disabled={!sessionPayload?.custom_attributes.includes('devrel')} value="all">All</TabsTrigger>
                         <TabsTrigger value="hackathons">Hackathons</TabsTrigger>
                         <TabsTrigger value="custom">Custom</TabsTrigger>
                       </TabsList>
