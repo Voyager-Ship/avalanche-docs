@@ -104,6 +104,7 @@ export interface GetHackathonsOptions {
   search?: string;
   created_by?: string | null;
   include_private?: boolean;
+  event?: string | null;
 }
 
 export async function getHackathon(id: string) {
@@ -229,6 +230,15 @@ export async function getFilteredHackathons(options: GetHackathonsOptions) {
       case "UPCOMING":
         conditions.push({ start_date: { gt: new Date() } });
         break;
+    }
+  }
+
+  if (options.event) {
+    const eventTypes = options.event.split(',').map((e: string) => e.trim());
+    if (eventTypes.length === 1) {
+      conditions.push({ event: eventTypes[0] });
+    } else {
+      conditions.push({ event: { in: eventTypes } });
     }
   }
 
