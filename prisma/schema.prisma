@@ -68,8 +68,8 @@ model User {
   registrations            RegisterForm[]
   statsPlaygrounds         StatsPlayground[]
   statsPlaygroundFavorites StatsPlaygroundFavorite[] @relation("StatsPlaygroundFavorites")
+  chatConversations        ChatConversation[]
   badges                   UserBadge[]
-  chatConversations   ChatConversation[]
 }
 
 model VerificationToken {

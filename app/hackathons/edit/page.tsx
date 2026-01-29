@@ -2433,7 +2433,8 @@ const HackathonsEdit = () => {
                       required
                     />
                   </div>
-                  <div className="space-y-4">
+                  {formDataLatest.event === "hackathon" && (
+                    <div className="space-y-4">
                     <label className="font-medium text-xl mb-2 block">{t[language].schedule}:</label>
                     <div className="mb-2 text-zinc-400 text-sm">{t[language].scheduleHelp}</div>
                     {formDataContent.schedule.map((event, index) => (
@@ -2459,6 +2460,7 @@ const HackathonsEdit = () => {
                       </Button>
                     </div>
                   </div>
+                  )}
                   <div className="space-y-4">
                     <label className="font-medium text-xl mb-2 block">{t[language].speakers}:</label>
                     {formDataContent.speakers.map((speaker, index) => (
