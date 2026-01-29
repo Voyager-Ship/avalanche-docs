@@ -74,6 +74,8 @@ export interface IDataMain {
     icon: string;
     small_banner: string;
     event: string;
+    custom_link: string | null;
+    top_most: boolean;
   }
   
   export const initialData = {
@@ -139,5 +141,7 @@ export interface IDataMain {
           icon: '',
           small_banner: '',
           event: 'hackathon',
+          custom_link: null,
+          top_most: false,
       }
   }
