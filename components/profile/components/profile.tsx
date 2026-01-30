@@ -62,16 +62,6 @@ export default function Profile() {
     );
   }
 
-  // Calcular el estado del checklist
-  const checklistState = {
-    email: !!watchedValues.email,
-    profilePicture: !!watchedValues.image,
-    country: !!watchedValues.country,
-    company: !!(watchedValues.founder_company_name || watchedValues.employee_company_name),
-    wallet: Array.isArray(watchedValues.wallet) ? watchedValues.wallet.length > 0 : !!watchedValues.wallet,
-    teamName: false, // TODO: Agregar campo team_name cuando esté disponible
-  };
-
   return (
     <>
       {/* Form Content */}

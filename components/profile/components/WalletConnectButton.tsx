@@ -711,11 +711,26 @@ export function WalletConnectButton({
                   disabled={isConnecting || !wallet.available}
                 >
                   {wallet.iconUrl ? (
-                    <img 
-                      src={wallet.iconUrl} 
-                      alt={wallet.name}
-                      className={`w-8 h-8 mr-3 rounded shrink-0 ${!wallet.available ? 'opacity-60' : ''}`}
-                    />
+                    wallet.id === "core" ? (
+                      <span className={`inline-flex shrink-0 mr-3 w-8 h-8 ${!wallet.available ? 'opacity-60' : ''}`}>
+                        <img
+                          src="/core-logo.svg"
+                          alt={wallet.name}
+                          className="w-8 h-8 rounded dark:hidden"
+                        />
+                        <img
+                          src="/core-logo-dark.svg"
+                          alt={wallet.name}
+                          className="w-8 h-8 rounded hidden dark:block"
+                        />
+                      </span>
+                    ) : (
+                      <img
+                        src={wallet.iconUrl}
+                        alt={wallet.name}
+                        className={`w-8 h-8 mr-3 rounded shrink-0 ${!wallet.available ? 'opacity-60' : ''}`}
+                      />
+                    )
                   ) : (
                     <span className={`text-2xl mr-3 shrink-0 ${!wallet.available ? 'opacity-60' : ''}`}>{wallet.icon}</span>
                   )}
