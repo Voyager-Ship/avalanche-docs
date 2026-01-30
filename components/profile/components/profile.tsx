@@ -108,7 +108,7 @@ export default function Profile() {
                     name="name"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center gap-4">
-                        <FormLabel className="w-32 flex-shrink-0">Full Name</FormLabel>
+                        <FormLabel className="w-32 shrink-0">Full Name</FormLabel>
                         <div className="flex-1">
                           <FormControl>
                             <Input
@@ -128,7 +128,7 @@ export default function Profile() {
                     name="bio"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start gap-4">
-                        <FormLabel className="w-32 flex-shrink-0 pt-2">Short bio</FormLabel>
+                        <FormLabel className="w-32 shrink-0 pt-2">Short bio</FormLabel>
                         <div className="flex-1">
                           <FormControl>
                             <Textarea
@@ -150,7 +150,7 @@ export default function Profile() {
                     name="country"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center gap-4">
-                        <FormLabel className="w-32 flex-shrink-0">City of Residence</FormLabel>
+                        <FormLabel className="w-32 shrink-0">City of Residence</FormLabel>
                         <div className="flex-1">
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
@@ -175,7 +175,7 @@ export default function Profile() {
                   {/* I'm */}
                   <div className="space-y-4">
                     <div className="flex flex-row items-center gap-4">
-                      <FormLabel className="w-32 flex-shrink-0">I'm</FormLabel>
+                      <FormLabel className="w-32 shrink-0">I'm</FormLabel>
                       <div className="flex-1">
                         <FormDescription className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
                           Select all roles that describe you.
@@ -205,7 +205,7 @@ export default function Profile() {
                           </FormItem>
                         )}
                       />
-                      <FormLabel className="text-sm font-normal cursor-pointer flex-shrink-0" onClick={() => {
+                      <FormLabel className="text-sm font-normal cursor-pointer shrink-0" onClick={() => {
                         const currentValue = watchedValues.is_student;
                         form.setValue("is_student", !currentValue, { shouldDirty: true });
                         if (currentValue) {
@@ -256,7 +256,7 @@ export default function Profile() {
                           </FormItem>
                         )}
                       />
-                      <FormLabel className="text-sm font-normal cursor-pointer flex-shrink-0" onClick={() => {
+                      <FormLabel className="text-sm font-normal cursor-pointer shrink-0" onClick={() => {
                         const currentValue = watchedValues.is_founder;
                         form.setValue("is_founder", !currentValue, { shouldDirty: true });
                         if (currentValue) {
@@ -307,7 +307,7 @@ export default function Profile() {
                           </FormItem>
                         )}
                       />
-                      <FormLabel className="text-sm font-normal cursor-pointer flex-shrink-0" onClick={() => {
+                      <FormLabel className="text-sm font-normal cursor-pointer shrink-0" onClick={() => {
                         const currentValue = watchedValues.is_employee;
                         form.setValue("is_employee", !currentValue, { shouldDirty: true });
                         if (currentValue) {
@@ -396,7 +396,7 @@ export default function Profile() {
                   name="github"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center gap-4">
-                      <FormLabel className="w-32 flex-shrink-0">GitHub</FormLabel>
+                      <FormLabel className="w-32 shrink-0">GitHub</FormLabel>
                       <div className="flex-1">
                         <FormControl>
                           <Input 
@@ -416,7 +416,7 @@ export default function Profile() {
                   name="wallet"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start gap-4">
-                      <FormLabel className="w-32 flex-shrink-0 pt-2">Wallets</FormLabel>
+                      <FormLabel className="w-32 shrink-0 pt-2">Wallets</FormLabel>
                       <div className="flex-1">
                         <FormControl>
                           <div className="space-y-2">
@@ -440,7 +440,7 @@ export default function Profile() {
                           </Button>
                               </div>
                             ))}
-                          <div className="flex-shrink-0">
+                          <div className="shrink-0">
                             <WalletConnectButton
                               onWalletConnected={(address) => {
                                   handleAddWallet(address);
@@ -465,7 +465,7 @@ export default function Profile() {
                   name="telegram_user"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center gap-4">
-                      <FormLabel className="w-32 flex-shrink-0">Telegram</FormLabel>
+                      <FormLabel className="w-32 shrink-0">Telegram</FormLabel>
                       <div className="flex-1">
                         <FormControl>
                           <Input
@@ -496,7 +496,7 @@ export default function Profile() {
 
                     return (
                       <FormItem className="flex flex-row items-start gap-4">
-                        <FormLabel className="w-32 flex-shrink-0 pt-2">Other accounts</FormLabel>
+                        <FormLabel className="w-32 shrink-0 pt-2">Other accounts</FormLabel>
                         <div className="flex-1">
                           <FormControl>
                             <div className="space-y-2">
@@ -550,7 +550,7 @@ export default function Profile() {
                   name="skills"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start gap-4">
-                      <FormLabel className="w-32 flex-shrink-0 pt-2">Skills</FormLabel>
+                      <FormLabel className="w-32 shrink-0 pt-2">Skills</FormLabel>
                       <div className="flex-1">
                         <div className="flex flex-wrap gap-2 mb-3">
                           {field.value?.map((skill) => (

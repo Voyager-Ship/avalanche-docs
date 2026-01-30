@@ -406,15 +406,20 @@ export function WalletConnectButton({
       detectedIds.add("coinbase");
     }
 
-    // Core Wallet (Avalanche wallet)
-    if ((window as any).avalanche?.request && !detectedIds.has("core")) {
+    // Core Wallet (Avalanche wallet) - Always show, even if not installed
+    if (!detectedIds.has("core")) {
+      const isCoreInstalled = !!(window as any).avalanche?.request;
       wallets.push({
         name: "Core Wallet",
         icon: "🔷",
+        iconUrl: "/core-logo-dark.svg", // Use Core Wallet logo
         id: "core",
-        available: true,
+        available: isCoreInstalled,
         type: "extension",
         connect: async () => {
+          if (!isCoreInstalled) {
+            throw new Error("Please install Core Wallet extension to connect.");
+          }
           try {
             const accounts = await window.avalanche!.request({
               method: "eth_requestAccounts",
@@ -689,12 +694,19 @@ export function WalletConnectButton({
                 </p>
               </div>
             ) : (
-              availableWallets.map((wallet) => (
+              availableWallets
+                .sort((a, b) => {
+                  // Sort Core Wallet first
+                  if (a.id === "core") return -1;
+                  if (b.id === "core") return 1;
+                  return 0;
+                })
+                .map((wallet) => (
                 <Button
                   key={wallet.id}
                   type="button"
                   variant="outline"
-                  className="w-full justify-start h-auto py-4"
+                  className="w-full justify-start h-auto py-4 disabled:opacity-70 disabled:cursor-not-allowed"
                   onClick={() => handleConnect(wallet)}
                   disabled={isConnecting || !wallet.available}
                 >
@@ -702,10 +714,10 @@ export function WalletConnectButton({
                     <img 
                       src={wallet.iconUrl} 
                       alt={wallet.name}
-                      className="w-8 h-8 mr-3 rounded"
+                      className={`w-8 h-8 mr-3 rounded shrink-0 ${!wallet.available ? 'opacity-60' : ''}`}
                     />
                   ) : (
-                    <span className="text-2xl mr-3">{wallet.icon}</span>
+                    <span className={`text-2xl mr-3 shrink-0 ${!wallet.available ? 'opacity-60' : ''}`}>{wallet.icon}</span>
                   )}
                   <div className="flex flex-col items-start flex-1">
                     <span className="font-medium">{wallet.name}</span>
@@ -716,7 +728,7 @@ export function WalletConnectButton({
                     )}
                     {!wallet.available && (
                       <span className="text-xs text-muted-foreground">
-                        Not available
+                        {wallet.id === "core" ? "Install extension to connect" : "Not available"}
                       </span>
                     )}
                   </div>
