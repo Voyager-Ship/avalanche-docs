@@ -415,6 +415,14 @@ body[data-layout="docs"] .prose pre {
   max-width: 100% !important;
 }
 
+/* Ensure Steps component step numbers are not clipped */
+body[data-layout="docs"] article .fd-steps,
+body[data-layout="docs"] .prose .fd-steps,
+.nd-layout-notebook article .fd-steps {
+  overflow: visible !important;
+  padding-left: 2rem !important; /* Space for step numbers */
+}
+
 /* Reduce heading top margin */
 .nd-layout-notebook article h1:first-child,
 .nd-layout-notebook article h2:first-child {
