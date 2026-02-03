@@ -8,7 +8,7 @@ import { CircleDotDashed, CircleFadingPlus, Lock, BadgeDollarSign, RefreshCw, Fl
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Brush, LineChart, Line } from "recharts";
-import { StatsBubbleNav } from "@/components/stats/stats-bubble.config";
+import { L1BubbleNav } from "@/components/stats/l1-bubble.config";
 import { AvalancheLogo } from "@/components/navigation/avalanche-logo";
 import { ChartWatermark } from "@/components/stats/ChartWatermark";
 import { LiveBlockBurns } from "@/components/stats/LiveBlockBurns";
@@ -431,7 +431,7 @@ export default function AvaxTokenPage() {
             ))}
           </div>
         </div>
-        <StatsBubbleNav />
+        <L1BubbleNav chainSlug="c-chain" rpcUrl="https://api.avax.network/ext/bc/C/rpc" />
       </div>
     );
   }
@@ -447,7 +447,7 @@ export default function AvaxTokenPage() {
             </CardContent>
           </Card>
         </div>
-        <StatsBubbleNav />
+        <L1BubbleNav chainSlug="c-chain" rpcUrl="https://api.avax.network/ext/bc/C/rpc" />
       </div>
     );
   }
@@ -831,7 +831,7 @@ export default function AvaxTokenPage() {
         </div>
       </div>
 
-      <StatsBubbleNav />
+      <L1BubbleNav chainSlug="c-chain" rpcUrl="https://api.avax.network/ext/bc/C/rpc" />
     </div>
   );
 }
