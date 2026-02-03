@@ -563,18 +563,23 @@ aside[aria-label*="On this page" i] > div:first-child,
 }
 
 /* Mobile: Ensure sidebar has solid background so page content isn't visible through it */
-/* The fumadocs mobile sidebar overlay is a div with backdrop-blur-xs that comes BEFORE
-   the sidebar in the DOM, so sibling selectors (~) don't work */
+/* The fumadocs mobile sidebar uses a div overlay with data-state attribute */
 @media (max-width: 1023px) {
-  /* Target fumadocs mobile sidebar overlay by its unique class combination */
-  body[data-layout="docs"] div.fixed.inset-0.backdrop-blur-xs[data-state] {
+  /* Target overlay by attribute - more robust than exact Tailwind class matching */
+  /* The overlay is a div.fixed with data-state, exclude the sidebar itself */
+  body[data-layout="docs"] div.fixed[data-state="open"]:not(#nd-sidebar-mobile) {
     background: rgba(0, 0, 0, 0.5) !important;
   }
 
-  /* Sidebar content - ensure solid background and proper z-index */
+  /* Sidebar content - ensure solid background and higher z-index than overlay */
   #nd-sidebar-mobile {
     background: hsl(var(--background)) !important;
     z-index: 50 !important;
+  }
+
+  /* Keep sidebar solid during close animation */
+  #nd-sidebar-mobile[data-state="closed"] {
+    background: hsl(var(--background)) !important;
   }
 }
 
