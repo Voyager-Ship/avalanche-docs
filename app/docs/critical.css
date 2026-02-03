@@ -57,11 +57,11 @@
     padding-top: 3rem !important;
   }
 
-  /* Let page content use available space */
+  /* Page content centering */
   [data-route-layout="docs"] #nd-page {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    max-width: none !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-width: var(--fd-page-width) !important;
   }
 
   /* First child padding */

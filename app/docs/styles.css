@@ -291,11 +291,11 @@ header + * {
     padding-right: 2rem !important;
   }
   
-  /* Let page content use available space */
+  /* Center the page content within available space */
   body[data-layout="docs"] #nd-page {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    max-width: none !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-width: var(--fd-page-width) !important;
   }
 }
 
@@ -307,9 +307,9 @@ header + * {
     padding-right: calc(var(--fd-toc-width, 286px) + 0.5rem) !important;
   }
 
-  /* Allow content to use available space, padding handles TOC clearance */
+  /* Constrain content to prevent TOC overlap on narrower XL screens */
   body[data-layout="docs"] #nd-page {
-    max-width: none !important;
+    max-width: min(var(--fd-page-width), calc(100vw - 19.5rem - var(--fd-toc-width, 286px) - 2rem)) !important;
   }
 }
 
@@ -590,15 +590,32 @@ aside[aria-label*="On this page" i] > div:first-child,
   }
 
   /* Override fumadocs default grey hover states on mobile sidebar */
+  /* Target all interactive elements including Tailwind utility-styled wrappers */
   body[data-layout="docs"] #nd-sidebar-mobile a:hover,
-  body[data-layout="docs"] #nd-sidebar-mobile button:hover {
+  body[data-layout="docs"] #nd-sidebar-mobile button:hover,
+  body[data-layout="docs"] #nd-sidebar-mobile [role="button"]:hover,
+  body[data-layout="docs"] #nd-sidebar-mobile [role="link"]:hover,
+  body[data-layout="docs"] #nd-sidebar-mobile li > div:hover,
+  body[data-layout="docs"] #nd-sidebar-mobile nav li:hover > *,
+  body[data-layout="docs"] #nd-sidebar-mobile [class*="hover\:bg-"]:hover {
     background-color: rgba(0, 0, 0, 0.05) !important;
   }
 
+  /* Dark mode hover states */
   .dark body[data-layout="docs"] #nd-sidebar-mobile a:hover,
   .dark body[data-layout="docs"] #nd-sidebar-mobile button:hover,
+  .dark body[data-layout="docs"] #nd-sidebar-mobile [role="button"]:hover,
+  .dark body[data-layout="docs"] #nd-sidebar-mobile [role="link"]:hover,
+  .dark body[data-layout="docs"] #nd-sidebar-mobile li > div:hover,
+  .dark body[data-layout="docs"] #nd-sidebar-mobile nav li:hover > *,
+  .dark body[data-layout="docs"] #nd-sidebar-mobile [class*="hover\:bg-"]:hover,
   body[data-layout="docs"].dark #nd-sidebar-mobile a:hover,
-  body[data-layout="docs"].dark #nd-sidebar-mobile button:hover {
+  body[data-layout="docs"].dark #nd-sidebar-mobile button:hover,
+  body[data-layout="docs"].dark #nd-sidebar-mobile [role="button"]:hover,
+  body[data-layout="docs"].dark #nd-sidebar-mobile [role="link"]:hover,
+  body[data-layout="docs"].dark #nd-sidebar-mobile li > div:hover,
+  body[data-layout="docs"].dark #nd-sidebar-mobile nav li:hover > *,
+  body[data-layout="docs"].dark #nd-sidebar-mobile [class*="hover\:bg-"]:hover {
     background-color: rgba(255, 255, 255, 0.08) !important;
   }
 }
