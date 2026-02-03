@@ -516,14 +516,14 @@ aside[aria-label*="On this page" i] > div:first-child,
     box-sizing: border-box !important;
   }
 
-  /* Mobile: API pages and full-width articles - let fumadocs handle padding (px-4) */
-  /* Only set width constraints and word wrapping, no additional padding */
+  /* Mobile: API pages need explicit padding - fumadocs-openapi doesn't provide any */
+  /* The APIPage component only uses "flex flex-col gap-24 text-sm", no px-4 class */
   body[data-layout="docs"] .fd-api-page,
   body[data-layout="docs"] [data-api-page],
   body[data-layout="docs"] article[data-full="true"],
   body[data-layout="docs"] .nd-layout-notebook article[data-full="true"] {
-    padding-left: 0 !important;  /* Remove - fumadocs px-4 already provides 16px */
-    padding-right: 0 !important; /* Remove - fumadocs px-4 already provides 16px */
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
     overflow-wrap: break-word !important;
@@ -565,6 +565,22 @@ aside[aria-label*="On this page" i] > div:first-child,
 @media (max-width: 1023px) {
   body[data-layout="docs"] {
     overflow-x: hidden !important;
+  }
+}
+
+/* Mobile: Ensure sidebar has solid background so page content isn't visible through it */
+@media (max-width: 1023px) {
+  /* Sidebar overlay - add semi-transparent background */
+  #nd-sidebar-mobile ~ div[data-state],
+  body[data-layout="docs"] [data-radix-dialog-overlay] {
+    background: rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* Sidebar content - ensure solid background and proper z-index */
+  #nd-sidebar-mobile,
+  body[data-layout="docs"] [data-radix-dialog-content] {
+    background: hsl(var(--background)) !important;
+    z-index: 50 !important;
   }
 }
 
