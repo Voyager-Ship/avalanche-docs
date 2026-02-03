@@ -562,24 +562,31 @@ aside[aria-label*="On this page" i] > div:first-child,
   }
 }
 
-/* Mobile: Ensure sidebar has solid background so page content isn't visible through it */
-/* The fumadocs mobile sidebar uses a div overlay with data-state attribute */
+/* Mobile: Ensure sidebar has solid background and overlay dims page content */
+/* NOTE: z-index is handled by global.css (sidebar: z-60, overlay: z-45) */
 @media (max-width: 1023px) {
-  /* Target overlay by attribute - more robust than exact Tailwind class matching */
-  /* The overlay is a div.fixed with data-state, exclude the sidebar itself */
-  body[data-layout="docs"] div.fixed[data-state="open"]:not(#nd-sidebar-mobile) {
-    background: rgba(0, 0, 0, 0.5) !important;
+  /* Sidebar - explicit opaque background colors (not CSS variables that might be translucent) */
+  body[data-layout="docs"] #nd-sidebar-mobile,
+  body[data-layout="docs"] #nd-sidebar-mobile[data-state="open"],
+  body[data-layout="docs"] #nd-sidebar-mobile[data-state="closed"] {
+    background-color: #ffffff !important;
+    /* DO NOT override z-index - global.css sets it to z-60 correctly */
   }
 
-  /* Sidebar content - ensure solid background and higher z-index than overlay */
-  #nd-sidebar-mobile {
-    background: hsl(var(--background)) !important;
-    z-index: 50 !important;
+  /* Dark mode: solid dark background */
+  .dark body[data-layout="docs"] #nd-sidebar-mobile,
+  .dark body[data-layout="docs"] #nd-sidebar-mobile[data-state="open"],
+  .dark body[data-layout="docs"] #nd-sidebar-mobile[data-state="closed"],
+  body[data-layout="docs"].dark #nd-sidebar-mobile,
+  body[data-layout="docs"].dark #nd-sidebar-mobile[data-state="open"],
+  body[data-layout="docs"].dark #nd-sidebar-mobile[data-state="closed"] {
+    background-color: #0a0a0a !important;
   }
 
-  /* Keep sidebar solid during close animation */
-  #nd-sidebar-mobile[data-state="closed"] {
-    background: hsl(var(--background)) !important;
+  /* Overlay backdrop - target fumadocs overlay specifically */
+  /* The overlay is a div with: fixed, inset-0, backdrop-blur-xs, data-state */
+  body[data-layout="docs"] div.fixed.inset-0[data-state="open"]:not(aside):not([id]) {
+    background-color: rgba(0, 0, 0, 0.5) !important;
   }
 }
 
