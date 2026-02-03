@@ -2,8 +2,7 @@
 
 /* Adjust APIPage layout - remove extra padding but keep centering - DESKTOP ONLY */
 @media (min-width: 1024px) {
-  body[data-layout="docs"] .fd-api-page,
-  body[data-layout="docs"] [data-api-page],
+  body[data-layout="docs"] [class*="-api-playground"],
   body[data-layout="docs"] article[data-full="true"],
   body[data-layout="docs"] .nd-layout-notebook article[data-full="true"] {
     padding-left: 0 !important;
@@ -13,8 +12,7 @@
   }
 
   /* Remove extra padding from API page content containers */
-  body[data-layout="docs"] .fd-api-page > *,
-  body[data-layout="docs"] [data-api-page] > * {
+  body[data-layout="docs"] [class*="-api-playground"] > * {
     padding-left: 0 !important;
   }
 
@@ -517,9 +515,8 @@ aside[aria-label*="On this page" i] > div:first-child,
   }
 
   /* Mobile: API pages need explicit padding - fumadocs-openapi doesn't provide any */
-  /* The APIPage component only uses "flex flex-col gap-24 text-sm", no px-4 class */
-  body[data-layout="docs"] .fd-api-page,
-  body[data-layout="docs"] [data-api-page],
+  /* Target the actual wrapper classes: data-api-playground, metrics-api-playground, etc. */
+  body[data-layout="docs"] [class*="-api-playground"],
   body[data-layout="docs"] article[data-full="true"],
   body[data-layout="docs"] .nd-layout-notebook article[data-full="true"] {
     padding-left: 1rem !important;
@@ -531,22 +528,19 @@ aside[aria-label*="On this page" i] > div:first-child,
   }
 
   /* Mobile: Constrain wide content (images, tables, code) to viewport */
-  body[data-layout="docs"] .fd-api-page img,
-  body[data-layout="docs"] [data-api-page] img,
+  body[data-layout="docs"] [class*="-api-playground"] img,
   body[data-layout="docs"] article[data-full="true"] img {
     max-width: 100% !important;
     height: auto !important;
   }
 
-  body[data-layout="docs"] .fd-api-page pre,
-  body[data-layout="docs"] [data-api-page] pre,
+  body[data-layout="docs"] [class*="-api-playground"] pre,
   body[data-layout="docs"] article[data-full="true"] pre {
     max-width: 100% !important;
     overflow-x: auto !important;
   }
 
-  body[data-layout="docs"] .fd-api-page table,
-  body[data-layout="docs"] [data-api-page] table,
+  body[data-layout="docs"] [class*="-api-playground"] table,
   body[data-layout="docs"] article[data-full="true"] table {
     display: block !important;
     max-width: 100% !important;
@@ -569,16 +563,16 @@ aside[aria-label*="On this page" i] > div:first-child,
 }
 
 /* Mobile: Ensure sidebar has solid background so page content isn't visible through it */
+/* The fumadocs mobile sidebar overlay is a div with backdrop-blur-xs that comes BEFORE
+   the sidebar in the DOM, so sibling selectors (~) don't work */
 @media (max-width: 1023px) {
-  /* Sidebar overlay - add semi-transparent background */
-  #nd-sidebar-mobile ~ div[data-state],
-  body[data-layout="docs"] [data-radix-dialog-overlay] {
+  /* Target fumadocs mobile sidebar overlay by its unique class combination */
+  body[data-layout="docs"] div.fixed.inset-0.backdrop-blur-xs[data-state] {
     background: rgba(0, 0, 0, 0.5) !important;
   }
 
   /* Sidebar content - ensure solid background and proper z-index */
-  #nd-sidebar-mobile,
-  body[data-layout="docs"] [data-radix-dialog-content] {
+  #nd-sidebar-mobile {
     background: hsl(var(--background)) !important;
     z-index: 50 !important;
   }
