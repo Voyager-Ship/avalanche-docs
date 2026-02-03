@@ -42,6 +42,8 @@
   }
 
   /* Main content layout and padding */
+  /* padding-left clears fixed sidebar (3rem offset + 16rem width + 0.5rem gap) */
+  /* padding-right is minimal buffer (no TOC below 1280px) */
   [data-route-layout="docs"] main#nd-docs-layout.fd-notebook-layout,
   [data-route-layout="docs"] main#nd-docs-layout.fd-default-layout {
     margin-left: 0 !important;
@@ -68,11 +70,12 @@
   }
 }
 
-/* XL screens: Account for TOC sidebar width (268px) when visible */
+/* XL screens: Account for TOC sidebar width (286px) when visible */
 @media (min-width: 1280px) {
   [data-route-layout="docs"] main#nd-docs-layout.fd-notebook-layout,
   [data-route-layout="docs"] main#nd-docs-layout.fd-default-layout {
-    padding-right: calc(var(--fd-toc-width, 268px) + 2rem) !important;
+    /* Right padding = TOC width + small buffer for visual balance */
+    padding-right: calc(var(--fd-toc-width, 286px) + 0.5rem) !important;
   }
 }
 
@@ -84,7 +87,14 @@
 
   [data-route-layout="docs"] #nd-docs-layout {
     --fd-sidebar-width: 0px !important;
-    padding-inline-start: 0 !important;
+    /* Removed: padding-inline-start: 0 - article handles its own padding */
+  }
+
+  /* Mobile article padding - content should not touch screen edges */
+  [data-route-layout="docs"] .nd-layout-notebook article {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box !important;
   }
 
   /* Subnavbar fixed on mobile */

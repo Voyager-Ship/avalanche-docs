@@ -1,26 +1,27 @@
 @import 'fumadocs-openapi/css/preset.css';
 
-/* Adjust APIPage layout to match content alignment */
-body[data-layout="docs"] .fd-api-page,
-body[data-layout="docs"] [data-api-page],
-body[data-layout="docs"] article[data-full="true"],
-body[data-layout="docs"] .nd-layout-notebook article[data-full="true"] {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  max-width: none !important;
-}
+/* Adjust APIPage layout - remove extra padding but keep centering - DESKTOP ONLY */
+@media (min-width: 1024px) {
+  body[data-layout="docs"] .fd-api-page,
+  body[data-layout="docs"] [data-api-page],
+  body[data-layout="docs"] article[data-full="true"],
+  body[data-layout="docs"] .nd-layout-notebook article[data-full="true"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    /* Removed: margin-left: 0, margin-right: 0, max-width: none */
+    /* Let the centering rules from #nd-page apply */
+  }
 
-/* Remove extra padding from API page content containers */
-body[data-layout="docs"] .fd-api-page > *,
-body[data-layout="docs"] [data-api-page] > * {
-  padding-left: 0 !important;
-}
+  /* Remove extra padding from API page content containers */
+  body[data-layout="docs"] .fd-api-page > *,
+  body[data-layout="docs"] [data-api-page] > * {
+    padding-left: 0 !important;
+  }
 
-/* Override inline padding-start on API pages */
-body[data-layout="docs"] main.fd-notebook-layout {
-  padding-inline-start: 0 !important;
+  /* Override inline padding-start on API pages */
+  body[data-layout="docs"] main.fd-notebook-layout {
+    padding-inline-start: 0 !important;
+  }
 }
 
 /* Force ONLY main navbar to extend to left edge - DOCS PAGE ONLY */
@@ -282,11 +283,12 @@ header + * {
   }
   
   /* Center content while maintaining sidebar and TOC spacing */
+  /* padding-left clears fixed sidebar (3rem offset + 16rem width + 0.5rem gap) */
+  /* padding-right is minimal buffer for LG screens without TOC */
   body[data-layout="docs"] main#nd-docs-layout.fd-notebook-layout,
   body[data-layout="docs"] main#nd-docs-layout.fd-default-layout {
     margin-left: 0 !important;
     margin-right: 0 !important;
-    /* Responsive padding that accounts for sidebar position (3rem) + width + spacing (0.5rem) */
     padding-left: calc(3rem + var(--fd-sidebar-width) + 0.5rem) !important;
     padding-right: 2rem !important;
   }
@@ -299,12 +301,17 @@ header + * {
   }
 }
 
-/* XL screens: Account for TOC sidebar width (268px) when visible */
+/* XL screens: Account for TOC sidebar width (286px) when visible */
 @media (min-width: 1280px) {
   body[data-layout="docs"] main#nd-docs-layout.fd-notebook-layout,
   body[data-layout="docs"] main#nd-docs-layout.fd-default-layout {
-    /* Add right padding for TOC sidebar (268px) + some breathing room */
-    padding-right: calc(var(--fd-toc-width, 268px) + 2rem) !important;
+    /* Right padding matches TOC width for balanced centering */
+    padding-right: calc(var(--fd-toc-width, 286px) + 0.5rem) !important;
+  }
+
+  /* Constrain content to prevent TOC overlap on narrower XL screens */
+  body[data-layout="docs"] #nd-page {
+    max-width: min(var(--fd-page-width), calc(100vw - 19.5rem - var(--fd-toc-width, 286px) - 2rem)) !important;
   }
 }
 
@@ -379,20 +386,32 @@ body[data-layout="docs"] #nd-sidebar nav {
   padding-top: 0 !important;
 }
 
-/* Tighten main content spacing */
-.nd-layout-notebook article {
-  padding-top: 0 !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+/* Tighten main content spacing - desktop only */
+@media (min-width: 1024px) {
+  .nd-layout-notebook article {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
 }
 
-/* Constrain article width but allow overflow for step numbers */
-/* Individual elements (tables, pre) handle their own horizontal scrolling */
-body[data-layout="docs"] article,
-body[data-layout="docs"] #nd-page {
-  max-width: 100% !important;
-  overflow-x: visible !important;  /* Allow step numbers to extend left */
+/* Mobile: Keep top padding removal only */
+@media (max-width: 1023px) {
+  .nd-layout-notebook article {
+    padding-top: 0 !important;
+  }
 }
+
+/* Mobile: Constrain article width but allow overflow for step numbers */
+/* Individual elements (tables, pre) handle their own horizontal scrolling */
+@media (max-width: 1023px) {
+  body[data-layout="docs"] article,
+  body[data-layout="docs"] #nd-page {
+    max-width: 100% !important;
+    overflow-x: visible !important;  /* Allow step numbers to extend left */
+  }
+}
+
 
 /* Constrain wide elements within article to prevent TOC overlap */
 /* Tables, pre, and other wide content get overflow-x: auto */
@@ -488,14 +507,64 @@ aside[aria-label*="On this page" i] > div:first-child,
   }
   
   /* Ensure article takes full width on mobile when TOC is hidden */
+  /* Add horizontal padding so content doesn't touch screen edges */
   body[data-layout="docs"] .nd-layout-notebook article {
     width: 100% !important;
     max-width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Mobile: API pages and full-width articles - let fumadocs handle padding (px-4) */
+  /* Only set width constraints and word wrapping, no additional padding */
+  body[data-layout="docs"] .fd-api-page,
+  body[data-layout="docs"] [data-api-page],
+  body[data-layout="docs"] article[data-full="true"],
+  body[data-layout="docs"] .nd-layout-notebook article[data-full="true"] {
+    padding-left: 0 !important;  /* Remove - fumadocs px-4 already provides 16px */
+    padding-right: 0 !important; /* Remove - fumadocs px-4 already provides 16px */
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+  }
+
+  /* Mobile: Constrain wide content (images, tables, code) to viewport */
+  body[data-layout="docs"] .fd-api-page img,
+  body[data-layout="docs"] [data-api-page] img,
+  body[data-layout="docs"] article[data-full="true"] img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  body[data-layout="docs"] .fd-api-page pre,
+  body[data-layout="docs"] [data-api-page] pre,
+  body[data-layout="docs"] article[data-full="true"] pre {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+  }
+
+  body[data-layout="docs"] .fd-api-page table,
+  body[data-layout="docs"] [data-api-page] table,
+  body[data-layout="docs"] article[data-full="true"] table {
+    display: block !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
   }
 
   /* Prevent any TOC from appearing above subnavbar */
   body[data-layout="docs"] aside:not(#nd-sidebar):not([data-sidebar]):not([id*="sidebar" i]) {
     z-index: 0 !important;
+  }
+}
+
+/* Mobile: Prevent horizontal scrolling from 100vw elements and content overflow */
+/* Step numbers extend left (negative margin) so they remain visible */
+/* The overflow issue is content extending right beyond viewport - this clips it */
+@media (max-width: 1023px) {
+  body[data-layout="docs"] {
+    overflow-x: hidden !important;
   }
 }
 
