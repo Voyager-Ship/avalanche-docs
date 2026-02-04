@@ -1033,11 +1033,13 @@ nav button[aria-current="page"]:hover {
     z-index: 44 !important; /* Below PopoverContent (z-10000) */
   }
   
-  /* CRITICAL: Prevent backdrop from blocking PopoverContent - backdrop must NOT block PopoverContent */
-  body:has([data-radix-popover-content][data-state="open"]) div.fixed.inset-0.backdrop-blur-xs[data-state="open"]:not(#nd-sidebar-mobile):not(aside):not([id]),
-  body:has([data-radix-popover-content][data-state="open"]) div.fixed.z-40.inset-0[data-state="open"]:not(#nd-sidebar-mobile):not(aside):not([id]) {
-    pointer-events: none !important; /* CRITICAL: Allow clicks through to PopoverContent when it's open */
-    z-index: 44 !important; /* Below PopoverContent (z-9999) */
+  /* Allow clicks through to PopoverContent ONLY when mobile sidebar is NOT open */
+  /* When sidebar IS open, backdrop must block all page content interactions */
+  /* Popovers inside sidebar still work because they're at z-10000 with pointer-events: auto */
+  body:not(:has(#nd-sidebar-mobile[data-state="open"])):has([data-radix-popover-content][data-state="open"]) div.fixed.inset-0.backdrop-blur-xs[data-state="open"]:not(#nd-sidebar-mobile):not(aside):not([id]),
+  body:not(:has(#nd-sidebar-mobile[data-state="open"])):has([data-radix-popover-content][data-state="open"]) div.fixed.z-40.inset-0[data-state="open"]:not(#nd-sidebar-mobile):not(aside):not([id]) {
+    pointer-events: none !important;
+    z-index: 44 !important;
   }
   
   /* Ensure mobile sidebar is above the backdrop and navbar */
