@@ -299,14 +299,13 @@ header + * {
   }
 }
 
-/* XL screens: TOC is visible - fumadocs pe-(--fd-toc-width) on #nd-page handles spacing */
+/* XL screens: Constrain #nd-page to available viewport space */
+/* Fumadocs pe-(--fd-toc-width) handles internal 286px padding for TOC buffer */
 @media (min-width: 1280px) {
-  /* Removed padding-right on main - fumadocs pe-(--fd-toc-width) on #nd-page handles spacing */
-
-  /* #nd-page max-width - don't subtract TOC width since fumadocs padding handles it */
   body[data-layout="docs"] #nd-page {
-    max-width: var(--fd-page-width) !important;
-    /* fumadocs adds pe-(--fd-toc-width) which creates the TOC buffer */
+    /* min(design-width, viewport - sidebar - buffer) */
+    /* 312px = sidebar (3rem + 16rem + 0.5rem), 32px = right buffer */
+    max-width: min(var(--fd-page-width), calc(100vw - 312px - 32px)) !important;
   }
 }
 

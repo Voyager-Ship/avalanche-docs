@@ -70,10 +70,11 @@
   }
 }
 
-/* XL screens: TOC is visible - fumadocs pe-(--fd-toc-width) on #nd-page handles spacing */
-/* Removed padding-right on main to avoid double-counting with fumadocs' built-in padding */
+/* XL screens: Constrain #nd-page to available viewport space */
 @media (min-width: 1280px) {
-  /* Keep default padding-right: 2rem from desktop breakpoint */
+  [data-route-layout="docs"] #nd-page {
+    max-width: min(var(--fd-page-width), calc(100vw - 312px - 32px)) !important;
+  }
 }
 
 /* Mobile: reset sidebar width and force left side */
