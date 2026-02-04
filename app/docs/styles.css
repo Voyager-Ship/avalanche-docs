@@ -393,6 +393,15 @@ body[data-layout="docs"] #nd-sidebar nav {
   }
 }
 
+/* XL breakpoint: Add right padding buffer when TOC is visible */
+@media (min-width: 1280px) {
+  body[data-layout="docs"] .nd-layout-notebook article,
+  body[data-layout="docs"] #nd-page article {
+    padding-right: 2rem !important;
+    box-sizing: border-box !important;
+  }
+}
+
 /* Mobile: Keep top padding removal only */
 @media (max-width: 1023px) {
   .nd-layout-notebook article {
@@ -433,6 +442,16 @@ body[data-layout="docs"] article pre,
 body[data-layout="docs"] .prose pre {
   overflow-x: auto !important;
   max-width: 100% !important;
+}
+
+/* Desktop: Constrain images to prevent overflow into TOC */
+@media (min-width: 1024px) {
+  body[data-layout="docs"] article img,
+  body[data-layout="docs"] #nd-page article img,
+  body[data-layout="docs"] .prose img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
 }
 
 /* Ensure Steps component step numbers are not clipped */
