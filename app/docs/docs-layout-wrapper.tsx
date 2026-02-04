@@ -63,6 +63,61 @@ export function DocsLayoutWrapper({
     };
   }, [pathname]);
 
+  // #region agent log - Debug z-index stacking when sidebar opens
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-state') {
+          const sidebar = document.getElementById('nd-sidebar-mobile');
+          if (sidebar) {
+            const sidebarState = sidebar.getAttribute('data-state');
+            const sidebarZIndex = window.getComputedStyle(sidebar).zIndex;
+            
+            // Find backdrop
+            const backdrop = document.querySelector('div.fixed.inset-0[data-state]');
+            const backdropZIndex = backdrop ? window.getComputedStyle(backdrop).zIndex : 'N/A';
+            
+            // Find all Radix popper wrappers in page content (not in sidebar)
+            const pageContent = document.querySelector('#nd-page, .nd-layout-notebook');
+            const popperWrappers = pageContent?.querySelectorAll('[data-radix-popper-content-wrapper]') || [];
+            const popperZIndexes = Array.from(popperWrappers).map(el => ({
+              zIndex: window.getComputedStyle(el).zIndex,
+              position: window.getComputedStyle(el).position,
+            }));
+            
+            // Find any open popovers
+            const openPopovers = document.querySelectorAll('[data-radix-popover-content][data-state="open"]');
+            const popoverZIndexes = Array.from(openPopovers).map(el => ({
+              zIndex: window.getComputedStyle(el).zIndex,
+              inSidebar: sidebar?.contains(el),
+            }));
+            
+            // Log to debug server
+            fetch('http://127.0.0.1:7242/ingest/1a5ca62b-5645-404a-9c28-3481c868b454',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'docs-layout-wrapper.tsx:sidebar-state-change',message:'Sidebar state changed',data:{sidebarState,sidebarZIndex,backdropZIndex,popperWrappersCount:popperWrappers.length,popperZIndexes,openPopoversCount:openPopovers.length,popoverZIndexes,hypothesisId:'H1-H2'},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+          }
+        }
+      });
+    });
+    
+    // Start observing document for sidebar state changes
+    const observeInterval = setInterval(() => {
+      const sidebar = document.getElementById('nd-sidebar-mobile');
+      if (sidebar) {
+        observer.observe(sidebar, { attributes: true, attributeFilter: ['data-state'] });
+        clearInterval(observeInterval);
+        
+        // Also log initial state
+        fetch('http://127.0.0.1:7242/ingest/1a5ca62b-5645-404a-9c28-3481c868b454',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'docs-layout-wrapper.tsx:observer-setup',message:'Observer setup complete',data:{sidebarFound:true,initialState:sidebar.getAttribute('data-state')},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+      }
+    }, 500);
+    
+    return () => {
+      observer.disconnect();
+      clearInterval(observeInterval);
+    };
+  }, []);
+  // #endregion
+
   // Determine which section we're in and get the appropriate tree
   let pageTree;
   let sidebarOptions: any = {};

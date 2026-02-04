@@ -459,7 +459,9 @@ svg.lucide.lucide-folder-open {
     z-index: 250;
   }
 
-  [data-state='open'] {
+  /* Elevate open elements ONLY when mobile sidebar is NOT open */
+  /* When sidebar IS open, content must stay below sidebar (z-60) */
+  body:not(:has(#nd-sidebar-mobile[data-state="open"])) [data-state='open'] {
     z-index: 450;
   }
 }
@@ -1070,6 +1072,21 @@ nav button[aria-current="page"]:hover {
     opacity: 1 !important;
     pointer-events: auto !important;
   }
+
+  /* #region agent log - DEBUG: Visual markers for z-index investigation */
+  /* When sidebar is OPEN, mark page content popper wrappers in red to see if they're visible */
+  body:has(#nd-sidebar-mobile[data-state="open"]) #nd-page [data-radix-popper-content-wrapper],
+  body:has(#nd-sidebar-mobile[data-state="open"]) .nd-layout-notebook [data-radix-popper-content-wrapper]:not(#nd-sidebar-mobile [data-radix-popper-content-wrapper]),
+  body:has(#nd-sidebar-mobile[data-state="open"]) main [data-radix-popper-content-wrapper]:not(#nd-sidebar-mobile [data-radix-popper-content-wrapper]) {
+    outline: 3px solid red !important;
+    outline-offset: 2px !important;
+  }
+  /* Mark sidebar popper wrappers in green */
+  body:has(#nd-sidebar-mobile[data-state="open"]) #nd-sidebar-mobile [data-radix-popper-content-wrapper] {
+    outline: 3px solid green !important;
+    outline-offset: 2px !important;
+  }
+  /* #endregion */
   
   /* Ensure mobile hamburger and dropdown are clickable */
   #nd-nav ul.flex.flex-row.items-center.ms-auto,
