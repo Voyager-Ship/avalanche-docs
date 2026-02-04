@@ -620,6 +620,29 @@ aside[aria-label*="On this page" i] > div:first-child,
   }
 }
 
+/* Desktop: Ensure API playground content respects container width */
+/* Tables were extending beyond visible content area on API reference pages */
+@media (min-width: 1024px) {
+  body[data-layout="docs"] [class*="-api-playground"],
+  body[data-layout="docs"] article[data-full="true"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+  }
+
+  body[data-layout="docs"] [class*="-api-playground"] > *,
+  body[data-layout="docs"] article[data-full="true"] > * {
+    max-width: 100% !important;
+  }
+
+  /* Ensure tables within API playground have proper overflow handling */
+  body[data-layout="docs"] [class*="-api-playground"] table,
+  body[data-layout="docs"] article[data-full="true"] table {
+    display: block !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+  }
+}
+
 /* Add extra horizontal padding to the first button in response tablist */
 div [role="tablist"] button:first-child {
   padding-left: 0.5rem !important;

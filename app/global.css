@@ -1073,21 +1073,6 @@ nav button[aria-current="page"]:hover {
     pointer-events: auto !important;
   }
 
-  /* #region agent log - DEBUG: Visual markers for z-index investigation */
-  /* When sidebar is OPEN, mark page content popper wrappers in red to see if they're visible */
-  body:has(#nd-sidebar-mobile[data-state="open"]) #nd-page [data-radix-popper-content-wrapper],
-  body:has(#nd-sidebar-mobile[data-state="open"]) .nd-layout-notebook [data-radix-popper-content-wrapper]:not(#nd-sidebar-mobile [data-radix-popper-content-wrapper]),
-  body:has(#nd-sidebar-mobile[data-state="open"]) main [data-radix-popper-content-wrapper]:not(#nd-sidebar-mobile [data-radix-popper-content-wrapper]) {
-    outline: 3px solid red !important;
-    outline-offset: 2px !important;
-  }
-  /* Mark sidebar popper wrappers in green */
-  body:has(#nd-sidebar-mobile[data-state="open"]) #nd-sidebar-mobile [data-radix-popper-content-wrapper] {
-    outline: 3px solid green !important;
-    outline-offset: 2px !important;
-  }
-  /* #endregion */
-  
   /* Ensure mobile hamburger and dropdown are clickable */
   #nd-nav ul.flex.flex-row.items-center.ms-auto,
   #nd-nav ul.flex.flex-row.items-center.ms-auto button,
