@@ -70,13 +70,10 @@
   }
 }
 
-/* XL screens: Account for TOC sidebar width (286px) when visible */
+/* XL screens: TOC is visible - fumadocs pe-(--fd-toc-width) on #nd-page handles spacing */
+/* Removed padding-right on main to avoid double-counting with fumadocs' built-in padding */
 @media (min-width: 1280px) {
-  [data-route-layout="docs"] main#nd-docs-layout.fd-notebook-layout,
-  [data-route-layout="docs"] main#nd-docs-layout.fd-default-layout {
-    /* Right padding = TOC width + small buffer for visual balance */
-    padding-right: calc(var(--fd-toc-width, 286px) + 0.5rem) !important;
-  }
+  /* Keep default padding-right: 2rem from desktop breakpoint */
 }
 
 /* Mobile: reset sidebar width and force left side */

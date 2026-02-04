@@ -299,17 +299,14 @@ header + * {
   }
 }
 
-/* XL screens: Account for TOC sidebar width (286px) when visible */
+/* XL screens: TOC is visible - fumadocs pe-(--fd-toc-width) on #nd-page handles spacing */
 @media (min-width: 1280px) {
-  body[data-layout="docs"] main#nd-docs-layout.fd-notebook-layout,
-  body[data-layout="docs"] main#nd-docs-layout.fd-default-layout {
-    /* Right padding matches TOC width for balanced centering */
-    padding-right: calc(var(--fd-toc-width, 286px) + 0.5rem) !important;
-  }
+  /* Removed padding-right on main - fumadocs pe-(--fd-toc-width) on #nd-page handles spacing */
 
-  /* Constrain content to prevent TOC overlap on narrower XL screens */
+  /* #nd-page max-width - don't subtract TOC width since fumadocs padding handles it */
   body[data-layout="docs"] #nd-page {
-    max-width: min(var(--fd-page-width), calc(100vw - 19.5rem - var(--fd-toc-width, 286px) - 2rem)) !important;
+    max-width: var(--fd-page-width) !important;
+    /* fumadocs adds pe-(--fd-toc-width) which creates the TOC buffer */
   }
 }
 
@@ -451,6 +448,33 @@ body[data-layout="docs"] .prose pre {
   body[data-layout="docs"] .prose img {
     max-width: 100% !important;
     height: auto !important;
+  }
+}
+
+/* XL breakpoint: Ensure all content respects container bounds */
+@media (min-width: 1280px) {
+  body[data-layout="docs"] #nd-page article,
+  body[data-layout="docs"] #nd-page .prose {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Images must respect article width */
+  body[data-layout="docs"] #nd-page article img,
+  body[data-layout="docs"] #nd-page .prose img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Math blocks (KaTeX/MathJax) - horizontal scroll for wide formulas */
+  body[data-layout="docs"] #nd-page article .katex-display,
+  body[data-layout="docs"] #nd-page article .math-display,
+  body[data-layout="docs"] #nd-page article mjx-container,
+  body[data-layout="docs"] #nd-page .prose .katex-display,
+  body[data-layout="docs"] #nd-page .prose .math-display,
+  body[data-layout="docs"] #nd-page .prose mjx-container {
+    max-width: 100% !important;
+    overflow-x: auto !important;
   }
 }
 
