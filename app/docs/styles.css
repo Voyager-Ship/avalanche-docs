@@ -281,12 +281,12 @@ header + * {
   }
   
   /* Center content while maintaining sidebar and TOC spacing */
-  /* padding-left clears fixed sidebar (3rem offset + 16rem width + 0.5rem gap) */
+  /* padding-left: just the sidebar offset - grid handles sidebar width via its column */
   /* padding-right is minimal buffer for LG screens without TOC */
   body[data-layout="docs"] #nd-notebook-layout {
     margin-left: 0 !important;
     margin-right: 0 !important;
-    padding-left: calc(3rem + var(--fd-sidebar-width) + 0.5rem) !important;
+    padding-left: 3rem !important;
     padding-right: 2rem !important;
   }
 
