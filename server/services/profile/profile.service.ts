@@ -1,5 +1,6 @@
 import { prisma } from "@/prisma/prisma";
 import { ExtendedProfile, UserType, UpdateExtendedProfileData } from "@/types/extended-profile";
+import { syncUserDataToHubSpot } from "@/server/services/hubspotUserData";
 
 /**
  * Custom errors for profile service
@@ -28,12 +29,13 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
     }
 
     // Parse user_type from JSON to object, with default values if it doesn't exist
-    const userType: UserType = user.user_type ? 
-        (typeof user.user_type === 'string' ? JSON.parse(user.user_type) : user.user_type) : 
+    const userType: UserType = user.user_type ?
+        (typeof user.user_type === 'string' ? JSON.parse(user.user_type) : user.user_type) :
         {
             is_student: false,
             is_founder: false,
             is_employee: false,
+            is_developer: false,
             is_enthusiast: false,
         };
 
@@ -55,6 +57,7 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
         notifications: user.notifications,
         profile_privacy: user.profile_privacy,
         telegram_user: user.telegram_user || null,
+        notification_means: user.notification_means || null,
     } as ExtendedProfile;
 }
 
@@ -141,7 +144,7 @@ export async function updateExtendedProfile(
     }
 
     // map username to user_name and socials to social_media
-    const { username, socials, user_type, ...restData } = profileData;
+    const { username, socials, user_type, notification_means, ...restData } = profileData;
     
     const updateData: any = {
         ...restData,
@@ -162,6 +165,11 @@ export async function updateExtendedProfile(
         updateData.user_type = user_type;
     }
 
+    // handle notification_means updates
+    if (notification_means !== undefined) {
+        updateData.notification_means = notification_means;
+    }
+
     await prisma.user.update({
         where: { id },
         data: updateData,
@@ -171,7 +179,33 @@ export async function updateExtendedProfile(
     if (!updatedProfile) {
         throw new Error("Failed to retrieve updated profile");
     }
-    
+
+    // Sync updated user data to HubSpot
+    if (updatedProfile.email) {
+        try {
+            await syncUserDataToHubSpot({
+                email: updatedProfile.email,
+                name: updatedProfile.name || undefined,
+                country: updatedProfile.country || undefined,
+                is_student: updatedProfile.user_type?.is_student,
+                student_institution: updatedProfile.user_type?.student_institution,
+                is_founder: updatedProfile.user_type?.is_founder,
+                founder_company_name: updatedProfile.user_type?.founder_company_name,
+                employee_company_name: updatedProfile.user_type?.employee_company_name,
+                employee_role: updatedProfile.user_type?.employee_role,
+                is_developer: updatedProfile.user_type?.is_developer,
+                is_enthusiast: updatedProfile.user_type?.is_enthusiast,
+                github: updatedProfile.github || undefined,
+                telegram_user: updatedProfile.telegram_user || undefined,
+                wallet: updatedProfile.wallet || undefined,
+                socials: updatedProfile.socials || undefined,
+            });
+        } catch (error) {
+            console.error('[HubSpot UserData] Failed to sync updated profile:', error);
+            // Don't block profile update if HubSpot sync fails
+        }
+    }
+
     return updatedProfile;
 }
 

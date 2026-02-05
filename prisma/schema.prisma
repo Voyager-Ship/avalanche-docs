@@ -47,19 +47,21 @@ model User {
   user_name                String?
   bio                      String?
   notification_email       String?
+  notifications            Boolean?
   profile_privacy          String?                   @default("public")
   social_media             String[]
-  notifications            Boolean?
   custom_attributes        String[]
   telegram_user            String?
   created_at               DateTime                  @default(now()) @db.Timestamptz(3)
   country                  String?
-  user_type                Json?
   github                   String?
-  skills                   String[]                  @default([])
-  noun_avatar_seed         Json?
   noun_avatar_enabled      Boolean                   @default(false)
+  noun_avatar_seed         Json?
+  skills                   String[]                  @default([])
+  user_type                Json?
   wallet                   String[]                  @default([])
+  notification_means       Json?
+  chatConversations        ChatConversation[]
   consoleLog               ConsoleLog[]
   faucetClaims             FaucetClaim[]
   hackathons               Hackathon[]
@@ -69,7 +71,6 @@ model User {
   registrations            RegisterForm[]
   statsPlaygrounds         StatsPlayground[]
   statsPlaygroundFavorites StatsPlaygroundFavorite[] @relation("StatsPlaygroundFavorites")
-  chatConversations        ChatConversation[]
   badges                   UserBadge[]
 }
 
@@ -132,9 +133,10 @@ model Project {
   small_cover_url     String?        @default("")
   tags                String[]       @default([])
   is_winner           Boolean?       @default(false)
-  origin              String         @default("unknown")
   categories          String[]       @default([])
+  origin              String         @default("unknown")
   other_category      String?
+  deployed_addresses  Json[]         @default([])
   formData            FormData[]
   members             Member[]
   prizes              Prize[]
@@ -211,7 +213,6 @@ model NodeRegistration {
   subnet_id           String
   blockchain_id       String
   node_id             String
-  node_index          Int?
   public_key          String
   proof_of_possession String
   rpc_url             String
@@ -220,6 +221,7 @@ model NodeRegistration {
   created_at          DateTime @default(now()) @db.Timestamptz(3)
   expires_at          DateTime @db.Timestamptz(3)
   updated_at          DateTime @updatedAt @db.Timestamptz(3)
+  node_index          Int?
   user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, subnet_id, node_index])
@@ -232,9 +234,9 @@ model ConsoleLog {
   id          String   @id @default(uuid())
   user_id     String
   status      String
-  action_path String?
   data        Json?
   created_at  DateTime @default(now()) @db.Timestamptz(3)
+  action_path String?
   user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
@@ -289,33 +291,30 @@ model FaucetClaim {
 }
 
 model ChatConversation {
-  id         String        @id @default(uuid())
-  user_id    String
-  title      String
-  created_at DateTime      @default(now()) @db.Timestamptz(3)
-  updated_at DateTime      @updatedAt @db.Timestamptz(3)
-
-  // Sharing fields
-  is_shared        Boolean   @default(false)
-  share_token      String?   @unique  // Cryptographically secure, non-guessable
-  shared_at        DateTime? @db.Timestamptz(3)
-  share_expires_at DateTime? @db.Timestamptz(3)  // Link expiration (default: 30 days from share)
-  view_count       Int       @default(0)
-
-  user       User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  messages   ChatMessage[]
+  id               String        @id @default(uuid())
+  user_id          String
+  title            String
+  created_at       DateTime      @default(now()) @db.Timestamptz(3)
+  updated_at       DateTime      @updatedAt @db.Timestamptz(3)
+  is_shared        Boolean       @default(false)
+  share_expires_at DateTime?     @db.Timestamptz(3)
+  share_token      String?       @unique
+  shared_at        DateTime?     @db.Timestamptz(3)
+  view_count       Int           @default(0)
+  user             User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  messages         ChatMessage[]
 
   @@index([user_id])
   @@index([updated_at])
-  @@index([share_token])  // Fast public lookup
-  @@index([is_shared])    // Filter shared conversations
+  @@index([share_token])
+  @@index([is_shared])
 }
 
 model ChatMessage {
   id              String           @id @default(uuid())
   conversation_id String
-  role            String           // "user" or "assistant"
-  content         String           @db.Text
+  role            String
+  content         String
   created_at      DateTime         @default(now()) @db.Timestamptz(3)
   conversation    ChatConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
 
@@ -368,49 +367,38 @@ model BuildGamesApplication {
 }
 
 model Retro9000ReturningApplication {
-  id                              String   @id @default(uuid())
-  email                           String   @unique
-
-  // PROJECT OVERVIEW
-  project_name                    String
-  project_type                    String
-  project_vertical                String
-  project_website                 String?
-  project_x_handle                String?
-  project_github                  String
-  project_hq                      String
-  project_continent               String
-  media_kit                       String
-
-  // FINANCIAL OVERVIEW
+  id                                  String   @id @default(uuid())
+  email                               String   @unique
+  project_name                        String
+  project_type                        String
+  project_vertical                    String
+  project_website                     String?
+  project_x_handle                    String?
+  project_github                      String
+  project_hq                          String
+  project_continent                   String
+  media_kit                           String
   previous_retro9000_snapshot_funding String?
-  requested_funding_range         String
-
-  // GRANT INFORMATION
-  eligibility_and_metrics         String   @db.Text
-  requested_grant_size_budget     String
-  changes_since_last_snapshot     String   @db.Text
-
-  // APPLICANT INFORMATION
-  first_name                      String
-  last_name                       String
-  pseudonym                       String?
-  role                            String
-  x_account                       String
-  telegram                        String
-  linkedin                        String?
-  github                          String?
-  country                         String?
-  other_url                       String?
-  bio                             String   @db.Text
-
-  // COMPLIANCE
-  kyb_willing                     String
-  gdpr                            Boolean  @default(false)
-  marketing_consent               Boolean  @default(false)
-
-  created_at                      DateTime @default(now()) @db.Timestamptz(3)
-  updated_at                      DateTime @updatedAt @db.Timestamptz(3)
+  requested_funding_range             String
+  eligibility_and_metrics             String
+  requested_grant_size_budget         String
+  changes_since_last_snapshot         String
+  first_name                          String
+  last_name                           String
+  pseudonym                           String?
+  role                                String
+  x_account                           String
+  telegram                            String
+  linkedin                            String?
+  github                              String?
+  country                             String?
+  other_url                           String?
+  bio                                 String
+  kyb_willing                         String
+  gdpr                                Boolean  @default(false)
+  marketing_consent                   Boolean  @default(false)
+  created_at                          DateTime @default(now()) @db.Timestamptz(3)
+  updated_at                          DateTime @updatedAt @db.Timestamptz(3)
 
   @@index([created_at])
   @@index([project_name])

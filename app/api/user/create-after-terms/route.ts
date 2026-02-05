@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { AuthOptions } from '@/lib/auth/authOptions';
 import { prisma } from '@/prisma/prisma';
+import { syncUserDataToHubSpot } from '@/server/services/hubspotUserData';
+import { getDefaultNotificationMeans } from '@/lib/notificationDefaults';
+import { withAuth } from '@/lib/protectedRoute';
 
 /**
  * API endpoint to create a new user after they accept terms.
@@ -9,17 +10,12 @@ import { prisma } from '@/prisma/prisma';
  * created in the database yet (to avoid creating accounts for users who
  * don't accept terms).
  */
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (
+  req: NextRequest,
+  context: any,
+  session: any
+) => {
   try {
-    const session = await getServerSession(AuthOptions);
-
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized: No valid session' },
-        { status: 401 }
-      );
-    }
-
     const email = session.user.email;
 
     // Check if user already exists (shouldn't happen, but safety check)
@@ -50,8 +46,24 @@ export async function POST(req: NextRequest) {
         authentication_mode: 'credentials',
         last_login: new Date(),
         notifications: notifications,
-      },
+        notification_means: getDefaultNotificationMeans(),
+      } as any,
     });
+
+    // Sync user data to HubSpot (after terms acceptance)
+    if (newUser.email) {
+      try {
+        await syncUserDataToHubSpot({
+          email: newUser.email,
+          name: newUser.name || undefined,
+          notifications: newUser.notifications ?? undefined,
+          gdpr: true, // User accepted terms and conditions
+        });
+      } catch (error) {
+        console.error('[HubSpot UserData] Failed to sync new user:', error);
+        // Don't block user creation if HubSpot sync fails
+      }
+    }
 
     return NextResponse.json({
       id: newUser.id,
@@ -65,4 +77,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
