@@ -17,7 +17,7 @@
   }
 
   /* Override inline padding-start on API pages */
-  body[data-layout="docs"] main.fd-notebook-layout {
+  body[data-layout="docs"] #nd-notebook-layout {
     padding-inline-start: 0 !important;
   }
 }
@@ -111,7 +111,7 @@ header + * {
 /* Mobile navigation: Separate main navbar and docs sidebar menus */
 @media (max-width: 1023px) {
   /* When we force mobile at <=1023px, kill desktop sidebar spacing */
-  body[data-layout="docs"] #nd-docs-layout {
+  body[data-layout="docs"] #nd-notebook-layout {
     --fd-sidebar-width: 0px !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
@@ -283,29 +283,43 @@ header + * {
   /* Center content while maintaining sidebar and TOC spacing */
   /* padding-left clears fixed sidebar (3rem offset + 16rem width + 0.5rem gap) */
   /* padding-right is minimal buffer for LG screens without TOC */
-  body[data-layout="docs"] main#nd-docs-layout.fd-notebook-layout,
-  body[data-layout="docs"] main#nd-docs-layout.fd-default-layout {
+  body[data-layout="docs"] #nd-notebook-layout {
     margin-left: 0 !important;
     margin-right: 0 !important;
     padding-left: calc(3rem + var(--fd-sidebar-width) + 0.5rem) !important;
     padding-right: 2rem !important;
   }
-  
+
   /* Center the page content within available space */
-  body[data-layout="docs"] #nd-page {
+  body[data-layout="docs"] #nd-page,
+  body[data-layout="docs"] article#nd-page {
     margin-left: auto !important;
     margin-right: auto !important;
     max-width: var(--fd-page-width) !important;
   }
 }
 
-/* XL screens: Constrain #nd-page to available viewport space */
-/* Fumadocs pe-(--fd-toc-width) handles internal 286px padding for TOC buffer */
+/* XL screens: Account for TOC sidebar width (286px) when visible */
 @media (min-width: 1280px) {
-  body[data-layout="docs"] #nd-page {
-    /* min(design-width, viewport - sidebar - buffer) */
-    /* 312px = sidebar (3rem + 16rem + 0.5rem), 32px = right buffer */
-    max-width: min(var(--fd-page-width), calc(100vw - 312px - 32px)) !important;
+  /* Add right padding to main layout to make space for TOC */
+  body[data-layout="docs"] #nd-notebook-layout {
+    /* Right padding = TOC width + small buffer for visual balance */
+    padding-right: calc(286px + 0.5rem) !important;
+  }
+
+  /* Constrain #nd-page content width to prevent TOC overlap */
+  /* Fumadocs sets --fd-toc-width to 0px inline, so use hard-coded value */
+  body[data-layout="docs"] #nd-page,
+  body[data-layout="docs"] article#nd-page {
+    /* min(design-width, viewport - sidebar - TOC - buffers) */
+    max-width: min(900px, calc(100vw - 600px)) !important;
+    overflow-x: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Children should respect parent width */
+  body[data-layout="docs"] #nd-page > * {
+    max-width: 100% !important;
   }
 }
 
