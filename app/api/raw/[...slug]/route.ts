@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { documentation, academy, integration, blog } from '@/lib/source';
+import { getLLMText } from '@/lib/llm-utils';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
@@ -15,18 +15,31 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Invalid content type' }, { status: 400 });
   }
 
-  const filePath = path.join(process.cwd(), 'content', contentType, ...restPath) + '.mdx';
-
-  //ensure the resolved path is within the content directory
-  const contentDir = path.join(process.cwd(), 'content');
-  const resolvedPath = path.resolve(filePath);
-
-  if (!resolvedPath.startsWith(contentDir)) {
-    return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
-  }
-
   try {
-    const content = await fs.readFile(resolvedPath, 'utf-8');
+    let page;
+
+    // Get page from appropriate source
+    switch (contentType) {
+      case 'docs':
+        page = documentation.getPage(restPath);
+        break;
+      case 'academy':
+        page = academy.getPage(restPath);
+        break;
+      case 'blog':
+        page = blog.getPage(restPath);
+        break;
+      case 'integrations':
+        page = integration.getPage(restPath);
+        break;
+    }
+
+    if (!page) {
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 });
+    }
+
+    // Get processed markdown content
+    const content = await getLLMText(page);
 
     return new NextResponse(content, {
       status: 200,
@@ -36,25 +49,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       },
     });
   } catch (error) {
-    const indexPath = path.join(process.cwd(), 'content', contentType, ...restPath, 'index.mdx');
-    const resolvedIndexPath = path.resolve(indexPath);
-
-    if (resolvedIndexPath.startsWith(contentDir)) {
-      try {
-        const content = await fs.readFile(resolvedIndexPath, 'utf-8');
-
-        return new NextResponse(content, {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/markdown; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600, s-maxage=3600',
-          },
-        });
-      } catch {
-        // 404 fallback
-      }
-    }
-
-    return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    console.error('Error fetching page:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
