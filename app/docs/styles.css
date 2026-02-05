@@ -301,16 +301,12 @@ header + * {
 
 /* XL screens: Account for TOC sidebar width (286px) when visible */
 @media (min-width: 1280px) {
-  /* Constrain #nd-page to prevent overlap with fixed TOC sidebar */
-  /* The TOC is position:fixed inside #nd-page, so we need to limit #nd-page width */
-  /* to leave room for TOC on the right side of the viewport */
+  /* Force #nd-page to respect its grid cell width instead of overflowing */
+  /* The grid already positions content correctly - we just prevent overflow */
   body[data-layout="docs"] #nd-page,
   body[data-layout="docs"] div#nd-page {
-    /* max-width = available space accounting for TOC (286px) + buffer (16px) */
-    max-width: calc(100% - 302px) !important;
-    /* Shift content left to make room for TOC instead of centering */
-    margin-left: 0 !important;
-    margin-right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
     overflow-x: auto !important;
     box-sizing: border-box !important;
   }
