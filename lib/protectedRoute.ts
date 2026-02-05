@@ -6,7 +6,10 @@ export function withAuth(handler: (request: NextRequest, context: any, session: 
   return async function (request: NextRequest, context: any) {
     const session = await getAuthSession();
     if (!session) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 401 });
+      return NextResponse.json({ 
+        error: 'Unauthorized', 
+        message: 'Authentication required. Please log in to access this resource.' 
+      }, { status: 401 });
     }
     return handler(request, context, session); 
   };
@@ -14,9 +17,23 @@ export function withAuth(handler: (request: NextRequest, context: any, session: 
 export function withAuthRole(role: string, handler: (request: NextRequest, context: any, session: any) => Promise<NextResponse>) {
   return async function (request: NextRequest, context: any) {
     const session = await getAuthSession();
-    const hasRole= session?.user.custom_attributes?.includes(role)??false;
-    if (!session || !hasRole) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 401 });
+    
+    // Check if user is authenticated
+    if (!session) {
+      return NextResponse.json({ 
+        error: 'Unauthorized', 
+        message: 'Authentication required. Please log in to access this resource.' 
+      }, { status: 401 });
+    }
+    
+    // Check if user has the required role
+    const hasRole = session?.user.custom_attributes?.includes(role) ?? false;
+    if (!hasRole) {
+      return NextResponse.json({ 
+        error: 'Forbidden', 
+        message: `Access denied. This action requires the '${role}' role.`,
+        requiredRole: role
+      }, { status: 403 });
     }
 
     return handler(request, context, session); 
