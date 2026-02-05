@@ -301,18 +301,16 @@ header + * {
 
 /* XL screens: Account for TOC sidebar width (286px) when visible */
 @media (min-width: 1280px) {
-  /* Add right padding to main layout to make space for TOC */
-  body[data-layout="docs"] #nd-notebook-layout {
-    /* Right padding = TOC width + small buffer for visual balance */
-    padding-right: calc(286px + 0.5rem) !important;
-  }
-
-  /* Constrain #nd-page content width to prevent TOC overlap */
-  /* Fumadocs sets --fd-toc-width to 0px inline, so use hard-coded value */
+  /* Constrain #nd-page to prevent overlap with fixed TOC sidebar */
+  /* The TOC is position:fixed inside #nd-page, so we need to limit #nd-page width */
+  /* to leave room for TOC on the right side of the viewport */
   body[data-layout="docs"] #nd-page,
-  body[data-layout="docs"] article#nd-page {
-    /* min(design-width, viewport - sidebar - TOC - buffers) */
-    max-width: min(900px, calc(100vw - 600px)) !important;
+  body[data-layout="docs"] div#nd-page {
+    /* max-width = available space accounting for TOC (286px) + buffer (16px) */
+    max-width: calc(100% - 302px) !important;
+    /* Shift content left to make room for TOC instead of centering */
+    margin-left: 0 !important;
+    margin-right: auto !important;
     overflow-x: auto !important;
     box-sizing: border-box !important;
   }
