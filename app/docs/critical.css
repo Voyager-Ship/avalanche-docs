@@ -71,10 +71,13 @@
 
 /* XL screens: Account for TOC sidebar width (286px) when visible */
 @media (min-width: 1280px) {
-  /* Force #nd-page to respect its grid cell width instead of overflowing */
-  /* The grid already positions content correctly - we just prevent overflow */
+  /* Override the 1024px+ centering rules to left-align content on XL screens */
+  /* This prevents content from centering and overlapping the TOC sidebar */
   body[data-layout="docs"] #nd-page,
-  body[data-layout="docs"] div#nd-page {
+  body[data-layout="docs"] div#nd-page,
+  [data-route-layout="docs"] #nd-page {
+    margin-left: 0 !important;      /* Reset auto margin - LEFT align */
+    margin-right: 0 !important;     /* Reset auto margin - prevent centering */
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
