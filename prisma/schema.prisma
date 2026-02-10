@@ -22,8 +22,8 @@ model Hackathon {
   icon            String         @default("")
   small_banner    String         @default("")
   participants    Int
-  top_most        Boolean?       @default(false)
   organizers      String?
+  top_most        Boolean?       @default(false)
   custom_link     String?
   created_by      String?
   is_public       Boolean?
@@ -33,7 +33,6 @@ model Hackathon {
   updated_by_user User?          @relation("HackathonUpdatedBy", fields: [updated_by], references: [id])
   projects        Project[]
   registrations   RegisterForm[]
-  cohosts         String[]       @default([])
 }
 
 model User {
@@ -60,7 +59,7 @@ model User {
   skills                   String[]                  @default([])
   user_type                Json?
   wallet                   String[]                  @default([])
-  notification_means       Json?
+  notification_means       Json?                     @default("{}")
   chatConversations        ChatConversation[]
   consoleLog               ConsoleLog[]
   faucetClaims             FaucetClaim[]

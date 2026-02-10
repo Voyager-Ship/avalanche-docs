@@ -336,7 +336,7 @@ export async function createHackathon(
       participants: hackathonData.participants!,
       tags: hackathonData.tags!,
       timezone: hackathonData.timezone!,
-      cohosts: hackathonData.cohosts ?? [],
+      // cohosts: hackathonData.cohosts ?? [],
       icon: hackathonData.icon!,
       banner: hackathonData.banner!,
       small_banner: hackathonData.small_banner!,
