@@ -36,6 +36,6 @@ export function withAuthRole(role: string, handler: (request: NextRequest, conte
       }, { status: 403 });
     }
 
-    return handler(request, context, session); 
+    return handler(request, context, session);
   };
 }
