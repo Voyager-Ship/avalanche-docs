@@ -76,6 +76,8 @@ export interface IDataMain {
     event: string;
     custom_link: string | null;
     top_most: boolean;
+    new_layout: boolean;
+    google_calendar_id: string | null;
   }
   
   export const initialData = {
@@ -143,5 +145,7 @@ export interface IDataMain {
           event: 'hackathon',
           custom_link: null,
           top_most: false,
+          new_layout: false,
+          google_calendar_id: null,
       }
   }
