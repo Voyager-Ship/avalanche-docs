@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
  import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 // Skeleton component for project cards
 function ProjectCardSkeleton() {
@@ -85,11 +86,9 @@ export default function Projects() {
               <p className="text-muted-foreground">No projects found</p>
             </div>
           ) : (
-            <div className='grid grid-cols-3 gap-6 w-full'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full'>
               {projects.map((project, index) => (
-                <div key={project.id || index} className="w-full">
-                  <ProjectCard project={project} isFromProfile={true} />
-                </div>
+                <ProjectCard key={project.id || index} project={project} isFromProfile={true} />
               ))}
             </div>
           )}

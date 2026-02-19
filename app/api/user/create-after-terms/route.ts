@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Session } from 'next-auth';
 import { prisma } from '@/prisma/prisma';
 import { syncUserDataToHubSpot } from '@/server/services/hubspotUserData';
 import { getDefaultNotificationMeans } from '@/lib/notificationDefaults';
@@ -12,8 +13,8 @@ import { withAuth } from '@/lib/protectedRoute';
  */
 export const POST = withAuth(async (
   req: NextRequest,
-  context: any,
-  session: any
+  _context: unknown,
+  session: Session
 ) => {
   try {
     const email = session.user.email;
@@ -47,7 +48,7 @@ export const POST = withAuth(async (
         last_login: new Date(),
         notifications: notifications,
         notification_means: getDefaultNotificationMeans(),
-      } as any,
+      }
     });
 
     // Sync user data to HubSpot (after terms acceptance)
