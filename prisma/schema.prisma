@@ -406,3 +406,11 @@ model Retro9000ReturningApplication {
   @@index([project_vertical])
   @@index([requested_funding_range])
 }
+
+model Speaker {
+  id       String @id @default(uuid())
+  name     String
+  icon     String
+  category String
+  picture  String
+}
