@@ -368,11 +368,11 @@ export const consoleMenu: LinkItemType = {
         banner: (
           <div className='-mx-3 -mt-3'>
             <Image
-              src="/builderhub-console.png"
-              alt='L1 Launcher Preview'
-              width={500}
-              height={140}
-              className='rounded-t-lg object-cover'
+              src="https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builder-console-megamenu"
+              alt='Builder Console Preview'
+              width={900}
+              height={400}
+              className='rounded-t-lg object-cover w-full h-auto'
               style={{
                 maskImage: 'linear-gradient(to bottom,white 60%,transparent)',
               }}
@@ -500,7 +500,7 @@ export const universityMenu: LinkItemType = {
 export const eventsMenu: LinkItemType = {
   type: 'menu',
   text: 'Events',
-  url: '/hackathons',
+  url: '/events',
   items: [
     {
       menu: {
@@ -524,7 +524,7 @@ export const eventsMenu: LinkItemType = {
       text: 'Hackathons',
       description:
         'The hackathons aims to harness the potential of Avalanche´s robust technology stack to address pressing issues and create scalable, practical solutions.',
-      url: '/hackathons',
+      url: '/events',
     },
     {
       menu: {

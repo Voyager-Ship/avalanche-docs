@@ -10,6 +10,7 @@ export function CustomCountdownBanner() {
       id="acp-267-validator-uptime-banner"
       variant="rainbow"
       className="z-50 max-md:!h-auto max-md:min-h-12 max-md:py-2"
+      style={{ background: "linear-gradient(90deg, #0b1e30 0%, #1a3a5c 50%, #0b1e30 100%)", color: "#fff" }}
     >
       <div className="inline-flex items-center gap-2 flex-wrap justify-center text-center">
         <span className="md:hidden">
@@ -17,7 +18,7 @@ export function CustomCountdownBanner() {
           <strong>80%</strong> to <strong>90%</strong>.
         </span>
         <span className="hidden md:inline">
-          ACP-267 update: Primary Network validators must maintain at least{" "}
+          ACP-267 Update: Primary Network validators must maintain at least{" "}
           <strong>90% uptime</strong> (up from <strong>80%</strong>) to remain eligible for rewards.
         </span>
         <Link

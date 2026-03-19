@@ -2,7 +2,6 @@ import clsx from "clsx";
 import Link from "next/link";
 import "./styles.css";
 import ReferralLink from "@/components/build-games/ReferralLink";
-import ApplicationStatusTracker from "@/components/build-games/ApplicationStatusTracker";
 import ProgramTimelineWrapper from "@/components/build-games/ProgramTimelineWrapper";
 import BuildGamesResourcesWrapper from "@/components/build-games/BuildGamesResourcesWrapper";
 import HowItWorksWrapper from "@/components/build-games/HowItWorksWrapper";
@@ -742,7 +741,7 @@ function HowItWorksSection() {
             <GridValue>Idea Pitch</GridValue>
             <GridHeader text="Deliverables" gridArea="1_/_2" />
             <GridHeader text="Support" gridArea="1_/_3" />
-            <GridContent text="1-min video pitching your concept" gridArea="2_/_2" />
+            <GridContent text="2-min video pitching your concept" gridArea="2_/_2" />
             <GridContent text="Video and pitch feedback" gridArea="2_/_3" />
           </ThreeColumnGrid>
         </TimelineRow>
@@ -1025,7 +1024,6 @@ function MainContent() {
     <div className="absolute content-stretch flex flex-col items-start left-[-0.05px] right-[0.05px] top-0" data-name="Main">
       <HeroSection />
       <HeroTilesSection />
-      <ApplicationStatusTracker />
       <div className="relative shrink-0 w-full" data-name="CTA">
         <div className="flex flex-col justify-center size-full">
           <div className="content-stretch flex flex-col gap-[16px] items-start justify-center px-[186px] py-0 relative w-full">
