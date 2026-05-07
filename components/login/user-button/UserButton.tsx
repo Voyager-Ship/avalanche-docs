@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation';
 
 const AVATAR_SIZE = 32;
 
+import { canAccessBuilderInsights, canAccessEvaluationTools } from '@/lib/auth/permissions';
 export function UserButton() {
   const { data: session, status } = useSession() ?? {};
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -30,6 +31,8 @@ export function UserButton() {
   const avatarContext = useUserAvatar();
   const isAuthenticated = status === 'authenticated';
   const { openLoginModal } = useLoginModalTrigger();
+  const canAccessEvaluate = canAccessEvaluationTools(session?.user?.custom_attributes);
+  const canAccessInsights = canAccessBuilderInsights(session?.user?.custom_attributes);
   const router = useRouter();
 
   const nounAvatarSeed = avatarContext?.nounAvatarSeed ?? localSeed;
@@ -177,9 +180,16 @@ export function UserButton() {
               )
             }
             {
-              (session?.user?.custom_attributes.includes('devrel') || session?.user?.custom_attributes?.includes('judge')) && (
+              canAccessEvaluate && (
                 <DropdownMenuItem asChild className='cursor-pointer'>
                   <Link href='/evaluate'>Evaluate Hackathons</Link>
+                </DropdownMenuItem>
+              )
+            }
+            {
+              canAccessInsights && (
+                <DropdownMenuItem asChild className='cursor-pointer'>
+                  <Link href='/builder-insights'>Builder Insights</Link>
                 </DropdownMenuItem>
               )
             }

@@ -2,6 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Session } from 'next-auth';
 import { prisma } from '@/prisma/prisma';
 import { syncUserDataToHubSpot } from '@/server/services/hubspotUserData';
+import { recordReferralAttributionFromRequest } from '@/server/services/referrals';
+
+const SIGNUP_ATTRIBUTION_RETRY_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+async function recordBhSignupReferral(
+  req: NextRequest,
+  user: { id: string; email: string | null },
+  referralAttribution: unknown,
+) {
+  try {
+    const attribution = await recordReferralAttributionFromRequest(req, {
+      targetType: 'bh_signup',
+      userId: user.id,
+      userEmail: user.email,
+      attribution: referralAttribution as any,
+    });
+    return Boolean(attribution);
+  } catch (error) {
+    console.error('[Referral] Failed to record BH signup attribution:', error);
+    return false;
+  }
+}
 import { getDefaultNotificationMeans } from '@/lib/notificationDefaults';
 import { withAuth } from '@/lib/protectedRoute';
 
@@ -18,6 +40,8 @@ export const POST = withAuth(async (
 ) => {
   try {
     const email = session.user.email;
+    const body = await req.json();
+    const { notifications = false, referral_attribution = null } = body;
 
     // Check if user already exists (shouldn't happen, but safety check)
     const existingUser = await prisma.user.findUnique({
@@ -25,22 +49,25 @@ export const POST = withAuth(async (
     });
 
     if (existingUser) {
+      const isRecentSignup =
+        Date.now() - existingUser.created_at.getTime() <= SIGNUP_ATTRIBUTION_RETRY_WINDOW_MS;
+      const referralAttributed = isRecentSignup
+        ? await recordBhSignupReferral(req, existingUser, referral_attribution)
+        : false;
+
       // User already exists, just return their data
       return NextResponse.json({
         id: existingUser.id,
         email: existingUser.email,
         alreadyExists: true,
+        referralAttributed,
       });
     }
-
-    // Get the terms acceptance data from the request body
-    const body = await req.json();
-    const { notifications = false } = body;
 
     // Create the new user
     const newUser = await prisma.user.create({
       data: {
-        email,
+        email: email || '',
         notification_email: email,
         name: '',
         image: '',
@@ -66,10 +93,13 @@ export const POST = withAuth(async (
       }
     }
 
+    const referralAttributed = await recordBhSignupReferral(req, newUser, referral_attribution);
+
     return NextResponse.json({
       id: newUser.id,
       email: newUser.email,
       created: true,
+      referralAttributed,
     });
   } catch (error) {
     console.error('Error creating user after terms:', error);

@@ -101,9 +101,9 @@ export function LoginModal() {
                   <DialogTitle className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
                     Sign in to your account
                   </DialogTitle>
-                  <p className="text-zinc-500 dark:text-zinc-400 text-xs">
+                  <Dialog.Description className="text-zinc-500 dark:text-zinc-400 text-xs">
                     Enter your email to receive a sign-in code
-                  </p>
+                  </Dialog.Description>
                 </div>
 
                 {/* Embedded Browser Warning */}
@@ -173,4 +173,3 @@ export function LoginModal() {
     </Dialog.Root>
   );
 }
-
