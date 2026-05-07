@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Divider } from '@/components/ui/divider'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { t } from '@/app/events/edit/translations'
 import { IDataContent } from '@/app/events/edit/initials'
 import StageCardsForm from './Card'
@@ -489,109 +490,116 @@ function StageForm({
   const dateValidation = validateDates()
 
   return (
-    <div className="space-y-4 pt-2">
-      <div className="space-y-2">
-        <Label htmlFor={`stage-label-${index}`}>Stage label</Label>
-        <Input
-          id={`stage-label-${index}`}
-          type="text"
-          value={stage.label}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-            onStageFieldChange(index, 'label', event.target.value)
-          }
-          placeholder="E.g. MVP Ready"
-        />
-      </div>
+    <Tabs defaultValue="stage" className="pt-2">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="stage">Stage form</TabsTrigger>
+        <TabsTrigger value="submit">Submit form</TabsTrigger>
+      </TabsList>
 
-      <div className="space-y-2">
-        <Label htmlFor={`stage-date-${index}`}>{t[language].stageStartDateLabel}</Label>
-        <Input
-          id={`stage-date-${index}`}
-          type="date"
-          value={stage.date}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-            onStageFieldChange(index, 'date', event.target.value)
-          }
-        />
-      </div>
+      <TabsContent value="stage" className="mt-4 space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor={`stage-label-${index}`}>Stage label</Label>
+          <Input
+            id={`stage-label-${index}`}
+            type="text"
+            value={stage.label}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              onStageFieldChange(index, 'label', event.target.value)
+            }
+            placeholder="E.g. MVP Ready"
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={`stage-deadline-${index}`}>{t[language].stageEndDateLabel}</Label>
-        <Input
-          id={`stage-deadline-${index}`}
-          type="date"
-          value={stage.deadline}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-            onStageFieldChange(index, 'deadline', event.target.value)
-          }
-        />
-        {dateValidation.error && (
-          <p className="text-sm text-red-500">{dateValidation.error}</p>
+        <div className="space-y-2">
+          <Label htmlFor={`stage-date-${index}`}>{t[language].stageStartDateLabel}</Label>
+          <Input
+            id={`stage-date-${index}`}
+            type="date"
+            value={stage.date}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              onStageFieldChange(index, 'date', event.target.value)
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor={`stage-deadline-${index}`}>{t[language].stageEndDateLabel}</Label>
+          <Input
+            id={`stage-deadline-${index}`}
+            type="date"
+            value={stage.deadline}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              onStageFieldChange(index, 'deadline', event.target.value)
+            }
+          />
+          {dateValidation.error && (
+            <p className="text-sm text-red-500">{dateValidation.error}</p>
+          )}
+        </div>
+
+        <Divider />
+        <div>
+          <h1 className="text-lg font-bold">{t[language].stageContentSection}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{t[language].stageContentSectionHelp}</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor={`stage-type-${index}`}>{t[language].stageDisplayFormat}</Label>
+          <select
+            id={`stage-type-${index}`}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            value={stage.component?.type ?? ''}
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+              onStageComponentTypeChange(
+                index,
+                event.target.value as StageComponentType
+              )
+            }
+          >
+            <option value="">Select type</option>
+            <option value={StageComponentType.Cards}>{t[language].stageCardsLabel}</option>
+            <option value={StageComponentType.Tags}>{t[language].stageTagsLabel}</option>
+          </select>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {stage.component?.type === StageComponentType.Cards
+              ? t[language].stageCardsDescription
+              : stage.component?.type === StageComponentType.Tags
+                ? t[language].stageTagsDescription
+                : ''}
+          </p>
+        </div>
+
+        {stage.component?.type === StageComponentType.Cards && (
+          <StageCardsForm
+            index={index}
+            component={stage.component}
+            onChange={onStageComponentChange}
+          />
         )}
-      </div>
 
-      <Divider />
-      <div>
-        <h1 className="text-lg font-bold">{t[language].stageContentSection}</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">{t[language].stageContentSectionHelp}</p>
-      </div>
+        {stage.component?.type === StageComponentType.Tags && (
+          <StageTagsForm
+            index={index}
+            component={stage.component}
+            onChange={onStageComponentChange}
+          />
+        )}
+      </TabsContent>
 
-      <div className="space-y-2">
-        <Label htmlFor={`stage-type-${index}`}>{t[language].stageDisplayFormat}</Label>
-        <select
-          id={`stage-type-${index}`}
-          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          value={stage.component?.type ?? ''}
-          onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-            onStageComponentTypeChange(
-              index,
-              event.target.value as StageComponentType
-            )
-          }
-        >
-          <option value="">Select type</option>
-          <option value={StageComponentType.Cards}>{t[language].stageCardsLabel}</option>
-          <option value={StageComponentType.Tags}>{t[language].stageTagsLabel}</option>
-        </select>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          {stage.component?.type === StageComponentType.Cards
-            ? t[language].stageCardsDescription
-            : stage.component?.type === StageComponentType.Tags
-              ? t[language].stageTagsDescription
-              : ''}
-        </p>
-      </div>
-
-      {stage.component?.type === StageComponentType.Cards && (
-        <StageCardsForm
-          index={index}
-          component={stage.component}
-          onChange={onStageComponentChange}
+      <TabsContent value="submit" className="mt-4">
+        <StageSubmitForm
+          stageIndex={index}
+          submitForm={stage.submitForm}
+          onAddField={onAddSubmitFormField}
+          onUpdateField={onUpdateSubmitFormField}
+          onRemoveField={onRemoveSubmitFormField}
+          onReplaceSubmitFormFields={onReplaceSubmitFormFields}
+          onRemoveSubmitForm={onRemoveSubmitForm}
+          setSelectedStageForm={setSelectedStageForm}
+          setActivePreviewTab={setActivePreviewTab}
+          selectedPredefinedFields={selectedPredefinedFields}
         />
-      )}
-
-      {stage.component?.type === StageComponentType.Tags && (
-        <StageTagsForm
-          index={index}
-          component={stage.component}
-          onChange={onStageComponentChange}
-        />
-      )}
-
-      <Divider />
-
-      <StageSubmitForm
-        stageIndex={index}
-        submitForm={stage.submitForm}
-        onAddField={onAddSubmitFormField}
-        onUpdateField={onUpdateSubmitFormField}
-        onRemoveField={onRemoveSubmitFormField}
-        onReplaceSubmitFormFields={onReplaceSubmitFormFields}
-        onRemoveSubmitForm={onRemoveSubmitForm}
-        setSelectedStageForm={setSelectedStageForm}
-        setActivePreviewTab={setActivePreviewTab}
-        selectedPredefinedFields={selectedPredefinedFields}
-      />
-    </div>
+      </TabsContent>
+    </Tabs>
   )
 }
