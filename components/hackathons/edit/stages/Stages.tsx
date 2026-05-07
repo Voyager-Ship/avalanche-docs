@@ -52,6 +52,8 @@ type StageFormProps = {
   stage: HackathonStage
   index: number
   language: 'en' | 'es'
+  eventStartDate: string
+  eventEndDate: string
   selectedPredefinedFields: string[]
   overlappingStageLabels: string[]
   onStageFieldChange: (
@@ -530,6 +532,8 @@ export default function HackathonsEditStages({
                 stage={stage}
                 index={index}
                 language={language}
+                eventStartDate={eventStartDate}
+                eventEndDate={eventEndDate}
                 overlappingStageLabels={getOverlappingStageLabels(
                   stages,
                   index
@@ -566,6 +570,8 @@ function StageForm({
   stage,
   index,
   language,
+  eventStartDate,
+  eventEndDate,
   overlappingStageLabels,
   onStageFieldChange,
   onStageComponentTypeChange,
@@ -581,10 +587,30 @@ function StageForm({
 }: StageFormProps): React.JSX.Element {
   const validateDates = (): { error: string | null } => {
     if (stage.date && stage.deadline) {
-      const startDate = new Date(stage.date)
-      const endDate = new Date(stage.deadline)
-      if (endDate < startDate) {
+      const stageStart = new Date(stage.date)
+      const stageEnd = new Date(stage.deadline)
+      const eventStart = new Date(eventStartDate)
+      const eventEnd = new Date(eventEndDate)
+      
+      // Validar que la fecha de fin sea mayor que la de inicio del stage
+      if (stageEnd < stageStart) {
         return { error: t[language].stageEndDateBeforeStartDate }
+      }
+      
+      // Validar que la fecha de inicio del stage no sea antes de la del hackathon
+      if (eventStartDate && stageStart < eventStart) {
+        const errorMsg = language === 'es' 
+          ? 'La fecha de inicio del stage no puede ser antes de la fecha de inicio del hackathon'
+          : 'Stage start date cannot be before the hackathon start date'
+        return { error: errorMsg }
+      }
+      
+      // Validar que la fecha de fin del stage no sea después de la del hackathon
+      if (eventEndDate && stageEnd > eventEnd) {
+        const errorMsg = language === 'es'
+          ? 'La fecha de fin del stage no puede ser después de la fecha de fin del hackathon'
+          : 'Stage end date cannot be after the hackathon end date'
+        return { error: errorMsg }
       }
     }
     return { error: null }
@@ -595,8 +621,8 @@ function StageForm({
   return (
     <Tabs defaultValue="stage" className="pt-2">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="stage">Stage form</TabsTrigger>
-        <TabsTrigger value="submit">Submit form</TabsTrigger>
+        <TabsTrigger value="stage">Stage Info</TabsTrigger>
+        <TabsTrigger value="submit">Submit Form</TabsTrigger>
       </TabsList>
 
       <TabsContent value="stage" className="mt-4 space-y-4">

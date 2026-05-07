@@ -1851,9 +1851,10 @@ const HackathonsEdit = () => {
       const container = leftPanelRef.current;
       const el = targetRef?.current;
       if (!container || !el) return;
-      const containerRect = container.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();
-      container.scrollBy({ top: elRect.top - containerRect.top - 16, behavior: 'smooth' });
+      const containerRect = container.getBoundingClientRect();
+      const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
+      container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
       // Click the correct Step 1 sub-tab if navigating to step1
       if (stepKey === 'step1') {
         if (
@@ -2749,9 +2750,10 @@ const HackathonsEdit = () => {
                                 const container = leftPanelRef.current;
                                 const el = step1Ref.current;
                                 if (!container || !el) return;
-                                const containerRect = container.getBoundingClientRect();
                                 const elRect = el.getBoundingClientRect();
-                                container.scrollBy({ top: elRect.top - containerRect.top - 16, behavior: 'smooth' });
+                                const containerRect = container.getBoundingClientRect();
+                                const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
+                                container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
                               });
                             }}
                             className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step1'
@@ -2779,9 +2781,10 @@ const HackathonsEdit = () => {
                                 const container = leftPanelRef.current;
                                 const el = step2Ref.current;
                                 if (!container || !el) return;
-                                const containerRect = container.getBoundingClientRect();
                                 const elRect = el.getBoundingClientRect();
-                                container.scrollBy({ top: elRect.top - containerRect.top - 16, behavior: 'smooth' });
+                                const containerRect = container.getBoundingClientRect();
+                                const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
+                                container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
                               });
                             }}
                             className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step2'
@@ -2809,9 +2812,10 @@ const HackathonsEdit = () => {
                                 const container = leftPanelRef.current;
                                 const el = step3Ref.current;
                                 if (!container || !el) return;
-                                const containerRect = container.getBoundingClientRect();
                                 const elRect = el.getBoundingClientRect();
-                                container.scrollBy({ top: elRect.top - containerRect.top - 16, behavior: 'smooth' });
+                                const containerRect = container.getBoundingClientRect();
+                                const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
+                                container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
                               });
                             }}
                             className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step3'
@@ -2839,9 +2843,10 @@ const HackathonsEdit = () => {
                                 const container = leftPanelRef.current;
                                 const el = step4Ref.current;
                                 if (!container || !el) return;
-                                const containerRect = container.getBoundingClientRect();
                                 const elRect = el.getBoundingClientRect();
-                                container.scrollBy({ top: elRect.top - containerRect.top - 16, behavior: 'smooth' });
+                                const containerRect = container.getBoundingClientRect();
+                                const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
+                                container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
                               });
                             }}
                             className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step4'
@@ -2870,9 +2875,10 @@ const HackathonsEdit = () => {
                                   const container = leftPanelRef.current;
                                   const el = step5Ref.current;
                                   if (!container || !el) return;
-                                  const containerRect = container.getBoundingClientRect();
                                   const elRect = el.getBoundingClientRect();
-                                  container.scrollBy({ top: elRect.top - containerRect.top - 16, behavior: 'smooth' });
+                                  const containerRect = container.getBoundingClientRect();
+                                  const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
+                                  container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
                                 });
                               }}
                               className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step5'
@@ -2901,9 +2907,10 @@ const HackathonsEdit = () => {
                                 const container = leftPanelRef.current;
                                 const el = step6Ref.current;
                                 if (!container || !el) return;
-                                const containerRect = container.getBoundingClientRect();
                                 const elRect = el.getBoundingClientRect();
-                                container.scrollBy({ top: elRect.top - containerRect.top - 16, behavior: 'smooth' });
+                                const containerRect = container.getBoundingClientRect();
+                                const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
+                                container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
                               });
                             }}
                             className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step6'
@@ -3007,7 +3014,7 @@ const HackathonsEdit = () => {
                 <form onSubmit={submitWithValidation} noValidate className="space-y-4">
                   <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-bold">{t[language].mainTopics}</h2>
+                      <h2 ref={step1Ref} className="text-2xl font-bold">{t[language].mainTopics}</h2>
                       {collapsed.main && (
                         <button onClick={() => setCollapsed({ ...collapsed, main: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
                           <ChevronRight className="w-5 h-5" /> {t[language].expand}
