@@ -1,10 +1,10 @@
 import { SubmitFormField, SubmitFormFieldType } from '@/types/hackathon-stage';
 
 export const BASE_SUBMIT_FORM_FIELDS = {
-  projectName: {
+  project_name: {
     label: 'Project Name',
     field: {
-      id: 'projectName',
+      id: 'project_name',
       type: SubmitFormFieldType.Text,
       label: 'Project Name',
       placeholder: 'Enter the project name',
@@ -14,10 +14,10 @@ export const BASE_SUBMIT_FORM_FIELDS = {
       required: true,
     },
   },
-  shortDescription: {
+  short_description: {
     label: 'Short Description',
     field: {
-      id: 'shortDescription',
+      id: 'short_description',
       type: SubmitFormFieldType.Text,
       label: 'Short Description',
       placeholder: 'Enter a short description',
@@ -27,10 +27,10 @@ export const BASE_SUBMIT_FORM_FIELDS = {
       required: true,
     },
   },
-  fullDescription: {
+  full_description: {
     label: 'Full Description',
     field: {
-      id: 'fullDescription',
+      id: 'full_description',
       type: SubmitFormFieldType.Text,
       label: 'Full Description',
       placeholder: 'Enter a full description',
@@ -40,10 +40,10 @@ export const BASE_SUBMIT_FORM_FIELDS = {
       required: true,
     },
   },
-  deployedAddress: {
+  deployed_addresses: {
     label: 'Deployed Address',
     field: {
-      id: 'deployedAddress',
+      id: 'deployed_addresses',
       type: SubmitFormFieldType.Text,
       label: 'Deployed Address',
       placeholder: 'Enter the deployed address',
@@ -66,10 +66,10 @@ export const BASE_SUBMIT_FORM_FIELDS = {
       options: ['Consumer', 'Defi', 'Enterprise', 'Developer Tooling', 'RWA', 'Gaming', 'Social'],
     },
   },
-  githubRepository: {
+  github_repository: {
     label: 'GitHub Repository',
     field: {
-      id: 'githubRepository',
+      id: 'github_repository',
       type: SubmitFormFieldType.Link,
       label: 'GitHub Repository',
       description: 'Must be a valid GitHub repository URL (e.g., https://github.com/username/repo)',
@@ -79,10 +79,10 @@ export const BASE_SUBMIT_FORM_FIELDS = {
       required: true,
     },
   },
-  demoOtherLinks: {
+  demo_link: {
     label: 'Demo and Other Links',
     field: {
-      id: 'demoOtherLinks',
+      id: 'demo_link',
       type: SubmitFormFieldType.Link,
       label: 'Demo and Other Links',
       description: 'Paste any project links (e.g., https://github.com/username/repo)',
@@ -92,10 +92,10 @@ export const BASE_SUBMIT_FORM_FIELDS = {
       required: true,
     },
   },
-  howItsMade: {
+  explanation: {
     label: 'How It’s Made',
     field: {
-      id: 'howItsMade',
+      id: 'explanation',
       type: SubmitFormFieldType.Text,
       label: 'How It’s Made',
       description: 'Explain how your project works under the hood. Tech stack integrations, architecture decisions, etc.',

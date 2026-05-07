@@ -4,7 +4,7 @@ import React from 'react'
 import { useForm } from 'react-hook-form'
 import Image from 'next/image'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form'
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -60,6 +60,56 @@ function buildDefaultValues(stage: HackathonStage): StageSubmitValues {
   )
 }
 
+function getRequiredMessage(label: string): string {
+  return `${label || 'This field'} is required`
+}
+
+function validateRequiredString(
+  value: string | string[] | undefined,
+  field: SubmitFormField
+): true | string {
+  if (!field.required) {
+    return true
+  }
+
+  return typeof value === 'string' && value.trim().length > 0
+    ? true
+    : getRequiredMessage(field.label)
+}
+
+function validateRequiredArray(
+  value: string | string[] | undefined,
+  field: SubmitFormField
+): true | string {
+  if (!field.required) {
+    return true
+  }
+
+  return Array.isArray(value) &&
+    value.some((item: string): boolean => item.trim().length > 0)
+    ? true
+    : getRequiredMessage(field.label)
+}
+
+function isRequiredFieldEmpty(
+  field: SubmitFormField,
+  value: string | string[] | undefined
+): boolean {
+  if (!field.required) {
+    return false
+  }
+
+  if (
+    field.type === SubmitFormFieldType.Link ||
+    field.type === SubmitFormFieldType.MultiSelect
+  ) {
+    return !Array.isArray(value) ||
+      !value.some((item: string): boolean => item.trim().length > 0)
+  }
+
+  return typeof value !== 'string' || value.trim().length === 0
+}
+
 export default function StageSubmitPageContent({
   hackathon,
   hackathonCreator,
@@ -84,6 +134,12 @@ export default function StageSubmitPageContent({
     defaultValues: buildDefaultValues(stage),
     shouldUnregister: true,
   })
+  const watchedValues: StageSubmitValues = form.watch()
+  const hasMissingRequiredFields: boolean = (stage.submitForm?.fields ?? []).some(
+    (field: SubmitFormField): boolean =>
+      isRequiredFieldEmpty(field, watchedValues[field.id])
+  )
+  const isSaveDisabled: boolean = isSubmitting || hasMissingRequiredFields
   const fieldLabelClassName: string = 'font-medium text-zinc-800 dark:text-white'
   const fieldDescriptionClassName: string = 'text-sm text-zinc-600 dark:text-zinc-400'
   const inputClassName: string =
@@ -125,6 +181,10 @@ export default function StageSubmitPageContent({
             key={textField.id}
             control={form.control}
             name={textField.id}
+            rules={{
+              validate: (value: string | string[] | undefined): true | string =>
+                validateRequiredString(value, textField),
+            }}
             render={({ field: rhfField }) => (
               <FormItem>
                 <FormLabel className={fieldLabelClassName}>
@@ -143,6 +203,7 @@ export default function StageSubmitPageContent({
                     className={inputClassName}
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -158,6 +219,10 @@ export default function StageSubmitPageContent({
             key={linkField.id}
             control={form.control}
             name={linkField.id}
+            rules={{
+              validate: (value: string | string[] | undefined): true | string =>
+                validateRequiredArray(value, linkField),
+            }}
             render={({ field: rhfField }) => {
               const links: string[] = Array.isArray(rhfField.value)
                 ? (rhfField.value as string[])
@@ -343,6 +408,7 @@ export default function StageSubmitPageContent({
                       })}
                     </div>
                   )}
+                  <FormMessage />
                 </FormItem>
               )
             }}
@@ -359,6 +425,10 @@ export default function StageSubmitPageContent({
             key={chipsField.id}
             control={form.control}
             name={chipsField.id}
+            rules={{
+              validate: (value: string | string[] | undefined): true | string =>
+                validateRequiredString(value, chipsField),
+            }}
             render={({ field: rhfField }) => {
               const chips: string[] = chipsField.chips ?? []
 
@@ -400,6 +470,7 @@ export default function StageSubmitPageContent({
                       })}
                     </div>
                   )}
+                  <FormMessage />
                 </FormItem>
               )
             }}
@@ -416,6 +487,10 @@ export default function StageSubmitPageContent({
             key={multiSelectField.id}
             control={form.control}
             name={multiSelectField.id}
+            rules={{
+              validate: (value: string | string[] | undefined): true | string =>
+                validateRequiredArray(value, multiSelectField),
+            }}
             render={({ field: rhfField }) => {
               const selectedValues: string[] = Array.isArray(rhfField.value)
                 ? (rhfField.value as string[])
@@ -465,6 +540,7 @@ export default function StageSubmitPageContent({
                       searchPlaceholder="Search options"
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )
             }}
@@ -680,7 +756,7 @@ export default function StageSubmitPageContent({
                   <div className="flex justify-center pt-4">
                     <Button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSaveDisabled}
                       className=" bg-[#d66666] py-4 text-base font-semibold text-zinc-900 hover:bg-[#e57f7f]"
                     >
                       {isSubmitting ? 'Saving...' : `Save ${stage.label}`}

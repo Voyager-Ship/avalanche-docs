@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/protectedRoute';
 import { prisma } from '@/prisma/prisma';
 
-type StageSubmitValues = Record<string, string | string[]>;
+type StageSubmitValues = Record<
+  string,
+  string | string[] | Array<{ address: string }> | null
+>;
 
 type StageSubmitRequestBody = {
   hackathonId: string;
@@ -154,17 +157,87 @@ export const POST = withAuth(async (request: Request, _context, session) => {
               project_id: true,
             },
           });
-      let projectColumnsToUpdate: { [key: string]: string } = {};
+      const getStringValue = (...keys: string[]): string | undefined => {
+        for (const key of keys) {
+          const value = values[key];
+          if (typeof value === 'string' && value.trim()) {
+            return value;
+          }
+        }
 
-      if (values.projectName && typeof values.projectName=== 'string') {
-        projectColumnsToUpdate.project_name= values.projectName;
-      }
-      if (values.shortDescription && typeof values.shortDescription === 'string') {
-        projectColumnsToUpdate.short_description = values.shortDescription;
-      }
-      if (values.fullDescription && typeof values.fullDescription === 'string') {
-        projectColumnsToUpdate.full_description = values.fullDescription;
-      }
+        return undefined;
+      };
+
+      const getLinkValue = (...keys: string[]): string | undefined => {
+        for (const key of keys) {
+          const value = values[key];
+          if (typeof value === 'string' && value.trim()) {
+            return value;
+          }
+
+          if (Array.isArray(value)) {
+            const links = value
+              .filter((link): link is string => typeof link === 'string')
+              .map((link) => link.trim())
+              .filter(Boolean);
+
+            if (links.length > 0) {
+              return links.join(',');
+            }
+          }
+        }
+
+        return undefined;
+      };
+
+      const getStringArrayValue = (...keys: string[]): string[] | undefined => {
+        for (const key of keys) {
+          const value = values[key];
+          if (Array.isArray(value)) {
+            const items = value
+              .filter((item): item is string => typeof item === 'string')
+              .map((item) => item.trim())
+              .filter(Boolean);
+
+            if (items.length > 0) {
+              return items;
+            }
+          }
+
+          if (typeof value === 'string' && value.trim()) {
+            return [value];
+          }
+        }
+
+        return undefined;
+      };
+
+      const getDeployedAddressesValue = (...keys: string[]): Array<{ address: string }> | undefined => {
+        const addresses = getStringArrayValue(...keys);
+        if (!addresses) {
+          return undefined;
+        }
+
+        return addresses.map((address) => ({ address }));
+      };
+
+      let projectColumnsToUpdate: { [key: string]: unknown } = {};
+      const projectColumnValues: Record<string, unknown> = {
+        project_name: getStringValue('project_name', 'projectName'),
+        short_description: getStringValue('short_description', 'shortDescription'),
+        full_description: getStringValue('full_description', 'fullDescription'),
+        deployed_addresses: getDeployedAddressesValue('deployed_addresses', 'deployedAddress'),
+        categories: getStringArrayValue('categories'),
+        github_repository: getLinkValue('github_repository', 'githubRepository'),
+        demo_link: getLinkValue('demo_link', 'demoOtherLinks'),
+        explanation: getStringValue('explanation', 'howItsMade'),
+      };
+
+      Object.entries(projectColumnValues).forEach(([column, value]) => {
+        if (value !== undefined) {
+          projectColumnsToUpdate[column] = value;
+        }
+      });
 
       const updatedProject = await tx.project.update({
         where: {

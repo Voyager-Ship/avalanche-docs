@@ -466,7 +466,7 @@ export default function HackathonsEditStages({
             deadline: eventEndDate,
             component: undefined,
             submitForm: {
-              fields: [BASE_SUBMIT_FORM_FIELDS.projectName.field],
+              fields: [BASE_SUBMIT_FORM_FIELDS.project_name.field],
             },
           }
         ],
@@ -474,10 +474,10 @@ export default function HackathonsEditStages({
       return
     }
 
-    if (stages.length > 0 && !stages[0].submitForm?.fields.find((field) => field.id === 'projectName')) {
+    if (stages.length > 0 && !stages[0].submitForm?.fields.find((field) => field.id === 'project_name' || field.id === 'projectName')) {
       setFormDataContent({
         ...formDataContent,
-        stages: [{ ...stages[0], submitForm: { ...stages[0].submitForm, fields: [BASE_SUBMIT_FORM_FIELDS.projectName.field, ...(stages[0].submitForm?.fields ?? [])] } }, ...stages.slice(1)]
+        stages: [{ ...stages[0], submitForm: { ...stages[0].submitForm, fields: [BASE_SUBMIT_FORM_FIELDS.project_name.field, ...(stages[0].submitForm?.fields ?? [])] } }, ...stages.slice(1)]
       })
       return
     }
