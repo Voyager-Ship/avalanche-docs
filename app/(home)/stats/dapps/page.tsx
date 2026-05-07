@@ -100,6 +100,7 @@ export default function DAppsPage() {
   const [loading, setLoading] = useState(true);
   const [chainStatsLoading, setChainStatsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chainStatsError, setChainStatsError] = useState<string | null>(null);
   const [chainStatsRange, setChainStatsRange] = useState<ChainStatsRange>("all");
 
   const [sortField, setSortField] = useState<SortField>("tvl");
@@ -113,42 +114,60 @@ export default function DAppsPage() {
 
   // Fetch DefiLlama data
   useEffect(() => {
+    const controller = new AbortController();
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/dapps");
+        const response = await fetch("/api/dapps", { signal: controller.signal });
         if (!response.ok) throw new Error("Failed to fetch dApps data");
         const data = await response.json();
         setDapps(data.dapps);
         setMetrics(data.metrics);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("Error fetching dApps:", err);
-        setError(err?.message || "Failed to load data");
+        setError(err instanceof Error ? err.message : "Failed to load data");
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
     fetchData();
+    return () => controller.abort();
   }, []);
 
   // Fetch on-chain stats (separate, may take longer) - refetch when range changes
   useEffect(() => {
+    const controller = new AbortController();
     const fetchChainStats = async () => {
       try {
         setChainStatsLoading(true);
+        setChainStatsError(null);
+        setChainStats(null);
         const days = CHAIN_STATS_RANGES[chainStatsRange].days;
-        const response = await fetch(`/api/dapps/chain-stats?days=${days}`);
-        if (response.ok) {
-          const data = await response.json();
-          setChainStats(data);
+        const response = await fetch(`/api/dapps/chain-stats?days=${days}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch chain stats (HTTP ${response.status})`);
         }
-      } catch (err) {
+        const data = await response.json();
+        setChainStats(data);
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("Error fetching chain stats:", err);
+        setChainStatsError(
+          err instanceof Error ? err.message : "Failed to load chain stats"
+        );
       } finally {
-        setChainStatsLoading(false);
+        if (!controller.signal.aborted) {
+          setChainStatsLoading(false);
+        }
       }
     };
     fetchChainStats();
+    return () => controller.abort();
   }, [chainStatsRange]);
 
   // Close dropdown when clicking outside
@@ -508,7 +527,7 @@ export default function DAppsPage() {
       </div>
 
       {/* On-Chain Analytics Section */}
-      {(chainStats || chainStatsLoading) && (
+      {(chainStats || chainStatsLoading || chainStatsError) && (
         <div className="bg-gradient-to-b from-zinc-100 to-zinc-50 dark:from-zinc-900 dark:to-zinc-950 py-8 sm:py-12 border-y border-zinc-200 dark:border-zinc-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between mb-6">
@@ -602,6 +621,12 @@ export default function DAppsPage() {
                     </p>
                   </div>
                 </>
+              ) : chainStatsError ? (
+                <div className="col-span-2 lg:col-span-4 bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/40 rounded-xl p-4 sm:p-5">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    Couldn't load on-chain stats: {chainStatsError}
+                  </p>
+                </div>
               ) : null}
             </div>
 

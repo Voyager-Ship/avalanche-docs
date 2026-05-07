@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis, Tooltip, Brush, ResponsiveContainer } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,15 @@ import { useTheme } from "next-themes";
 import { toPng } from "html-to-image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ICTTDashboard, ICTTTransfersTable } from "@/components/stats/ICTTDashboard";
-import ICMFlowChart from "@/components/stats/ICMFlowChart";
+import {
+  ICTTDashboard,
+  ICTTTransfersTable,
+  type Transfer as ICTTTransfer,
+} from "@/components/stats/ICTTDashboard";
+import ICMFlowChart, {
+  type ICMFlowData,
+  type ChainNode as ICMChainNode,
+} from "@/components/stats/ICMFlowChart";
 import { LinkableHeading } from "@/components/stats/LinkableHeading";
 import { ChainCategoryFilter, allChains } from "@/components/stats/ChainCategoryFilter";
 import { calculateDateRangeDays, formatXAxisLabel, generateXAxisTicks } from "@/components/stats/chart-axis-utils";
@@ -56,14 +63,14 @@ interface ICTTStats {
     value: number;
     address: string;
   }>;
-  transfers: any[];
+  transfers: ICTTTransfer[];
   last_updated: number;
 }
 
 interface ICMFlowResponse {
-  flows: any[];
-  sourceNodes: any[];
-  targetNodes: any[];
+  flows: ICMFlowData[];
+  sourceNodes: ICMChainNode[];
+  targetNodes: ICMChainNode[];
   totalMessages: number;
   last_updated: number;
 }
@@ -76,6 +83,8 @@ export default function ICMStatsPage() {
   const [icttLoading, setIcttLoading] = useState(true);
   const [icmFlowLoading, setIcmFlowLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [icttError, setIcttError] = useState<string | null>(null);
+  const [icmFlowError, setIcmFlowError] = useState<string | null>(null);
   const [chartPeriod, setChartPeriod] = useState<"D" | "W" | "M" | "Q" | "Y">(
     "D"
   );
@@ -100,13 +109,15 @@ export default function ICMStatsPage() {
     return names;
   }, [selectedChainIds]);
 
-  const fetchData = async () => {
+  const initialFetchAbortRef = useRef<AbortController | null>(null);
+
+  const fetchData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError(null);
 
       // Always fetch 1 year of data
-      const response = await fetch(`/api/icm-stats?timeRange=1y`);
+      const response = await fetch(`/api/icm-stats?timeRange=1y`, { signal });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -114,50 +125,64 @@ export default function ICMStatsPage() {
 
       const data = await response.json();
       setMetrics(data);
-    } catch (err) {
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  };
+  }, []);
 
   const [loadingMoreTransfers, setLoadingMoreTransfers] = useState(false);
 
-  const fetchIcttData = async (offset = 0, append = false) => {
-    try {
-      if (append) {
-        setLoadingMoreTransfers(true);
-      } else {
-        setIcttLoading(true);
+  const fetchIcttData = useCallback(
+    async (offset = 0, append = false, signal?: AbortSignal) => {
+      try {
+        if (append) {
+          setLoadingMoreTransfers(true);
+        } else {
+          setIcttLoading(true);
+          setIcttError(null);
+        }
+
+        const limit = offset === 0 ? 20 : 25;
+        const response = await fetch(
+          `/api/ictt-stats?limit=${limit}&offset=${offset}`,
+          { signal }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ICTT stats (HTTP ${response.status})`);
+        }
+
+        const data = await response.json();
+
+        if (append) {
+          setIcttData((prev) =>
+            prev
+              ? { ...data, transfers: [...prev.transfers, ...data.transfers] }
+              : data
+          );
+        } else {
+          setIcttData(data);
+        }
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("Error fetching ICTT stats:", err);
+        if (!append) {
+          setIcttError(
+            err instanceof Error ? err.message : "Failed to load ICTT data"
+          );
+        }
+      } finally {
+        if (!signal?.aborted) {
+          setIcttLoading(false);
+          setLoadingMoreTransfers(false);
+        }
       }
-
-      const limit = offset === 0 ? 20 : 25;
-      const response = await fetch(
-        `/api/ictt-stats?limit=${limit}&offset=${offset}`
-      );
-
-      if (!response.ok) {
-        console.error("Failed to fetch ICTT stats:", response.status);
-        return;
-      }
-
-      const data = await response.json();
-
-      if (append && icttData) {
-        setIcttData({
-          ...data,
-          transfers: [...icttData.transfers, ...data.transfers],
-        });
-      } else {
-        setIcttData(data);
-      }
-    } catch (err) {
-      console.error("Error fetching ICTT stats:", err);
-    } finally {
-      setIcttLoading(false);
-      setLoadingMoreTransfers(false);
-    }
-  };
+    },
+    []
+  );
 
   const handleLoadMoreTransfers = () => {
     if (icttData?.transfers) {
@@ -165,26 +190,36 @@ export default function ICMStatsPage() {
     }
   };
 
-  const fetchIcmFlowData = async () => {
+  const fetchIcmFlowData = useCallback(async (signal?: AbortSignal) => {
     try {
       setIcmFlowLoading(true);
-      const response = await fetch("/api/icm-flow?days=30");
-      if (response.ok) {
-        const data = await response.json();
-        setIcmFlowData(data);
+      setIcmFlowError(null);
+      const response = await fetch("/api/icm-flow?days=30", { signal });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ICM flow (HTTP ${response.status})`);
       }
-    } catch (err) {
+      const data = await response.json();
+      setIcmFlowData(data);
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       console.error("Error fetching ICM flow data:", err);
+      setIcmFlowError(
+        err instanceof Error ? err.message : "Failed to load ICM flow"
+      );
     } finally {
-      setIcmFlowLoading(false);
+      if (!signal?.aborted) setIcmFlowLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData();
-    fetchIcttData();
-    fetchIcmFlowData();
-  }, []);
+    initialFetchAbortRef.current?.abort();
+    const controller = new AbortController();
+    initialFetchAbortRef.current = controller;
+    fetchData(controller.signal);
+    fetchIcttData(0, false, controller.signal);
+    fetchIcmFlowData(controller.signal);
+    return () => controller.abort();
+  }, [fetchData, fetchIcttData, fetchIcmFlowData]);
 
   // Section navigation tracking
   const sections = [
@@ -309,7 +344,7 @@ export default function ICMStatsPage() {
       { count: number; logo: string; color: string }
     >();
 
-    filteredIcmFlowData.flows.forEach((flow: any) => {
+    filteredIcmFlowData.flows.forEach((flow) => {
       if (flow.sourceChain === chainName) {
         const current = peerMap.get(flow.targetChain) || {
           count: 0,
@@ -384,39 +419,43 @@ export default function ICMStatsPage() {
     if (!icmFlowData) return null;
 
     const filteredFlows = icmFlowData.flows.filter(
-      (flow: any) => selectedChainNames.has(flow.sourceChain) || selectedChainNames.has(flow.targetChain)
+      (flow) => selectedChainNames.has(flow.sourceChain) || selectedChainNames.has(flow.targetChain)
     );
     
-    const sourceNodeMap = new Map<string, any>();
-    const targetNodeMap = new Map<string, any>();
+    const sourceNodeMap = new Map<string, ICMChainNode>();
+    const targetNodeMap = new Map<string, ICMChainNode>();
     let totalMessages = 0;
 
-    filteredFlows.forEach((flow: any) => {
+    filteredFlows.forEach((flow) => {
       totalMessages += flow.messageCount;
 
-      if (!sourceNodeMap.has(flow.sourceChain)) {
+      const existingSource = sourceNodeMap.get(flow.sourceChain);
+      if (existingSource) {
+        existingSource.totalMessages += flow.messageCount;
+      } else {
         sourceNodeMap.set(flow.sourceChain, {
           id: flow.sourceChainId,
           name: flow.sourceChain,
           logo: flow.sourceLogo,
           color: flow.sourceColor,
-          totalMessages: 0,
+          totalMessages: flow.messageCount,
           isSource: true,
         });
       }
-      sourceNodeMap.get(flow.sourceChain).totalMessages += flow.messageCount;
 
-      if (!targetNodeMap.has(flow.targetChain)) {
+      const existingTarget = targetNodeMap.get(flow.targetChain);
+      if (existingTarget) {
+        existingTarget.totalMessages += flow.messageCount;
+      } else {
         targetNodeMap.set(flow.targetChain, {
           id: flow.targetChainId,
           name: flow.targetChain,
           logo: flow.targetLogo,
           color: flow.targetColor,
-          totalMessages: 0,
+          totalMessages: flow.messageCount,
           isSource: false,
         });
       }
-      targetNodeMap.get(flow.targetChain).totalMessages += flow.messageCount;
     });
 
     return {
@@ -432,13 +471,17 @@ export default function ICMStatsPage() {
   const filteredIcttData = useMemo(() => {
     if (!icttData) return null;
 
-    const filteredTransfers = icttData.transfers.filter(
-      (transfer: any) =>
-        selectedChainNames.has(transfer.homeChainName) ||
-        selectedChainNames.has(transfer.remoteChainName) ||
-        selectedChainNames.has(transfer.homeChainDisplayName) ||
-        selectedChainNames.has(transfer.remoteChainDisplayName)
-    );
+    const filteredTransfers = icttData.transfers.filter((transfer) => {
+      const candidates = [
+        transfer.homeChainName,
+        transfer.remoteChainName,
+        transfer.homeChainDisplayName,
+        transfer.remoteChainDisplayName,
+      ];
+      return candidates.some(
+        (name): name is string => !!name && selectedChainNames.has(name)
+      );
+    });
 
     return {
       ...icttData,
@@ -605,7 +648,7 @@ export default function ICMStatsPage() {
               <p className="text-red-600 dark:text-red-400 text-sm mb-4">
                 {error}
               </p>
-              <Button onClick={fetchData}>Retry</Button>
+              <Button onClick={() => fetchData()}>Retry</Button>
             </div>
           </Card>
         </div>
@@ -839,6 +882,19 @@ export default function ICMStatsPage() {
                     Loading ICM flows...
                   </div>
                 </div>
+              ) : icmFlowError ? (
+                <div className="h-full w-full flex flex-col items-center justify-center gap-3 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-red-200 dark:border-red-900/40 p-6 text-center">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    Couldn't load ICM flow data: {icmFlowError}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchIcmFlowData()}
+                  >
+                    Retry
+                  </Button>
+                </div>
               ) : (
                 <ICMFlowChart data={filteredIcmFlowData} height={520} maxFlows={30} />
               )}
@@ -1031,13 +1087,28 @@ export default function ICMStatsPage() {
             </p>
           </div>
 
-          <ICTTDashboard
-            data={icttData}
-            onLoadMore={handleLoadMoreTransfers}
-            loadingMore={loadingMoreTransfers}
-            totalICMMessages={totalICMMessages}
-            showTitle={false}
-          />
+          {icttError && !icttData ? (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-red-200 dark:border-red-900/40 bg-zinc-50 dark:bg-zinc-900 p-6 text-center">
+              <p className="text-sm text-red-600 dark:text-red-400">
+                Couldn't load ICTT analytics: {icttError}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchIcttData()}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <ICTTDashboard
+              data={icttData}
+              onLoadMore={handleLoadMoreTransfers}
+              loadingMore={loadingMoreTransfers}
+              totalICMMessages={totalICMMessages}
+              showTitle={false}
+            />
+          )}
         </section>
 
         {/* Top Transfers Section - Proper section */}

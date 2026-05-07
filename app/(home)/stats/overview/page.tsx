@@ -28,6 +28,7 @@ import {
   Info,
 } from "lucide-react";
 import { StatsBubbleNav } from "@/components/stats/stats-bubble.config";
+import type { L1Chain } from "@/types/stats";
 import l1ChainsData from "@/constants/l1-chains.json";
 import { AvalancheLogo } from "@/components/navigation/avalanche-logo";
 import NetworkDiagram, {
@@ -355,19 +356,19 @@ export default function AvalancheMetrics() {
 
   // Helper function to find the slug for a subnet ID
   const getSlugForSubnetId = (subnetId: string): string | null => {
-    const chain = (l1ChainsData as any[]).find((c) => c.subnetId === subnetId);
+    const chain = (l1ChainsData as L1Chain[]).find((c) => c.subnetId === subnetId);
     return chain?.slug || null;
   };
 
   const getValidatorSlugForSubnetId = (subnetId: string): string | null => {
-    const chain = (l1ChainsData as any[]).find((c) => c.subnetId === subnetId);
+    const chain = (l1ChainsData as L1Chain[]).find((c) => c.subnetId === subnetId);
     if (chain?.isTestnet) return null;
     return chain?.slug || null;
   };
 
   // Helper function to get category for a subnet ID
   const getCategoryForSubnetId = (subnetId: string, subnetName: string): string => {
-    const chain = (l1ChainsData as any[]).find(
+    const chain = (l1ChainsData as L1Chain[]).find(
       (c) => c.subnetId === subnetId || c.chainName?.toLowerCase() === subnetName.toLowerCase()
     );
     return chain?.category || "General";
