@@ -11,7 +11,7 @@ import JoinButton from '../JoinButton';
 import { EventReferralButton } from '../EventReferralModal';
 import { normalizeEventsLang, t } from '@/lib/events/i18n';
 
-export default async function Submission({
+export default function Submission({
   hackathon,
   isRegistered = false,
   isAuthenticated = false,
