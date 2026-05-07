@@ -134,7 +134,6 @@ export default function StageSubmitForm({
         </Button>
         <Button
           type="button"
-          variant="secondary"
           onClick={() => setImportDialogOpen(true)}
         >
           Import from Google Forms
