@@ -3,6 +3,8 @@ ALTER TABLE "User" RENAME COLUMN "github" TO "github_account";
 ALTER TABLE "User" RENAME COLUMN "social_media" TO "additional_social_media";
 ALTER TABLE "User" RENAME COLUMN "x_handle" TO "x_account";
 ALTER TABLE "User" RENAME COLUMN "linkedin_url" TO "linkedin_account";
+ALTER TABLE "User" RENAME COLUMN "telegram_user" TO "telegram_account";
+ALTER TABLE "RegisterForm" RENAME COLUMN "telegram_user" TO "telegram_account";
 
 -- Move only canonical values out of the catch-all array. Anything that is
 -- malformed, label-style, duplicate, or conflicts with an existing dedicated
@@ -72,7 +74,7 @@ chosen_socials AS (
     (
       ARRAY_AGG(r.normalized_value ORDER BY r.ordinality)
       FILTER (WHERE r.platform = 'telegram')
-    )[1] AS telegram_user
+    )[1] AS telegram_account
   FROM "User" u
   LEFT JOIN ranked_socials r ON r.id = u.id
   GROUP BY u.id
@@ -100,7 +102,7 @@ remaining_socials AS (
             )
             OR (
               r.platform = 'telegram'
-              AND (NULLIF(BTRIM(u."telegram_user"), '') IS NOT NULL OR r.platform_rank > 1)
+              AND (NULLIF(BTRIM(u."telegram_account"), '') IS NOT NULL OR r.platform_rank > 1)
             )
           )
       ),
@@ -115,7 +117,7 @@ SET
   "github_account" = COALESCE(NULLIF(BTRIM(u."github_account"), ''), chosen_socials.github_account),
   "x_account" = COALESCE(NULLIF(BTRIM(u."x_account"), ''), chosen_socials.x_account),
   "linkedin_account" = COALESCE(NULLIF(BTRIM(u."linkedin_account"), ''), chosen_socials.linkedin_account),
-  "telegram_user" = COALESCE(NULLIF(BTRIM(u."telegram_user"), ''), chosen_socials.telegram_user),
+  "telegram_account" = COALESCE(NULLIF(BTRIM(u."telegram_account"), ''), chosen_socials.telegram_account),
   "additional_social_media" = remaining_socials.additional_social_media
 FROM chosen_socials
 JOIN remaining_socials ON remaining_socials.id = chosen_socials.id

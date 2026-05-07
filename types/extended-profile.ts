@@ -35,7 +35,7 @@ export type ExtendedProfile = {
     skills: string[];
     notifications: boolean | null;
     profile_privacy: string | null;
-    telegram_user?: string | null;
+    telegram_account?: string | null;
 }
 
 /**

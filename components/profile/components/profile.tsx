@@ -517,7 +517,7 @@ export default function Profile() {
                 {/* Telegram */}
                 <FormField
                   control={form.control}
-                  name="telegram_user"
+                  name="telegram_account"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center gap-4">
                       <FormLabel className="w-32 shrink-0">Telegram *</FormLabel>

@@ -49,17 +49,17 @@ model User {
   user_name                String?
   bio                      String?
   notification_email       String?
-  notifications            Boolean?
-  profile_privacy          String?                   @default("public")
-  additional_social_media  String[]                  @default([])
-  custom_attributes        String[]
-  team_id                  String?
-  telegram_user            String?
-  created_at               DateTime                  @default(now()) @db.Timestamptz(3)
-  country                  String?
+  telegram_account         String?
   github_account           String?
   x_account                String?
   linkedin_account         String?
+  additional_social_media  String[]                  @default([])
+  notifications            Boolean?
+  profile_privacy          String?                   @default("public")
+  custom_attributes        String[]
+  team_id                  String?
+  created_at               DateTime                  @default(now()) @db.Timestamptz(3)
+  country                  String?
   noun_avatar_enabled      Boolean                   @default(false)
   noun_avatar_seed         Json?
   skills                   String[]                  @default([])
@@ -114,7 +114,7 @@ model RegisterForm {
   terms_event_conditions  Boolean   @default(false)
   updated_at              DateTime  @updatedAt @db.Timestamptz(3)
   web3_proficiency        String
-  telegram_user           String?
+  telegram_account        String?
   user                    User      @relation(fields: [email], references: [email], onDelete: Cascade)
   hackathon               Hackathon @relation(fields: [hackathon_id], references: [id], onDelete: Cascade)
 

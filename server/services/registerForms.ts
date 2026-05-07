@@ -33,10 +33,10 @@ export const registerValidations: Validation[] = [
       requiredField(registerForm, "city"),
   },
   {
-    field: "telegram_user",
+    field: "telegram_account",
     message: "Telegram username is required.",
     validation: (registerForm: RegistrationForm) =>
-      requiredField(registerForm, "telegram_user"),
+      requiredField(registerForm, "telegram_account"),
   },
   // Note: The following fields are now optional in Step 2
   // {
@@ -115,9 +115,22 @@ export async function createRegisterForm(
   const hackathon = await prisma.hackathon.findUnique({
     where: { id: registerData.hackathon_id },
   });
-  
+
   const isOnlineHackathon = hackathon?.location?.toLowerCase().includes("online") || false;
-  
+
+  // Telegram is mandatory on the User profile (BasicProfileSetup gate),
+  // so the registration form no longer asks for it. Pull it from the user
+  // record here so the validation, upsert, and HubSpot payload all see it.
+  if (registerData.email) {
+    const user = await prisma.user.findUnique({
+      where: { email: registerData.email },
+      select: { telegram_account: true },
+    });
+    if (user?.telegram_account) {
+      registerData.telegram_account = user.telegram_account;
+    }
+  }
+
   const errors = validateRegisterForm(registerData, isOnlineHackathon);
   if (errors.length > 0) {
     throw new ValidationError("Validation failed", errors);
@@ -147,7 +160,7 @@ export async function createRegisterForm(
       tools: (registerData.tools ?? []).join(","),
       web3_proficiency: registerData.web3_proficiency ?? "",
       github_portfolio: registerData.github_portfolio ?? "",
-      telegram_user: registerData.telegram_user ?? "",
+      telegram_account: registerData.telegram_account ?? "",
     },
     create: {
       hackathon: {
@@ -158,7 +171,7 @@ export async function createRegisterForm(
       },
       utm: registerData.utm ?? "",
       city: registerData.city ?? "",
-      telegram_user: registerData.telegram_user ?? "",
+      telegram_account: registerData.telegram_account ?? "",
       company_name: registerData.company_name ?? null,
       dietary: registerData.dietary ?? null,
       hackathon_participation: registerData.hackathon_participation ?? "",
@@ -287,7 +300,7 @@ export async function sendRegistrationToHubSpot(
       'country_dropdown': registrationData.city,
       'hs_role': registrationData.role || 'Other',
       'name': registrationData.company_name || '',
-      'telegram_handle': registrationData.telegram_user || '',
+      'telegram_handle': registrationData.telegram_account || '',
       'github_url': registrationData.github_portfolio || '',
       //'avalanche_ecosystem_member': registrationData.hackathon_participation || '',
       'hackathon_interests': registrationData.interests || '',

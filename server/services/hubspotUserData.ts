@@ -30,7 +30,7 @@ export interface UserDataForHubSpot {
   github_account?: string;
   x_account?: string;
   linkedin_account?: string;
-  telegram_user?: string;
+  telegram_account?: string;
   wallet?: string[];
   additional_social_media?: string[];
   notifications?: boolean;
@@ -59,7 +59,7 @@ function buildHubSpotUserProperties(userData: UserDataForHubSpot, includeEmail: 
     ...(userData.github_account && { github_url: userData.github_account }),
     ...(userData.x_account && { x_handle: userData.x_account }),
     ...(userData.linkedin_account && { linkedin_url: userData.linkedin_account }),
-    ...(userData.telegram_user && { telegram_handle: userData.telegram_user }),
+    ...(userData.telegram_account && { telegram_handle: userData.telegram_account }),
     ...(userData.wallet && userData.wallet.length > 0 && { wallet: userData.wallet.join('; ') }),
     ...(userData.additional_social_media && userData.additional_social_media.length > 0 && { contact_othersocials: userData.additional_social_media.join('; ') }),
     ...(userData.notifications !== undefined && { marketing_consent: userData.notifications }),

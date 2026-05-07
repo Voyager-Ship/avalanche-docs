@@ -58,7 +58,7 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
         skills: user.skills || [],
         notifications: user.notifications,
         profile_privacy: user.profile_privacy,
-        telegram_user: user.telegram_user || null,
+        telegram_account: user.telegram_account || null,
     } as ExtendedProfile;
 }
 
@@ -189,7 +189,7 @@ export async function updateExtendedProfile(
                 github_account: updatedProfile.github_account || undefined,
                 x_account: updatedProfile.x_account || undefined,
                 linkedin_account: updatedProfile.linkedin_account || undefined,
-                telegram_user: updatedProfile.telegram_user || undefined,
+                telegram_account: updatedProfile.telegram_account || undefined,
                 wallet: updatedProfile.wallet || undefined,
                 additional_social_media: updatedProfile.additional_social_media || undefined,
             });

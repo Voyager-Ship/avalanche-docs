@@ -51,7 +51,7 @@ const basicProfileSchema = z.object({
     .string()
     .min(1, 'GitHub profile is required')
     .regex(GITHUB_ACCOUNT_PATTERN, 'Enter a valid GitHub username or github.com URL'),
-  telegram_user: z
+  telegram_account: z
     .string()
     .min(1, 'Telegram username is required')
     .regex(TELEGRAM_ACCOUNT_PATTERN, 'Enter a valid Telegram username (5-32 chars, starts with a letter)'),
@@ -85,7 +85,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
       x_account: '',
       linkedin_account: '',
       github_account: '',
-      telegram_user: '',
+      telegram_account: '',
       is_student: false,
       student_institution: '',
       is_founder: false,
@@ -120,7 +120,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
           x_account: profile.x_account ?? '',
           linkedin_account: profile.linkedin_account ?? '',
           github_account: profile.github_account ?? '',
-          telegram_user: profile.telegram_user ?? '',
+          telegram_account: profile.telegram_account ?? '',
           is_student: Boolean(userType.is_student),
           student_institution: userType.student_institution ?? '',
           is_founder: Boolean(userType.is_founder),
@@ -159,7 +159,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
         x_account,
         linkedin_account,
         github_account,
-        telegram_user,
+        telegram_account,
       } = data;
 
       // Construct user_type object with all role fields
@@ -169,7 +169,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
         x_account,
         linkedin_account,
         github_account,
-        telegram_user,
+        telegram_account,
         user_type: {
           is_student,
           is_founder,
@@ -331,7 +331,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
               />
               <FormField
                 control={form.control}
-                name="telegram_user"
+                name="telegram_account"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm sm:text-base">Telegram *</FormLabel>

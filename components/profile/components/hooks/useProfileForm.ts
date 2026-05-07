@@ -52,7 +52,7 @@ export const profileSchema = z.object({
   skills: z.array(z.string()).default([]),
   notifications: z.boolean().default(false),
   profile_privacy: z.string().default("public"),
-  telegram_user: z
+  telegram_account: z
     .string()
     .min(1, "Telegram username is required")
     .regex(TELEGRAM_ACCOUNT_PATTERN, "Enter a valid Telegram username (5-32 chars, starts with a letter)"),
@@ -100,7 +100,7 @@ export function useProfileForm() {
       skills: [],
       notifications: false,
       profile_privacy: "public",
-      telegram_user: "",
+      telegram_account: "",
     },
   });
 
@@ -165,7 +165,7 @@ export function useProfileForm() {
             skills: profile.skills || [],
             notifications: profile.notifications || false,
             profile_privacy: profile.profile_privacy || "public",
-            telegram_user: profile.telegram_user || "",
+            telegram_account: profile.telegram_account || "",
           };
 
           form.reset(formData);
@@ -517,7 +517,7 @@ export function useProfileForm() {
         skills: updatedProfile.skills || [],
         notifications: updatedProfile.notifications || false,
         profile_privacy: updatedProfile.profile_privacy || "public",
-        telegram_user: updatedProfile.telegram_user || "",
+        telegram_account: updatedProfile.telegram_account || "",
       };
 
       form.reset(newFormData);

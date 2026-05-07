@@ -167,24 +167,6 @@ export default function RegisterFormStep1({ user, lang = "en" }: Step1Props) {
             )}
           />
 
-          {/* Telegram User */}
-          <FormField
-            control={form.control}
-            name="telegram_user"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t(lang, "reg.step1.telegram.label")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t(lang, "reg.step1.telegram.placeholder")}
-                    className="bg-transparent placeholder-zinc-600"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage className="text-zinc-600" />
-              </FormItem>
-            )}
-          />
         </div>
       </div>
       <div className="mt-8 mb-6">

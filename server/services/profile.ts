@@ -13,7 +13,7 @@ export async function getProfile(id: string) {
             notifications: true,
             profile_privacy: true,
             additional_social_media: true,
-            telegram_user: true,
+            telegram_account: true,
         }
     });
 
@@ -57,7 +57,7 @@ export async function updateProfile(id: string, profileData: Partial<Profile>) {
             notifications: data.notifications,
             profile_privacy: data.profile_privacy,
             additional_social_media: data.additional_social_media,
-            telegram_user: data.telegram_user,
+            telegram_account: data.telegram_account,
         }
     })
 

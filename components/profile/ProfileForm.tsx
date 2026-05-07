@@ -46,7 +46,7 @@ const profileSchema = z.object({
   additional_social_media: z.array(z.string()).default([]),
   notifications: z.boolean().default(false),
   profile_privacy: z.string().default("public"),
-  telegram_user: z.string().optional(),
+  telegram_account: z.string().optional(),
 });
 
 // Type for data coming from database (notifications can be null)
@@ -59,7 +59,7 @@ interface ProfileFormProps {
   additional_social_media: string[];
   notifications: boolean | null;
   profile_privacy: string;
-  telegram_user?: string;
+  telegram_account?: string;
 }
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -93,7 +93,7 @@ export default function ProfileForm({
         })
       : z.boolean().default(false),
     profile_privacy: z.string().default("public"),
-    telegram_user: z.string().optional(),
+    telegram_account: z.string().optional(),
   });
 
   // Process initial data: if notifications is null, use false
@@ -522,7 +522,7 @@ export default function ProfileForm({
 
           <FormField
             control={form.control}
-            name="telegram_user"
+            name="telegram_account"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Telegram user</FormLabel>
@@ -532,7 +532,7 @@ export default function ProfileForm({
                     {...field}
                     onChange={(e) => {
                       field.onChange(e);
-                      form.setValue("telegram_user", e.target.value, {
+                      form.setValue("telegram_account", e.target.value, {
                         shouldDirty: true,
                       });
                     }}

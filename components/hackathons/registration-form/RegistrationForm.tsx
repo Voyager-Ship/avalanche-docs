@@ -40,7 +40,6 @@ const createRegisterSchema = (isOnline: boolean) => z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
   company_name: z.string().optional(),
-  telegram_user: z.string().min(1, "Telegram username is required"),
   role: z.string().optional(),
   city: z.string().min(1, "City is required"),
   interests: z.array(z.string()).optional(),
@@ -107,7 +106,6 @@ export function RegisterForm({
     languages: [],
     hackathon_participation: "",
     github_portfolio: "",
-    telegram_user: "",
     terms_event_conditions: false,
     newsletter_subscription: false,
     prohibited_items: false,
@@ -164,7 +162,6 @@ export function RegisterForm({
           role: loadedData.role || "",
           city: loadedData.city || "",
           dietary: loadedData.dietary || "",
-          telegram_user: loadedData.telegram_user || "",
           interests: loadedData.interests
             ? parseArrayField(loadedData.interests)
             : [],
@@ -349,7 +346,6 @@ export function RegisterForm({
         "name",
         "email",
         "company_name",
-        "telegram_user",
         "role",
         "city",
       ];
@@ -367,13 +363,6 @@ export function RegisterForm({
         errors.email = {
           type: "custom",
           message: "Invalid email"
-        };
-      }
-
-      if (!formValues.telegram_user || formValues.telegram_user.trim() === "") {
-        errors.telegram_user = {
-          type: "custom",
-          message: "Telegram username is required"
         };
       }
 
