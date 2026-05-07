@@ -26,6 +26,7 @@ const textFieldSchema = z.object({
   description: z.string().max(400).optional(),
   required: z.boolean(),
   maxCharacters: z.number().int().positive().max(5000).nullable(),
+  predefinedField: z.boolean().optional(),
 });
 
 const linkFieldSchema = z.object({
@@ -35,6 +36,8 @@ const linkFieldSchema = z.object({
   placeholder: z.string().max(240).optional(),
   description: z.string().max(400).optional(),
   required: z.boolean(),
+  maxLinks: z.number().int().positive().max(50).optional(),
+  predefinedField: z.boolean().optional(),
 });
 
 const chipsFieldSchema = z.object({
@@ -44,12 +47,26 @@ const chipsFieldSchema = z.object({
   description: z.string().max(400).optional(),
   required: z.boolean(),
   chips: z.array(z.string().trim().min(1).max(40)).max(20),
+  predefinedField: z.boolean().optional(),
+});
+
+const multiSelectFieldSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal(SubmitFormFieldType.MultiSelect),
+  label: z.string().trim().min(1).max(120),
+  placeholder: z.string().max(240).optional(),
+  description: z.string().max(400).nullable().optional(),
+  required: z.boolean(),
+  options: z.array(z.string().trim().min(1).max(80)).max(50),
+  maxSelections: z.number().int().positive().max(50).nullable().optional(),
+  predefinedField: z.boolean().optional(),
 });
 
 const submitFieldSchema = z.discriminatedUnion("type", [
   textFieldSchema,
   linkFieldSchema,
   chipsFieldSchema,
+  multiSelectFieldSchema,
 ]);
 
 const stageSchema = z.object({

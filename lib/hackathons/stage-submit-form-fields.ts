@@ -11,9 +11,9 @@ export function createTextStagesSubmitFormField(id?: string): TextStagesSubmitFo
     id: id ?? crypto.randomUUID(),
     type: SubmitFormFieldType.Text,
     label: '',
-    placeholder: '',
+    placeholder: 'Place your text',
     description: '',
-    maxCharacters: null,
+    maxCharacters: 100,
     required: false,
   };
 }
@@ -23,7 +23,7 @@ export function createLinkStagesSubmitFormField(id?: string): LinkStagesSubmitFo
     id: id ?? crypto.randomUUID(),
     type: SubmitFormFieldType.Link,
     label: '',
-    placeholder: '',
+    placeholder: 'Enter a URL',
     description: '',
     maxLinks: 1,
     required: false,
@@ -35,7 +35,7 @@ export function createChipsStagesSubmitFormField(id?: string): ChipsStagesSubmit
     id: id ?? crypto.randomUUID(),
     type: SubmitFormFieldType.Chips,
     label: '',
-    description: '',
+    description: 'Select options',
     required: false,
     chips: [],
   };
@@ -46,7 +46,7 @@ export function createMultiSelectStagesSubmitFormField(id?: string): MultiSelect
     type: SubmitFormFieldType.MultiSelect,
     label: '',
     description: '',
-    placeholder: '',
+    placeholder: 'Select multiple options',
     required: false,
     options: [],
     maxSelections: null,

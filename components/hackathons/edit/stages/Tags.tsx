@@ -137,6 +137,7 @@ export default function StageTagsForm({
               <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between gap-2 py-1 text-sm font-medium outline-none [&[data-state=open]_svg.chevron]:rotate-180">
                 <span>{tag.title?.trim() ? tag.title : `Item ${tagIndex + 1}`}</span>
                 <div className="flex items-center gap-2">
+                  <span className='text-xs font-light text-green-500'>List Item</span>
                   <ChevronDownIcon className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
                   <RemoveButton
                     onRemove={() => removeTag(tagIndex)}

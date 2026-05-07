@@ -404,14 +404,6 @@ export default function HackathonsEditStages({
 
   return (
     <div className="space-y-4">
-      <Button
-        type="button"
-        className="bg-green-600 text-white hover:bg-green-700"
-        onClick={addStage}
-      >
-        {t[language].addStage}
-      </Button>
-
       {stages.map((stage: HackathonStage, index: number) => (
         <Accordion
           key={`stage-${index}`}
@@ -456,6 +448,13 @@ export default function HackathonsEditStages({
           </AccordionItem>
         </Accordion>
       ))}
+      <Button
+        type="button"
+        className="bg-green-600 text-white hover:bg-green-700"
+        onClick={addStage}
+      >
+        {t[language].addStage}
+      </Button>
     </div>
   )
 }

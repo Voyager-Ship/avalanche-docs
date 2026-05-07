@@ -82,6 +82,28 @@ function replaceSubmitFormFieldWithBaseField(
   }
 }
 
+function getFieldDescription(type: SubmitFormFieldType, predefinedField: boolean): string {
+  let description = ''
+  if (predefinedField) {
+    description = 'Predefined '
+  }
+  switch (type) {
+    case SubmitFormFieldType.Text:
+      description += 'Text Field'
+      break
+    case SubmitFormFieldType.Link:
+      description += 'Link Field'
+      break
+    case SubmitFormFieldType.Chips:
+      description += 'Chips Field'
+      break
+    case SubmitFormFieldType.MultiSelect:
+      description += 'Multi-select Field'
+      break
+  }
+  return description
+}
+
 export default function StageSubmitForm({
   stageIndex,
   submitForm,
@@ -95,8 +117,6 @@ export default function StageSubmitForm({
   selectedPredefinedFields
 }: StageSubmitFormProps): React.JSX.Element {
   const [importDialogOpen, setImportDialogOpen] = React.useState(false)
-
-  console.log('Selected predefined fields:', selectedPredefinedFields)
 
   return (
     <div className="space-y-4">
@@ -112,6 +132,19 @@ export default function StageSubmitForm({
           >
             Show preview
           </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              const availablePredefinedFields = Object.entries(BASE_SUBMIT_FORM_FIELDS)
+                .filter(([key]) => !selectedPredefinedFields.includes(key))
+                .map(([key]) => replaceSubmitFormFieldWithBaseField(key as BaseSubmitFormFieldKey))
+
+              const currentFields = submitForm?.fields ?? []
+              onReplaceSubmitFormFields(stageIndex, [...currentFields, ...availablePredefinedFields])
+            }}
+          >
+            + Predefined fields
+          </Button>
 
           {!!submitForm?.fields.length && (
             <Button
@@ -126,13 +159,6 @@ export default function StageSubmitForm({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          className='bg-green-500 text-white hover:bg-green-600'
-          onClick={() => onAddField(stageIndex, SubmitFormFieldType.Text)}
-        >
-          Add field
-        </Button>
         <Button
           type="button"
           onClick={() => setImportDialogOpen(true)}
@@ -163,6 +189,7 @@ export default function StageSubmitForm({
                 <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between gap-2 py-1 text-sm font-medium outline-none [&[data-state=open]_svg.chevron]:rotate-180">
                   <span>{field.label?.trim() ? field.label : `Field ${fieldIndex + 1}`}</span>
                   <div className="flex items-center gap-2">
+                    <span className='text-xs font-light text-green-500'>{getFieldDescription(field.type, field.predefinedField ?? false)}</span>
                     <ChevronDownIcon className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
                     <RemoveButton
                       onRemove={() => onRemoveField(stageIndex, fieldIndex)}
@@ -176,35 +203,33 @@ export default function StageSubmitForm({
               <AccordionContent>
                 <div className="space-y-4 pt-2">
 
-                  {!field.predefinedField && (
-                    <div className="space-y-2">
-                      <Label htmlFor={`submit-base-field-${field.id}`}>Select field type</Label>
-                      <select
-                        id={`submit-base-field-${field.id}`}
-                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={field.type}
-                        onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
-                          onUpdateField(
-                            stageIndex,
-                            fieldIndex,
-                            replaceSubmitFormFieldType(
-                              { ...field },
-                              event.target.value as SubmitFormFieldType
-                            )
+                  <div className="space-y-2">
+                    <Label htmlFor={`submit-base-field-${field.id}`}>Select field type</Label>
+                    <select
+                      id={`submit-base-field-${field.id}`}
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={field.predefinedField ? SubmitFormFieldType.Predefined : field.type}
+                      onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                        onUpdateField(
+                          stageIndex,
+                          fieldIndex,
+                          replaceSubmitFormFieldType(
+                            { ...field },
+                            event.target.value as SubmitFormFieldType
                           )
-                        }}
-                      >
-                        <option value="" disabled>
-                          Select a type
-                        </option>
-                        <option value={SubmitFormFieldType.Predefined}>Predefined field</option>
-                        <option value={SubmitFormFieldType.Text}>Text</option>
-                        <option value={SubmitFormFieldType.Link}>Link</option>
-                        <option value={SubmitFormFieldType.Chips}>Chips</option>
-                        <option value={SubmitFormFieldType.MultiSelect}>Multi-select</option>
-                      </select>
-                    </div>
-                  )}
+                        )
+                      }}
+                    >
+                      <option value="" disabled>
+                        Select a type
+                      </option>
+                      <option value={SubmitFormFieldType.Predefined}>Predefined field</option>
+                      <option value={SubmitFormFieldType.Text}>Text</option>
+                      <option value={SubmitFormFieldType.Link}>Link</option>
+                      <option value={SubmitFormFieldType.Chips}>Chips</option>
+                      <option value={SubmitFormFieldType.MultiSelect}>Multi-select</option>
+                    </select>
+                  </div>
                   {
                     field.predefinedField && (
                       <div className="space-y-2">
@@ -281,6 +306,13 @@ export default function StageSubmitForm({
           </Accordion>
         )
       )}
+      <Button
+        type="button"
+        className='bg-green-500 text-white hover:bg-green-600'
+        onClick={() => onAddField(stageIndex, SubmitFormFieldType.Text)}
+      >
+        Add field
+      </Button>
     </div>
   )
 }
