@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash, ChevronDown, ChevronRight, Database, PlusCircle, FileText, Layers, ImageIcon, Users, AlignLeft, LayoutGrid, ClipboardList, X, Save, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Plus, Trash, ChevronDown, ChevronRight, Database, PlusCircle, FileText, Layers, ImageIcon, Users, AlignLeft, LayoutGrid, X, Save, Eye, EyeOff, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import TrackDialogContent from '@/components/hackathons/hackathon/TrackDialogContent';
 import type { Track } from '@/types/hackathons';
@@ -36,6 +36,7 @@ import RemoveButton from '@/components/hackathons/edit/stages/RemoveButton';
 import { OverlaySpinner } from '@/components/ui/overlay-spinner';
 import { mapFormToHackathonHeader } from '@/lib/hackathons/map-form-to-hackathon-header';
 import { resolveFieldLabel } from '@/lib/events-field-labels';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 function toLocalDatetimeString(isoString: string) {
   if (!isoString) return '';
@@ -1270,10 +1271,9 @@ const HackathonsEdit = () => {
     about: false,
     trackText: false,
     content: false,
-    last: false,
   });
   const [pendingCollapseSection, setPendingCollapseSection] = useState<
-    'main' | 'images' | 'stages' | 'about' | 'trackText' | 'content' | 'last' | null
+    'main' | 'images' | 'stages' | 'about' | 'trackText' | 'content' | null
   >(null);
 
   const [language, setLanguage] = useState<'en' | 'es'>('en');
@@ -1286,16 +1286,20 @@ const HackathonsEdit = () => {
   const [dateRangeError, setDateRangeError] = useState<string | null>(null);
 
   const leftPanelRef = useRef<HTMLDivElement | null>(null);
+  const rightPanelRef = useRef<HTMLDivElement | null>(null);
   const step1Ref = useRef<HTMLDivElement | null>(null);
   const step2Ref = useRef<HTMLDivElement | null>(null);
   const step3Ref = useRef<HTMLDivElement | null>(null);
   const step4Ref = useRef<HTMLDivElement | null>(null);
   const step5Ref = useRef<HTMLDivElement | null>(null);
   const step6Ref = useRef<HTMLDivElement | null>(null);
-  const step7Ref = useRef<HTMLDivElement | null>(null);
+  const step1BasicTabRef = useRef<HTMLButtonElement | null>(null);
+  const step1DatesTabRef = useRef<HTMLButtonElement | null>(null);
 
-  const [activeStep, setActiveStep] = useState<'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6' | 'step7'>('step1');
-  const [contentTab, setContentTab] = useState<'tracks' | 'stages' | 'meta' | 'schedule' | 'resources' | 'speakers' | 'submission'>('tracks');
+  const [activeStep, setActiveStep] = useState<'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6'>('step1');
+  const [contentTab, setContentTab] = useState<'tracks' | 'schedule' | 'resources' | 'speakers'>('tracks');
+  const [scheduleMode, setScheduleMode] = useState<'calendar' | 'manual'>('calendar');
+  const [pendingManualSwitch, setPendingManualSwitch] = useState(false);
 
   const getDateRangeError = (start: string, end: string): string | null => {
     if (!start?.trim() || !end?.trim()) return null;
@@ -1308,6 +1312,8 @@ const HackathonsEdit = () => {
   const scrollToSection = (section: string) => {
     setScrollTarget(section);
     setTimeout(() => setScrollTarget(undefined), 1000);
+    const previewEl = rightPanelRef.current?.querySelector(`[data-preview-section="${section}"]`);
+    previewEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   useEffect(() => {
@@ -1420,12 +1426,21 @@ const HackathonsEdit = () => {
   }, [formDataContent.resources.length]);
 
   useEffect(() => {
-    if (formDataLatest.event !== 'hackathon') {
-      if (contentTab === 'tracks') {
-        setContentTab('meta');
-      }
+    if (formDataLatest.event !== 'hackathon' && contentTab === 'tracks') {
+      setContentTab('schedule');
     }
-  }, [formDataLatest.event, contentTab]);
+  }, [formDataLatest.event]);
+
+  useEffect(() => {
+    if (formDataLatest.google_calendar_id) {
+      setScheduleMode('calendar');
+    } else if (formDataContent.schedule.some(s => s.name?.trim())) {
+      setScheduleMode('manual');
+    } else {
+      setScheduleMode('calendar');
+    }
+    setPendingManualSwitch(false);
+  }, [selectedHackathon]);
 
   useEffect(() => {
     const container = leftPanelRef.current;
@@ -1438,7 +1453,6 @@ const HackathonsEdit = () => {
       { id: 'step4', ref: step4Ref },
       { id: 'step5', ref: step5Ref },
       { id: 'step6', ref: step6Ref },
-      { id: 'step7', ref: step7Ref },
     ];
 
     const updateActiveStep = () => {
@@ -1500,6 +1514,7 @@ const HackathonsEdit = () => {
     const newTags = [...formDataMain.tags];
     newTags[index] = value;
     setFormDataMain({ ...formDataMain, tags: newTags });
+    scrollToSection('about');
   };
 
   const addTag = () => {
@@ -1677,9 +1692,9 @@ const HackathonsEdit = () => {
     setShowValidationModal(false);
     const { section, path } = issue;
 
-    let collapsedKey: 'main' | 'images' | 'stages' | 'about' | 'trackText' | 'content' | 'last' | null = null;
+    let collapsedKey: 'main' | 'images' | 'stages' | 'about' | 'trackText' | 'content' | null = null;
     let targetRef: React.RefObject<HTMLDivElement | null> | null = null;
-    let stepKey: 'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6' | 'step7' = 'step1';
+    let stepKey: 'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6' = 'step1';
 
     if (section === 'Participants & Prizes') {
       collapsedKey = 'about'; targetRef = step4Ref; stepKey = 'step4';
@@ -1691,8 +1706,14 @@ const HackathonsEdit = () => {
       collapsedKey = 'images'; targetRef = step3Ref; stepKey = 'step3';
     } else if (section === 'Track Text' || path === 'content.tracks_text') {
       collapsedKey = 'trackText'; targetRef = step5Ref; stepKey = 'step5';
-    } else if (section === 'Last Details') {
-      collapsedKey = 'last'; targetRef = step7Ref; stepKey = 'step7';
+    } else if (
+      section === 'Last Details' ||
+      path === 'latest.start_date' ||
+      path === 'latest.end_date' ||
+      path === 'latest.timezone' ||
+      path === 'content.submission_deadline'
+    ) {
+      collapsedKey = 'main'; targetRef = step1Ref; stepKey = 'step1';
     } else if (/^content\.schedule\.\d+\./.test(path)) {
       collapsedKey = 'content'; targetRef = step6Ref; stepKey = 'step6';
       setContentTab('schedule');
@@ -1719,11 +1740,24 @@ const HackathonsEdit = () => {
       const containerRect = container.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();
       container.scrollBy({ top: elRect.top - containerRect.top - 16, behavior: 'smooth' });
+      // Click the correct Step 1 sub-tab if navigating to step1
+      if (stepKey === 'step1') {
+        if (
+          path === 'latest.start_date' ||
+          path === 'latest.end_date' ||
+          path === 'latest.timezone' ||
+          path === 'content.submission_deadline'
+        ) {
+          step1DatesTabRef.current?.click();
+        } else {
+          step1BasicTabRef.current?.click();
+        }
+      }
     });
   }, []);
 
   const collapseSection = useCallback(
-    (section: 'main' | 'images' | 'stages' | 'about' | 'trackText' | 'content' | 'last'): void => {
+    (section: 'main' | 'images' | 'stages' | 'about' | 'trackText' | 'content'): void => {
       setCollapsed((prev) => ({ ...prev, [section]: true }));
     },
     []
@@ -1737,7 +1771,7 @@ const HackathonsEdit = () => {
   );
 
   const handleDone = async (
-    section: 'main' | 'images' | 'stages' | 'about' | 'trackText' | 'content' | 'last'
+    section: 'main' | 'images' | 'stages' | 'about' | 'trackText' | 'content'
   ): Promise<void> => {
     const isValid = await trigger();
     if (!isValid) {
@@ -2109,6 +2143,7 @@ const HackathonsEdit = () => {
       newTracks[idx] = { ...newTracks[idx], [field]: value };
       return { ...prev, tracks: newTracks };
     });
+    scrollToSection('tracks');
   }, [setFormDataContent]);
 
   const handleScheduleFieldChange = useCallback((idx: number, field: string, value: any) => {
@@ -2117,6 +2152,7 @@ const HackathonsEdit = () => {
       newSchedule[idx] = { ...newSchedule[idx], [field]: field === 'duration' ? Number(value) : value };
       return { ...prev, schedule: newSchedule };
     });
+    scrollToSection('schedule');
   }, [setFormDataContent]);
 
   const handleSpeakerFieldChange = useCallback((idx: number, field: string, value: any) => {
@@ -2125,6 +2161,7 @@ const HackathonsEdit = () => {
       newSpeakers[idx] = { ...newSpeakers[idx], [field]: value };
       return { ...prev, speakers: newSpeakers };
     });
+    scrollToSection('speakers');
   }, [setFormDataContent]);
 
   const handleResourceFieldChange = useCallback((idx: number, field: string, value: any) => {
@@ -2133,6 +2170,7 @@ const HackathonsEdit = () => {
       newResources[idx] = { ...newResources[idx], [field]: value };
       return { ...prev, resources: newResources };
     });
+    scrollToSection('resources');
   }, [setFormDataContent]);
 
   const loadMockData = () => {
@@ -2285,7 +2323,6 @@ const HackathonsEdit = () => {
       about: true,
       trackText: true,
       content: true,
-      last: true
     });
 
     setShowForm(true);
@@ -2766,36 +2803,6 @@ const HackathonsEdit = () => {
                         <TooltipContent>{t[language].content}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (collapsed.last) {
-                                setCollapsed((prev) => ({ ...prev, last: false }));
-                              }
-                              setActiveStep('step7');
-                              requestAnimationFrame(() => {
-                                const container = leftPanelRef.current;
-                                const el = step7Ref.current;
-                                if (!container || !el) return;
-                                const containerRect = container.getBoundingClientRect();
-                                const elRect = el.getBoundingClientRect();
-                                container.scrollBy({ top: elRect.top - containerRect.top - 16, behavior: 'smooth' });
-                              });
-                            }}
-                            className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step7'
-                              ? 'bg-[#D66666] text-white border-[#D66666]'
-                              : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800'
-                              }`}
-                          >
-                            <ClipboardList className="h-3.5 w-3.5" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t[language].lastDetails}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
                   </div>
                 )}
               </div>
@@ -2895,11 +2902,22 @@ const HackathonsEdit = () => {
                     </div>
                     {!collapsed.main && (
                       <>
-                        <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-500/30 rounded-lg">
-                          <h3 className="text-lg font-semibold text-green-700 dark:text-green-300 mb-2">Hackathon Details</h3>
-                          <p className="text-sm text-green-800 dark:text-green-200">Let's start with the basic information that will appear in your hackathon preview.</p>
+                        <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-500/30 rounded-lg">
+                          <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-2">Hackathon Details</h3>
+                          <p className="text-sm text-purple-800 dark:text-purple-200">Let's start with the basic information that will appear in your hackathon preview.</p>
                         </div>
 
+                        <Tabs defaultValue="basicInfo" className="w-full">
+                          <TabsList className="w-full mb-4">
+                            <TabsTrigger ref={step1BasicTabRef} value="basicInfo" className="flex-1">
+                              {language === 'es' ? t['es'].basicInfo : t['en'].basicInfo}
+                            </TabsTrigger>
+                            <TabsTrigger ref={step1DatesTabRef} value="datesTime" className="flex-1">
+                              {language === 'es' ? t['es'].datesTime : t['en'].datesTime}
+                            </TabsTrigger>
+                          </TabsList>
+
+                          <TabsContent value="basicInfo">
                         <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].mainName}</div>
                         <Input
                           type="text"
@@ -2950,6 +2968,25 @@ const HackathonsEdit = () => {
                           <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('main.location')}</p>
                         )}
 
+                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">
+                          {t[language].address}
+                        </div>
+                        <Input
+                          type="text"
+                          placeholder={language === 'es' ? 'Dirección del evento' : 'Event address'}
+                          value={formDataContent.address}
+                          onChange={(e) => {
+                            setFormDataContent(prev => ({ ...prev, address: e.target.value }));
+                            scrollToSection('about');
+                          }}
+                          className="w-full mb-4"
+                        />
+                        {getInlineError('content.address') && (
+                          <p className="text-red-500 text-sm -mt-2 mb-3">
+                            {getInlineError('content.address')}
+                          </p>
+                        )}
+
                         <div className="flex flex-col space-y-2 bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 my-4">
                           <label className="font-medium">{t[language].tags}</label>
                           <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].tagsHelp}</div>
@@ -2981,6 +3018,127 @@ const HackathonsEdit = () => {
                             </React.Fragment>
                           ))}
                         </div>
+                          </TabsContent>
+
+                          <TabsContent value="datesTime">
+                        <div className="space-y-4 mt-4">
+                          <div>
+                            <label className="font-medium text-xl mb-2 block">{t[language].startDate}:</label>
+                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].startDateHelp}</div>
+                            <Input
+                              type="datetime-local"
+                              placeholder="Start Date"
+                              value={formDataLatest.start_date}
+                              onChange={(e) => {
+                                const start = e.target.value;
+                                setFormDataLatest({ ...formDataLatest, start_date: start });
+                                setDateRangeError(getDateRangeError(start, formDataLatest.end_date));
+                                scrollToSection('about');
+                              }}
+                              className="w-full mb-4"
+                              required
+                            />
+                            {getInlineError('latest.start_date') && (
+                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.start_date')}</p>
+                            )}
+                          </div>
+                          <div>
+                            <label className="font-medium text-xl mb-2 block">{t[language].endDate}:</label>
+                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].endDateHelp}</div>
+                            <Input
+                              type="datetime-local"
+                              placeholder="End Date"
+                              value={formDataLatest.end_date}
+                              onChange={(e) => {
+                                const end = e.target.value;
+                                setFormDataLatest({ ...formDataLatest, end_date: end });
+                                setDateRangeError(getDateRangeError(formDataLatest.start_date, end));
+                                scrollToSection('about');
+                              }}
+                              className="w-full mb-4"
+                              required
+                            />
+                            {getInlineError('latest.end_date') && (
+                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.end_date')}</p>
+                            )}
+                            {dateRangeError && (
+                              <p className="text-red-500 text-sm mt-1 mb-4">{dateRangeError}</p>
+                            )}
+                          </div>
+                          {formDataLatest.event === 'hackathon' && (
+                            <div>
+                              <label className="font-medium text-xl mb-2 block">{t[language].submissionDeadline}:</label>
+                              <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].submissionDeadlineHelp}</div>
+                              <Input
+                                type="datetime-local"
+                                placeholder="Submission Deadline"
+                                value={formDataContent.submission_deadline}
+                                onChange={(e) => setFormDataContent({ ...formDataContent, submission_deadline: e.target.value })}
+                                className="w-full mb-4"
+                              />
+                              {getInlineError('content.submission_deadline') && (
+                                <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.submission_deadline')}</p>
+                              )}
+                            </div>
+                          )}
+                          <div>
+                            <label className="font-medium text-xl mb-2 block">{t[language].timezone}:</label>
+                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].timezoneHelp}</div>
+                            <Select
+                              value={formDataLatest.timezone}
+                              onValueChange={(value) => setFormDataLatest({ ...formDataLatest, timezone: value })}
+                            >
+                              <SelectTrigger className="w-full mb-4">
+                                <SelectValue placeholder="Select timezone" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="America/New_York">New York (EST/EDT) - GMT-5/-4</SelectItem>
+                                <SelectItem value="America/Chicago">Chicago (CST/CDT) - GMT-6/-5</SelectItem>
+                                <SelectItem value="America/Denver">Denver (MST/MDT) - GMT-7/-6</SelectItem>
+                                <SelectItem value="America/Los_Angeles">Los Angeles (PST/PDT) - GMT-8/-7</SelectItem>
+                                <SelectItem value="America/Toronto">Toronto (EST/EDT) - GMT-5/-4</SelectItem>
+                                <SelectItem value="America/Vancouver">Vancouver (PST/PDT) - GMT-8/-7</SelectItem>
+                                <SelectItem value="America/Mexico_City">Mexico City (CST/CDT) - GMT-6/-5</SelectItem>
+                                <SelectItem value="America/Bogota">Bogotá, Colombia (COT) - GMT-5</SelectItem>
+                                <SelectItem value="America/Costa_Rica">San José, Costa Rica (CST) - GMT-6</SelectItem>
+                                <SelectItem value="America/Panama">Panama City, Panama (EST) - GMT-5</SelectItem>
+                                <SelectItem value="America/Caracas">Caracas, Venezuela (VET) - GMT-4</SelectItem>
+                                <SelectItem value="America/La_Paz">La Paz, Bolivia (BOT) - GMT-4</SelectItem>
+                                <SelectItem value="America/Lima">Lima, Peru (PET) - GMT-5</SelectItem>
+                                <SelectItem value="America/Sao_Paulo">São Paulo, Brazil (BRT) - GMT-3</SelectItem>
+                                <SelectItem value="America/Santiago">Santiago, Chile (CLT) - GMT-3</SelectItem>
+                                <SelectItem value="America/Buenos_Aires">Buenos Aires, Argentina (ART) - GMT-3</SelectItem>
+                                <SelectItem value="Europe/London">London (GMT/BST) - GMT+0/+1</SelectItem>
+                                <SelectItem value="Europe/Paris">Paris (CET/CEST) - GMT+1/+2</SelectItem>
+                                <SelectItem value="Europe/Berlin">Berlin (CET/CEST) - GMT+1/+2</SelectItem>
+                                <SelectItem value="Europe/Rome">Rome (CET/CEST) - GMT+1/+2</SelectItem>
+                                <SelectItem value="Europe/Madrid">Madrid (CET/CEST) - GMT+1/+2</SelectItem>
+                                <SelectItem value="Europe/Amsterdam">Amsterdam (CET/CEST) - GMT+1/+2</SelectItem>
+                                <SelectItem value="Europe/Zurich">Zurich (CET/CEST) - GMT+1/+2</SelectItem>
+                                <SelectItem value="Europe/Stockholm">Stockholm (CET/CEST) - GMT+1/+2</SelectItem>
+                                <SelectItem value="Europe/Moscow">Moscow (MSK) - GMT+3</SelectItem>
+                                <SelectItem value="Asia/Tokyo">Tokyo (JST) - GMT+9</SelectItem>
+                                <SelectItem value="Asia/Shanghai">Shanghai (CST) - GMT+8</SelectItem>
+                                <SelectItem value="Asia/Hong_Kong">Hong Kong (HKT) - GMT+8</SelectItem>
+                                <SelectItem value="Asia/Singapore">Singapore (SGT) - GMT+8</SelectItem>
+                                <SelectItem value="Asia/Seoul">Seoul (KST) - GMT+9</SelectItem>
+                                <SelectItem value="Asia/Mumbai">Mumbai (IST) - GMT+5:30</SelectItem>
+                                <SelectItem value="Asia/Dubai">Dubai (GST) - GMT+4</SelectItem>
+                                <SelectItem value="Asia/Jerusalem">Jerusalem (IST) - GMT+2/+3</SelectItem>
+                                <SelectItem value="Australia/Sydney">Sydney (AEST/AEDT) - GMT+10/+11</SelectItem>
+                                <SelectItem value="Australia/Melbourne">Melbourne (AEST/AEDT) - GMT+10/+11</SelectItem>
+                                <SelectItem value="Australia/Perth">Perth (AWST) - GMT+8</SelectItem>
+                                <SelectItem value="Pacific/Auckland">Auckland (NZST/NZDT) - GMT+12/+13</SelectItem>
+                                <SelectItem value="Pacific/Honolulu">Honolulu (HST) - GMT-10</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {getInlineError('latest.timezone') && (
+                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.timezone')}</p>
+                            )}
+                          </div>
+                        </div>
+                          </TabsContent>
+                        </Tabs>
 
                         <div className="flex justify-end mt-4">
                           <button
@@ -3050,9 +3208,9 @@ const HackathonsEdit = () => {
                     </div>
                     {!collapsed.images && (
                       <>
-                        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-lg">
-                          <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-2">Hackathon Images & Branding</h3>
-                          <p className="text-sm text-blue-800 dark:text-blue-200">Upload your hackathon banner and small banner. Images will be stored locally and uploaded to the database when you submit the form.</p>
+                        <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-500/30 rounded-lg">
+                          <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-2">Hackathon Images &amp; Branding</h3>
+                          <p className="text-sm text-purple-800 dark:text-purple-200">Upload your hackathon banner and small banner. Images will be stored locally and uploaded to the database when you submit the form.</p>
                         </div>
 
                         {/* Banner Image */}
@@ -3096,7 +3254,7 @@ const HackathonsEdit = () => {
                                   type="text"
                                   placeholder="Or enter banner URL"
                                   value={formDataLatest.banner}
-                                  onChange={e => setFormDataLatest({ ...formDataLatest, banner: e.target.value })}
+                                  onChange={e => { setFormDataLatest({ ...formDataLatest, banner: e.target.value }); scrollToSection('about'); }}
                                   className="w-full"
                                 />
                                 {getInlineError('latest.banner') && (
@@ -3167,7 +3325,7 @@ const HackathonsEdit = () => {
                                   type="text"
                                   placeholder="Or enter small banner URL"
                                   value={formDataLatest.small_banner}
-                                  onChange={e => setFormDataLatest({ ...formDataLatest, small_banner: e.target.value })}
+                                  onChange={e => { setFormDataLatest({ ...formDataLatest, small_banner: e.target.value }); scrollToSection('about'); }}
                                   className="w-full"
                                 />
                                 {getInlineError('latest.small_banner') && (
@@ -3230,9 +3388,9 @@ const HackathonsEdit = () => {
                       <>
                         {formDataLatest.event === 'hackathon' && (
                           <>
-                            <div className="mb-4 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-500/30 rounded-lg">
-                              <h3 className="text-lg font-semibold text-orange-700 dark:text-orange-300 mb-2">Participants & Prize Information</h3>
-                              <p className="text-sm text-orange-800 dark:text-orange-200">Now let's add details about participants and the prize pool.</p>
+                            <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-500/30 rounded-lg">
+                              <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-2">Participants &amp; Prize Information</h3>
+                              <p className="text-sm text-purple-800 dark:text-purple-200">Now let's add details about participants and the prize pool.</p>
                             </div>
                           </>
                         )}
@@ -3267,7 +3425,7 @@ const HackathonsEdit = () => {
                               value={formDataMain.total_prizes?.toString() || ''}
                               onChange={(e) => {
                                 setFormDataMain(prev => ({ ...prev, total_prizes: Number(e.target.value) || 0 }));
-                                scrollToSection('tracks');
+                                scrollToSection('about');
                               }}
                               className="w-full mb-4"
                               required
@@ -3482,7 +3640,7 @@ const HackathonsEdit = () => {
                               // Auto-convert to markdown on every change
                               const markdownText = convertToMarkdown(e.target.value);
                               setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                              scrollToSection('about');
+                              scrollToSection('tracks');
                             }}
                             onKeyDown={(e) => {
                               // Keyboard shortcuts
@@ -3543,231 +3701,243 @@ const HackathonsEdit = () => {
                     {!collapsed.content && (
                       <>
                         {/* Inner tabs for content sections */}
-                        <div className="mb-6">
-                          <div className="flex flex-wrap gap-2">
+                        <Tabs
+                          value={contentTab}
+                          onValueChange={(v) => setContentTab(v as typeof contentTab)}
+                          className="w-full"
+                        >
+                          <TabsList className="w-full mb-6">
                             {formDataLatest.event === 'hackathon' && (
-                              <button
-                                type="button"
-                                onClick={() => setContentTab('tracks')}
-                                className={`px-3 py-1 rounded-full text-xs border transition-colors ${contentTab === 'tracks'
-                                  ? 'bg-red-600 text-white border-red-500'
-                                  : 'bg-zinc-900 text-zinc-200 border-zinc-700 hover:bg-zinc-800'
-                                  }`}
-                              >
+                              <TabsTrigger value="tracks" className="flex-1">
                                 {t[language].tracks}
-                              </button>
+                              </TabsTrigger>
                             )}
-                            <button
-                              type="button"
-                              onClick={() => setContentTab('meta')}
-                              className={`px-3 py-1 rounded-full text-xs border transition-colors ${contentTab === 'meta'
-                                ? 'bg-red-600 text-white border-red-500'
-                                : 'bg-zinc-900 text-zinc-200 border-zinc-700 hover:bg-zinc-800'
-                                }`}
-                            >
-                              Meta
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setContentTab('schedule')}
-                              className={`px-3 py-1 rounded-full text-xs border transition-colors ${contentTab === 'schedule'
-                                ? 'bg-red-600 text-white border-red-500'
-                                : 'bg-zinc-900 text-zinc-200 border-zinc-700 hover:bg-zinc-800'
-                                }`}
-                            >
+                            <TabsTrigger value="schedule" className="flex-1">
                               {t[language].schedule}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setContentTab('resources')}
-                              className={`px-3 py-1 rounded-full text-xs border transition-colors ${contentTab === 'resources'
-                                ? 'bg-red-600 text-white border-red-500'
-                                : 'bg-zinc-900 text-zinc-200 border-zinc-700 hover:bg-zinc-800'
-                                }`}
-                            >
+                            </TabsTrigger>
+                            <TabsTrigger value="resources" className="flex-1">
                               {t[language].resources}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setContentTab('speakers')}
-                              className={`px-3 py-1 rounded-full text-xs border transition-colors ${contentTab === 'speakers'
-                                ? 'bg-red-600 text-white border-red-500'
-                                : 'bg-zinc-900 text-zinc-200 border-zinc-700 hover:bg-zinc-800'
-                                }`}
-                            >
+                            </TabsTrigger>
+                            <TabsTrigger value="speakers" className="flex-1">
                               {t[language].speakers}
-                            </button>
+                            </TabsTrigger>
+                          </TabsList>
 
-                          </div>
-                        </div>
+                          {/* Tracks Section - Only for Hackathons */}
+                          {formDataLatest.event === 'hackathon' && (
+                            <TabsContent value="tracks">
+                              <div className="space-y-4">
+                                <label className="font-medium text-xl">{t[language].tracks}:</label>
+                                {formDataContent.tracks.map((track, index) => (
+                                  <TrackItem
+                                    key={index}
+                                    track={track}
+                                    index={index}
+                                    collapsed={collapsedTracks[index]}
+                                    onChange={handleTrackFieldChange}
+                                    onDone={handleTrackDone}
+                                    onExpand={handleTrackExpand}
+                                    onRemove={animateRemove.bind(null, 'track', index, removeTrack)}
+                                    onScrollToPreview={scrollToSection}
+                                    t={t}
+                                    language={language}
+                                    removing={removing}
+                                    tracksLength={formDataContent.tracks.length}
+                                    rawTrackDescriptions={rawTrackDescriptions}
+                                    setRawTrackDescriptions={setRawTrackDescriptions}
+                                    convertToHTML={convertToHTML}
+                                    fieldError={(f) => getInlineError(`content.tracks.${index}.${f}`)}
+                                  />
+                                ))}
+                                <div className="flex justify-end">
+                                  <Button type="button" onClick={addTrack} className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
+                                    <Plus className="w-4 h-4" /> {t[language].addTrack}
+                                  </Button>
+                                </div>
+                              </div>
+                            </TabsContent>
+                          )}
 
-                        {/* Tracks Section - Only for Hackathons */}
-                        {formDataLatest.event === 'hackathon' && contentTab === 'tracks' && (
-                          <div className="space-y-4">
-                            <label className="font-medium text-xl">{t[language].tracks}:</label>
-                            {formDataContent.tracks.map((track, index) => (
-                              <TrackItem
-                                key={index}
-                                track={track}
-                                index={index}
-                                collapsed={collapsedTracks[index]}
-                                onChange={handleTrackFieldChange}
-                                onDone={handleTrackDone}
-                                onExpand={handleTrackExpand}
-                                onRemove={animateRemove.bind(null, 'track', index, removeTrack)}
-                                onScrollToPreview={scrollToSection}
-                                t={t}
-                                language={language}
-                                removing={removing}
-                                tracksLength={formDataContent.tracks.length}
-                                rawTrackDescriptions={rawTrackDescriptions}
-                                setRawTrackDescriptions={setRawTrackDescriptions}
-                                convertToHTML={convertToHTML}
-                                fieldError={(f) => getInlineError(`content.tracks.${index}.${f}`)}
-                              />
-                            ))}
-                            <div className="flex justify-end">
-                              <Button type="button" onClick={addTrack} className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
-                                <Plus className="w-4 h-4" /> {t[language].addTrack}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Meta: Address + Google Calendar */}
-                        {contentTab === 'meta' && (
-                          <>
+                          {/* Schedule / Calendar */}
+                          <TabsContent value="schedule">
                             <div className="space-y-4">
-                              <label className="font-medium text-xl mb-2 block">{t[language].address}:</label>
-                              <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].addressHelp}</div>
-                              <Input
-                                type="text"
-                                placeholder="Address"
-                                value={formDataContent.address}
-                                onChange={(e) => setFormDataContent({ ...formDataContent, address: e.target.value })}
-                                className="w-full mb-4"
-                                required
-                              />
-                              {getInlineError('content.address') && (
-                                <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.address')}</p>
+                              {/* Pill toggles: Calendar vs Manual */}
+                              <div className="flex gap-2 mb-4">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPendingManualSwitch(false);
+                                    setScheduleMode('calendar');
+                                  }}
+                                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                    scheduleMode === 'calendar'
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : 'bg-transparent text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                  }`}
+                                >
+                                  {t[language].scheduleModeCalendar}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (formDataLatest.google_calendar_id) {
+                                      if (!pendingManualSwitch) {
+                                        setPendingManualSwitch(true);
+                                        return;
+                                      }
+                                      // second click confirms
+                                      setFormDataLatest(prev => ({ ...prev, google_calendar_id: null }));
+                                    }
+                                    setPendingManualSwitch(false);
+                                    setScheduleMode('manual');
+                                  }}
+                                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                    scheduleMode === 'manual'
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : 'bg-transparent text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                  }`}
+                                >
+                                  {t[language].scheduleModeManual}
+                                </button>
+                              </div>
+
+                              {/* Inline warning on pending switch */}
+                              {pendingManualSwitch && (
+                                <p className="text-amber-600 dark:text-amber-400 text-sm mb-3">
+                                  {t[language].switchToManualWarning}
+                                </p>
+                              )}
+
+                              {/* Calendar mode */}
+                              {scheduleMode === 'calendar' && (
+                                <>
+                                  <div className="rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4 mb-4">
+                                    <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-1">{t[language].googleCalendarIntegration}</h3>
+                                    <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">{t[language].googleCalendarIntegrationHelp}</p>
+                                    <label className="font-medium text-sm mb-1 block">{t[language].googleCalendarId}:</label>
+                                    <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-xs">{t[language].googleCalendarIdHelp}</div>
+                                    <Input
+                                      type="text"
+                                      placeholder="e.g. primary or abc123@group.calendar.google.com"
+                                      value={formDataLatest.google_calendar_id ?? ''}
+                                      onChange={(e) => setFormDataLatest({ ...formDataLatest, google_calendar_id: e.target.value || null })}
+                                      className="w-full mb-2"
+                                    />
+                                    {getInlineError('latest.google_calendar_id') && (
+                                      <p className="text-red-500 text-sm -mt-1 mb-2">{getInlineError('latest.google_calendar_id')}</p>
+                                    )}
+                                  </div>
+                                  <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-600 dark:text-zinc-400">
+                                    {t[language].calendarModeInfoBanner}
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Manual mode */}
+                              {scheduleMode === 'manual' && (
+                                <>
+                                  <label className="font-medium text-xl mb-2 block">{t[language].schedule}:</label>
+                                  <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleHelp}</div>
+                                  {formDataContent.schedule.map((event, index) => (
+                                    <ScheduleItem
+                                      key={index}
+                                      event={event}
+                                      index={index}
+                                      collapsed={collapsedSchedules[index]}
+                                      onChange={handleScheduleFieldChange}
+                                      onDone={handleScheduleDone}
+                                      onExpand={handleScheduleExpand}
+                                      onRemove={animateRemove.bind(null, 'schedule', index, removeSchedule)}
+                                      t={t}
+                                      language={language}
+                                      removing={removing}
+                                      scheduleLength={formDataContent.schedule.length}
+                                      toLocalDatetimeString={toLocalDatetimeString}
+                                      fieldError={(f) => getInlineError(`content.schedule.${index}.${f}`)}
+                                    />
+                                  ))}
+                                  <div className="flex justify-end">
+                                    <Button type="button" onClick={addSchedule} className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
+                                      <Plus className="w-4 h-4" /> {t[language].addSchedule}
+                                    </Button>
+                                  </div>
+                                  <div className="mt-4 p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-600 dark:text-zinc-400">
+                                    {t[language].manualModeInfoBanner}
+                                  </div>
+                                </>
                               )}
                             </div>
+                          </TabsContent>
+
+                          {/* Resources */}
+                          <TabsContent value="resources">
                             <div className="space-y-4">
-                              <label className="font-medium text-xl mb-2 block">{t[language].googleCalendarId}:</label>
-                              <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].googleCalendarIdHelp}</div>
-                              <Input
-                                type="text"
-                                placeholder="e.g. primary or abc123@group.calendar.google.com"
-                                value={formDataLatest.google_calendar_id ?? ''}
-                                onChange={(e) => setFormDataLatest({ ...formDataLatest, google_calendar_id: e.target.value || null })}
-                                className="w-full mb-4"
-                              />
-                              {getInlineError('latest.google_calendar_id') && (
-                                <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.google_calendar_id')}</p>
-                              )}
+                              <label className="font-medium text-xl mb-2 block">{t[language].resources}:</label>
+                              {formDataContent.resources.map((resource, index) => (
+                                <ResourceItem
+                                  key={index}
+                                  resource={resource}
+                                  index={index}
+                                  collapsed={collapsedResources[index]}
+                                  onChange={handleResourceFieldChange}
+                                  onDone={handleResourceDone}
+                                  onExpand={handleResourceExpand}
+                                  onRemove={animateRemove.bind(null, 'resource', index, removeResource)}
+                                  t={t}
+                                  language={language}
+                                  removing={removing}
+                                  resourcesLength={formDataContent.resources.length}
+                                  fieldError={(f) => getInlineError(`content.resources.${index}.${f}`)}
+                                />
+                              ))}
+                              <div className="flex justify-end">
+                                <Button type="button" onClick={addResource} className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
+                                  <Plus className="w-4 h-4" /> {t[language].addResource}
+                                </Button>
+                              </div>
                             </div>
-                          </>
-                        )}
+                          </TabsContent>
 
-                        {/* Schedule */}
-                        {contentTab === 'schedule' && (
-                          <div className="space-y-4">
-                            <label className="font-medium text-xl mb-2 block">{t[language].schedule}:</label>
-                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleHelp}</div>
-                            {formDataContent.schedule.map((event, index) => (
-                              <ScheduleItem
-                                key={index}
-                                event={event}
-                                index={index}
-                                collapsed={collapsedSchedules[index]}
-                                onChange={handleScheduleFieldChange}
-                                onDone={handleScheduleDone}
-                                onExpand={handleScheduleExpand}
-                                onRemove={animateRemove.bind(null, 'schedule', index, removeSchedule)}
-                                t={t}
-                                language={language}
-                                removing={removing}
-                                scheduleLength={formDataContent.schedule.length}
-                                toLocalDatetimeString={toLocalDatetimeString}
-                                fieldError={(f) => getInlineError(`content.schedule.${index}.${f}`)}
-                              />
-                            ))}
-                            <div className="flex justify-end">
-                              <Button type="button" onClick={addSchedule} className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
-                                <Plus className="w-4 h-4" /> {t[language].addSchedule}
-                              </Button>
+                          {/* Speakers */}
+                          <TabsContent value="speakers">
+                            <div className="space-y-4">
+                              <label className="font-medium text-xl mb-2 block">{t[language].speakers}:</label>
+                              {formDataContent.speakers.map((speaker, index) => (
+                                <SpeakerItem
+                                  key={index}
+                                  speaker={speaker}
+                                  index={index}
+                                  collapsed={collapsedSpeakers[index]}
+                                  onChange={handleSpeakerFieldChange}
+                                  onDone={handleSpeakerDone}
+                                  onExpand={handleSpeakerExpand}
+                                  onRemove={animateRemove.bind(null, 'speaker', index, removeSpeaker)}
+                                  t={t}
+                                  language={language}
+                                  removing={removing}
+                                  speakersLength={formDataContent.speakers.length}
+                                  onPictureChange={handleSpeakerPictureChange}
+                                  onApplyTemplate={handleApplySpeakerTemplate}
+                                  speakerTemplates={speakerTemplates}
+                                  loadingSpeakerTemplates={loadingSpeakerTemplates}
+                                  onImageFileTooLarge={() =>
+                                    toast({
+                                      title: 'The file is too large (Max: 2MB).',
+                                      description: 'Try compressing it.',
+                                      variant: 'destructive',
+                                    })
+                                  }
+                                  fieldError={(f) => getInlineError(`content.speakers.${index}.${f}`)}
+                                />
+                              ))}
+                              <div className="flex justify-end">
+                                <Button type="button" onClick={addSpeaker} className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
+                                  <Plus className="w-4 h-4" /> {t[language].addSpeaker}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        )}
-
-                        {/* Resources Section - For all event types */}
-                        {contentTab === 'resources' && (
-                          <div className="space-y-4">
-                            <label className="font-medium text-xl mb-2 block">{t[language].resources}:</label>
-                            {formDataContent.resources.map((resource, index) => (
-                              <ResourceItem
-                                key={index}
-                                resource={resource}
-                                index={index}
-                                collapsed={collapsedResources[index]}
-                                onChange={handleResourceFieldChange}
-                                onDone={handleResourceDone}
-                                onExpand={handleResourceExpand}
-                                onRemove={animateRemove.bind(null, 'resource', index, removeResource)}
-                                t={t}
-                                language={language}
-                                removing={removing}
-                                resourcesLength={formDataContent.resources.length}
-                                fieldError={(f) => getInlineError(`content.resources.${index}.${f}`)}
-                              />
-                            ))}
-                            <div className="flex justify-end">
-                              <Button type="button" onClick={addResource} className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
-                                <Plus className="w-4 h-4" /> {t[language].addResource}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Speakers */}
-                        {contentTab === 'speakers' && (
-                          <div className="space-y-4">
-                            <label className="font-medium text-xl mb-2 block">{t[language].speakers}:</label>
-                            {formDataContent.speakers.map((speaker, index) => (
-                              <SpeakerItem
-                                key={index}
-                                speaker={speaker}
-                                index={index}
-                                collapsed={collapsedSpeakers[index]}
-                                onChange={handleSpeakerFieldChange}
-                                onDone={handleSpeakerDone}
-                                onExpand={handleSpeakerExpand}
-                                onRemove={animateRemove.bind(null, 'speaker', index, removeSpeaker)}
-                                t={t}
-                                language={language}
-                                removing={removing}
-                                speakersLength={formDataContent.speakers.length}
-                                onPictureChange={handleSpeakerPictureChange}
-                                onApplyTemplate={handleApplySpeakerTemplate}
-                                speakerTemplates={speakerTemplates}
-                                loadingSpeakerTemplates={loadingSpeakerTemplates}
-                                onImageFileTooLarge={() =>
-                                  toast({
-                                    title: 'The file is too large (Max: 2MB).',
-                                    description: 'Try compressing it.',
-                                    variant: 'destructive',
-                                  })
-                                }
-                                fieldError={(f) => getInlineError(`content.speakers.${index}.${f}`)}
-                              />
-                            ))}
-                            <div className="flex justify-end">
-                              <Button type="button" onClick={addSpeaker} className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
-                                <Plus className="w-4 h-4" /> {t[language].addSpeaker}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
+                          </TabsContent>
+                        </Tabs>
 
                         <div className="flex justify-end mt-4">
                           <button
@@ -3784,230 +3954,72 @@ const HackathonsEdit = () => {
                       <div className="text-zinc-600 dark:text-zinc-400 italic">{t[language].contentCompleted}</div>
                     )}
                   </div>
-                  <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6 mt-10">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 ref={step7Ref} className="text-2xl font-bold">{t[language].lastDetails}</h2>
-                      {collapsed.last && (
-                        <button onClick={() => setCollapsed({ ...collapsed, last: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
-                          <ChevronRight className="w-5 h-5" /> {t[language].expand}
-                        </button>
-                      )}
-                    </div>
-                    {!collapsed.last && (
-                      <>
-                        <div className="space-y-4">
-                          {/* Top Most checkbox
-                    <div className="flex items-center gap-2 mb-4">
-                      <Checkbox
-                        id="top_most"
-                        name="top_most"
-                        checked={formDataLatest.top_most}
-                        onCheckedChange={(checked) => {
-                          setFormDataLatest(prev => ({ ...prev, top_most: checked }));
-                        }}
-                      />
-                      <label htmlFor="top_most" className="text-zinc-700 dark:text-zinc-400 text-sm cursor-pointer">
-                        Top most
-                      </label>
-                    </div>
-                    */}
-                          <div>
-                            <label className="font-medium text-xl mb-2 block">{t[language].startDate}:</label>
-                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].startDateHelp}</div>
-                            <Input
-                              type="datetime-local"
-                              placeholder="Start Date"
-                              value={formDataLatest.start_date}
-                              onChange={(e) => {
-                                const start = e.target.value;
-                                setFormDataLatest({ ...formDataLatest, start_date: start });
-                                setDateRangeError(getDateRangeError(start, formDataLatest.end_date));
-                              }}
-                              className="w-full mb-4"
-                              required
-                            />
-                            {getInlineError('latest.start_date') && (
-                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.start_date')}</p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="font-medium text-xl mb-2 block">{t[language].endDate}:</label>
-                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].endDateHelp}</div>
-                            <Input
-                              type="datetime-local"
-                              placeholder="End Date"
-                              value={formDataLatest.end_date}
-                              onChange={(e) => {
-                                const end = e.target.value;
-                                setFormDataLatest({ ...formDataLatest, end_date: end });
-                                setDateRangeError(getDateRangeError(formDataLatest.start_date, end));
-                              }}
-                              className="w-full mb-4"
-                              required
-                            />
-                            {getInlineError('latest.end_date') && (
-                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.end_date')}</p>
-                            )}
-                            {dateRangeError && (
-                              <p className="text-red-500 text-sm mt-1 mb-4">{dateRangeError}</p>
-                            )}
-                          </div>
-                          {formDataLatest.event === 'hackathon' && (
-                            <div>
-                              <label className="font-medium text-xl mb-2 block">{t[language].submissionDeadline}:</label>
-                              <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].submissionDeadlineHelp}</div>
-                              <Input
-                                type="datetime-local"
-                                placeholder="Submission Deadline"
-                                value={formDataContent.submission_deadline}
-                                onChange={(e) => setFormDataContent({ ...formDataContent, submission_deadline: e.target.value })}
-                                className="w-full mb-4"
-                              />
-                              {getInlineError('content.submission_deadline') && (
-                                <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.submission_deadline')}</p>
-                              )}
-                            </div>
-                          )}
-                          <div>
-                            <label className="font-medium text-xl mb-2 block">{t[language].timezone}:</label>
-                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].timezoneHelp}</div>
-                            <Select
-                              value={formDataLatest.timezone}
-                              onValueChange={(value) => setFormDataLatest({ ...formDataLatest, timezone: value })}
-                            >
-                              <SelectTrigger className="w-full mb-4">
-                                <SelectValue placeholder="Select timezone" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="America/New_York">New York (EST/EDT) - GMT-5/-4</SelectItem>
-                                <SelectItem value="America/Chicago">Chicago (CST/CDT) - GMT-6/-5</SelectItem>
-                                <SelectItem value="America/Denver">Denver (MST/MDT) - GMT-7/-6</SelectItem>
-                                <SelectItem value="America/Los_Angeles">Los Angeles (PST/PDT) - GMT-8/-7</SelectItem>
-                                <SelectItem value="America/Toronto">Toronto (EST/EDT) - GMT-5/-4</SelectItem>
-                                <SelectItem value="America/Vancouver">Vancouver (PST/PDT) - GMT-8/-7</SelectItem>
-                                <SelectItem value="America/Mexico_City">Mexico City (CST/CDT) - GMT-6/-5</SelectItem>
-                                <SelectItem value="America/Bogota">Bogotá, Colombia (COT) - GMT-5</SelectItem>
-                                <SelectItem value="America/Costa_Rica">San José, Costa Rica (CST) - GMT-6</SelectItem>
-                                <SelectItem value="America/Panama">Panama City, Panama (EST) - GMT-5</SelectItem>
-                                <SelectItem value="America/Caracas">Caracas, Venezuela (VET) - GMT-4</SelectItem>
-                                <SelectItem value="America/La_Paz">La Paz, Bolivia (BOT) - GMT-4</SelectItem>
-                                <SelectItem value="America/Lima">Lima, Peru (PET) - GMT-5</SelectItem>
-                                <SelectItem value="America/Sao_Paulo">São Paulo, Brazil (BRT) - GMT-3</SelectItem>
-                                <SelectItem value="America/Santiago">Santiago, Chile (CLT) - GMT-3</SelectItem>
-                                <SelectItem value="America/Buenos_Aires">Buenos Aires, Argentina (ART) - GMT-3</SelectItem>
-                                <SelectItem value="Europe/London">London (GMT/BST) - GMT+0/+1</SelectItem>
-                                <SelectItem value="Europe/Paris">Paris (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Berlin">Berlin (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Rome">Rome (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Madrid">Madrid (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Amsterdam">Amsterdam (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Zurich">Zurich (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Stockholm">Stockholm (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Moscow">Moscow (MSK) - GMT+3</SelectItem>
-                                <SelectItem value="Asia/Tokyo">Tokyo (JST) - GMT+9</SelectItem>
-                                <SelectItem value="Asia/Shanghai">Shanghai (CST) - GMT+8</SelectItem>
-                                <SelectItem value="Asia/Hong_Kong">Hong Kong (HKT) - GMT+8</SelectItem>
-                                <SelectItem value="Asia/Singapore">Singapore (SGT) - GMT+8</SelectItem>
-                                <SelectItem value="Asia/Seoul">Seoul (KST) - GMT+9</SelectItem>
-                                <SelectItem value="Asia/Mumbai">Mumbai (IST) - GMT+5:30</SelectItem>
-                                <SelectItem value="Asia/Dubai">Dubai (GST) - GMT+4</SelectItem>
-                                <SelectItem value="Asia/Jerusalem">Jerusalem (IST) - GMT+2/+3</SelectItem>
-                                <SelectItem value="Australia/Sydney">Sydney (AEST/AEDT) - GMT+10/+11</SelectItem>
-                                <SelectItem value="Australia/Melbourne">Melbourne (AEST/AEDT) - GMT+10/+11</SelectItem>
-                                <SelectItem value="Australia/Perth">Perth (AWST) - GMT+8</SelectItem>
-                                <SelectItem value="Pacific/Auckland">Auckland (NZST/NZDT) - GMT+12/+13</SelectItem>
-                                <SelectItem value="Pacific/Honolulu">Honolulu (HST) - GMT-10</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            {getInlineError('latest.timezone') && (
-                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.timezone')}</p>
-                            )}
-                          </div>
+                  <Accordion
+                  type="single"
+                  collapsible
+                  className="w-full rounded-md border mt-6 px-4 py-2"
+                  >
+                    <AccordionItem value={'options'}>
+                      <AccordionPrimitive.Header className="flex">
+                        <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between gap-2 py-1 text-sm font-medium outline-none [&[data-state=open]_svg.chevron]:rotate-180">
+                        <span>Advanced options</span>
+                        <div className="flex items-center gap-2">
+                        <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
                         </div>
-                        <div>
-                        <Accordion
-                        type="single"
-                        collapsible
-                        className="w-full rounded-md border mt-6 px-4 py-2"
-                        >
-                          <AccordionItem value={'options'}>
-                            <AccordionPrimitive.Header className="flex">
-                              <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between gap-2 py-1 text-sm font-medium outline-none [&[data-state=open]_svg.chevron]:rotate-180">
-                              <span>Advanced options</span>
-                              <div className="flex items-center gap-2">
-                              <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
-                              </div>
-                              </AccordionPrimitive.Trigger>
-                            </AccordionPrimitive.Header>
+                        </AccordionPrimitive.Trigger>
+                      </AccordionPrimitive.Header>
 
-                            <AccordionContent>
-                            <div className='pt-4'>
-                              <label className="font-medium text-xl mb-2 block">{t[language].customLink}:</label>
-                              <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].customLinkHelp}</div>
-                              <Input
-                                type="text"
-                                name="custom_link"
-                                placeholder="e.g., https://hackathon.custom..."
-                                value={formDataLatest.custom_link ?? ''}
-                                onChange={(e) => {
-                                  setFormDataLatest(prev => ({ ...prev, custom_link: e.target.value }));
-                                }}
-                                className="w-full mb-4"
-                              />
-                              {getInlineError('latest.custom_link') && (
-                                <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.custom_link')}</p>
-                              )}
-                              <label className="font-medium text-xl mb-2 block">{t[language].joinCustomLink}:</label>
-                              <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].joinCustomLinkHelp}</div>
-                              <Input
-                                type="text"
-                                name="join_custom_link"
-                                placeholder="e.g., https://hackathon.custom..."
-                                value={formDataContent.join_custom_link ?? ''}
-                                onChange={(e) => {
-                                  setFormDataContent(prev => ({ ...prev, join_custom_link: e.target.value }));
-                                }}
-                                className="w-full mb-4"
-                              />
-                              {getInlineError('content.join_custom_link') && (
-                                <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.join_custom_link')}</p>
-                              )}
-                              <label className="font-medium text-xl mb-2 block">{t[language].submissionCustomLink}:</label>
-                              <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].submissionCustomLinkHelp}</div>
-                              <Input
-                                type="text"
-                                name="submission_custom_link"
-                                placeholder="e.g., https://hackathon.custom..."
-                                value={formDataContent.submission_custom_link ?? ''}
-                                onChange={(e) => {
-                                  setFormDataContent(prev => ({ ...prev, submission_custom_link: e.target.value }));
-                                }}
-                                className="w-full mb-4"
-                              />
-                              {getInlineError('content.submission_custom_link') && (
-                                <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.submission_custom_link')}</p>
-                              )}
-                            </div>
-                            </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
-                        </div>
-
-                        <div className="flex justify-end mt-4">
-                        <button
-                        type="button"
-                        onClick={() => handleDone('last')}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded flex items-center gap-1 cursor-pointer"
-                        >
-                        {t[language].done} <ChevronDown className="w-4 h-4" />
-                        </button>
-                        </div>
-                        </>
-                    )}
-                    {collapsed.last && (
-                      <div className="text-zinc-600 dark:text-zinc-400 italic">{t[language].lastDetailsCompleted}</div>
-                    )}
-                    </div>
+                      <AccordionContent>
+                      <div className='pt-4'>
+                        <label className="font-medium text-xl mb-2 block">{t[language].customLink}:</label>
+                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].customLinkHelp}</div>
+                        <Input
+                          type="text"
+                          name="custom_link"
+                          placeholder="e.g., https://hackathon.custom..."
+                          value={formDataLatest.custom_link ?? ''}
+                          onChange={(e) => {
+                            setFormDataLatest(prev => ({ ...prev, custom_link: e.target.value }));
+                          }}
+                          className="w-full mb-4"
+                        />
+                        {getInlineError('latest.custom_link') && (
+                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.custom_link')}</p>
+                        )}
+                        <label className="font-medium text-xl mb-2 block">{t[language].joinCustomLink}:</label>
+                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].joinCustomLinkHelp}</div>
+                        <Input
+                          type="text"
+                          name="join_custom_link"
+                          placeholder="e.g., https://hackathon.custom..."
+                          value={formDataContent.join_custom_link ?? ''}
+                          onChange={(e) => {
+                            setFormDataContent(prev => ({ ...prev, join_custom_link: e.target.value }));
+                          }}
+                          className="w-full mb-4"
+                        />
+                        {getInlineError('content.join_custom_link') && (
+                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.join_custom_link')}</p>
+                        )}
+                        <label className="font-medium text-xl mb-2 block">{t[language].submissionCustomLink}:</label>
+                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].submissionCustomLinkHelp}</div>
+                        <Input
+                          type="text"
+                          name="submission_custom_link"
+                          placeholder="e.g., https://hackathon.custom..."
+                          value={formDataContent.submission_custom_link ?? ''}
+                          onChange={(e) => {
+                            setFormDataContent(prev => ({ ...prev, submission_custom_link: e.target.value }));
+                          }}
+                          className="w-full mb-4"
+                        />
+                        {getInlineError('content.submission_custom_link') && (
+                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.submission_custom_link')}</p>
+                        )}
+                      </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                     </form>
               </>
             )}
@@ -4033,7 +4045,7 @@ const HackathonsEdit = () => {
             )}
           </div>
         </div>
-        <div className={`w-1/2 min-h-0 ${activePreviewTab === 'stages-submit-form' ? 'overflow-y-auto' : 'overflow-hidden'} border-l border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900`}>
+        <div ref={rightPanelRef} className={`w-1/2 min-h-0 ${activePreviewTab === 'stages-submit-form' ? 'overflow-y-auto' : 'overflow-hidden'} border-l border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900`}>
           <div className="h-full">
             {renderHackathonPreviewTabs()}
           </div>
