@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Trash, ChevronDown, ChevronRight, Database, PlusCircle, FileText, Layers, ImageIcon, Users, AlignLeft, LayoutGrid, ClipboardList, X, Save, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import TrackDialogContent from '@/components/hackathons/hackathon/TrackDialogContent';
+import type { Track } from '@/types/hackathons';
 import { ICON_OPTIONS } from '@/components/hackathons/edit/icon-registry';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import HackathonsList from '@/components/hackathons/edit/HackathonsList';
@@ -254,6 +257,19 @@ const IconPicker = ({ value, onChange }: { value: string; onChange: (val: string
   );
 };
 
+function trackFormToDialogTrack(track: ITrack): Track {
+  return {
+    name: track.name?.trim() || 'Untitled track',
+    short_description: track.short_description || '',
+    icon: track.icon || track.logo || '',
+    logo: track.logo || track.icon || '',
+    description: track.description || '',
+    total_reward: 0,
+    partner: track.partner,
+    resources: [],
+  };
+}
+
 type TrackItemProps = {
   track: ITrack;
   index: number;
@@ -283,7 +299,13 @@ const TrackItem = memo(function TrackItem({ track, index, collapsed, onChange, o
             <div className="flex items-center gap-2">
               <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
               {tracksLength > 1 && (
-                <RemoveButton onRemove={() => onRemove(index)} tooltipLabel={t[language].removeTrack} size={18} />
+                <RemoveButton
+                  onRemove={() => onRemove(index)}
+                  tooltipLabel={t[language].removeTrack}
+                  confirmPrompt={t[language].confirmDeletePrompt}
+                  size={18}
+                  language={language}
+                />
               )}
             </div>
           </AccordionPrimitive.Trigger>
@@ -446,14 +468,6 @@ const TrackItem = memo(function TrackItem({ track, index, collapsed, onChange, o
             required
           />
           <SubformFieldError fieldError={fieldError} field="description" />
-          {track.description && (
-            <div className="mb-3">
-              <div className="text-zinc-700 dark:text-zinc-400 text-sm mb-2">HTML Preview:</div>
-              <div className="p-3 bg-zinc-800 border border-zinc-600 rounded-lg text-green-400 text-xs font-mono whitespace-pre-wrap max-h-20 overflow-y-auto">
-                {track.description}
-              </div>
-            </div>
-          )}
           <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].shortDescription}</div>
           <Input
             type="text"
@@ -465,15 +479,33 @@ const TrackItem = memo(function TrackItem({ track, index, collapsed, onChange, o
           />
           <SubformFieldError fieldError={fieldError} field="short_description" />
           <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">Icon</div>
-          <div className="relative mb-3">
-            <IconPicker
-              value={track.logo || track.icon}
-              onChange={(val) => {
-                onChange(index, 'logo', val);
-                onChange(index, 'icon', val);
-                onScrollToPreview('tracks');
-              }}
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-3">
+            <div className="relative min-w-0 flex-1">
+              <IconPicker
+                value={track.logo || track.icon}
+                onChange={(val) => {
+                  onChange(index, 'logo', val);
+                  onChange(index, 'icon', val);
+                  onScrollToPreview('tracks');
+                }}
+              />
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0 self-end border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  {t[language].previewTrack}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="dark:bg-zinc-900 bg-zinc-50 border-2">
+                <DialogTitle />
+                <TrackDialogContent track={trackFormToDialogTrack(track)} />
+              </DialogContent>
+            </Dialog>
           </div>
         </>
         </AccordionContent>
@@ -507,7 +539,13 @@ const ScheduleItem = memo(function ScheduleItem({ event, index, collapsed, onCha
             <h3 className="text-lg font-semibold my-1">Schedule {index + 1}</h3>
             <div className="flex items-center gap-2">
               <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
-              <RemoveButton onRemove={() => onRemove(index)} tooltipLabel={t[language].removeSchedule} size={18} />
+              <RemoveButton
+                onRemove={() => onRemove(index)}
+                tooltipLabel={t[language].removeSchedule}
+                confirmPrompt={t[language].confirmDeletePrompt}
+                size={18}
+                language={language}
+              />
             </div>
           </AccordionPrimitive.Trigger>
         </AccordionPrimitive.Header>
@@ -662,7 +700,13 @@ const SpeakerItem = memo(function SpeakerItem({ speaker, index, collapsed, onCha
             <div className="flex items-center gap-2">
               <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
               {speakersLength > 1 && (
-                <RemoveButton onRemove={() => onRemove(index)} tooltipLabel={t[language].removeSpeaker} size={18} />
+                <RemoveButton
+                  onRemove={() => onRemove(index)}
+                  tooltipLabel={t[language].removeSpeaker}
+                  confirmPrompt={t[language].confirmDeletePrompt}
+                  size={18}
+                  language={language}
+                />
               )}
             </div>
           </AccordionPrimitive.Trigger>
@@ -817,7 +861,13 @@ const ResourceItem = memo(function ResourceItem({ resource, index, collapsed, on
             <div className="flex items-center gap-2">
               <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
               {resourcesLength > 1 && (
-                <RemoveButton onRemove={() => onRemove(index)} tooltipLabel={t[language].removeResource} size={18} />
+                <RemoveButton
+                  onRemove={() => onRemove(index)}
+                  tooltipLabel={t[language].removeResource}
+                  confirmPrompt={t[language].confirmDeletePrompt}
+                  language={language}
+                  size={18}
+                />
               )}
             </div>
           </AccordionPrimitive.Trigger>
@@ -1125,6 +1175,8 @@ const HackathonsEdit = () => {
   });
 
   const [language, setLanguage] = useState<'en' | 'es'>('en');
+  const [cancelEditConfirming, setCancelEditConfirming] = useState(false);
+  const [cancelEditTooltipOpen, setCancelEditTooltipOpen] = useState(false);
   const [scrollTarget, setScrollTarget] = useState<string | undefined>();
   const [rawTrackText, setRawTrackText] = useState<string>('');
   const [rawTrackDescriptions, setRawTrackDescriptions] = useState<{ [key: number]: string }>({});
@@ -2173,17 +2225,73 @@ const HackathonsEdit = () => {
             {isSelectedHackathon && (
               <>
                 <TooltipProvider>
-                  <Tooltip>
+                  <Tooltip
+                    open={cancelEditTooltipOpen}
+                    disableHoverableContent={false}
+                    onOpenChange={(nextOpen) => {
+                      setCancelEditTooltipOpen(nextOpen);
+                      if (!nextOpen) setCancelEditConfirming(false);
+                    }}
+                  >
                     <TooltipTrigger asChild>
                       <button
                         type="button"
-                        onClick={handleCancelEdit}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!cancelEditConfirming) {
+                            setCancelEditConfirming(true);
+                            setCancelEditTooltipOpen(true);
+                          }
+                        }}
                         className="shrink-0 p-1.5 rounded-full border transition-colors bg-white text-zinc-700 border-zinc-300 hover:bg-red-400 hover:text-white dark:bg-zinc-900 dark:text-zinc-200 dark:border-zinc-700"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>{t[language].cancel}</TooltipContent>
+                    <TooltipContent
+                      className="pointer-events-auto"
+                      onPointerDownOutside={(e) => e.preventDefault()}
+                    >
+                      {!cancelEditConfirming ? (
+                        t[language].cancel
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <span>{t[language].confirmDiscardPrompt}</span>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleCancelEdit();
+                                setCancelEditConfirming(false);
+                                setCancelEditTooltipOpen(false);
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              className="underline text-xs hover:text-red-400 cursor-pointer"
+                            >
+                              {t[language].confirmAction}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setCancelEditConfirming(false);
+                                setCancelEditTooltipOpen(false);
+                              }}
+                              className="underline text-xs hover:text-zinc-300 cursor-pointer"
+                            >
+                              {t[language].cancelAction}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <TooltipProvider>
@@ -2613,7 +2721,7 @@ const HackathonsEdit = () => {
                 <form onSubmit={submitWithValidation} noValidate className="space-y-4">
                   <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 ref={step1Ref} className="text-2xl font-bold">Step 1: {t[language].mainTopics}</h2>
+                      <h2 className="text-2xl font-bold">{t[language].mainTopics}</h2>
                       {collapsed.main && (
                         <button onClick={() => setCollapsed({ ...collapsed, main: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
                           <ChevronRight className="w-5 h-5" /> {t[language].expand}
@@ -2726,7 +2834,7 @@ const HackathonsEdit = () => {
                   </div>
                   <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 ref={step2Ref} className="text-2xl font-bold">Step 2: Stages</h2>
+                      <h2 ref={step2Ref} className="text-2xl font-bold">Stages</h2>
                       {collapsed.stages && (
                         <button onClick={() => setCollapsed({ ...collapsed, stages: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
                           <ChevronRight className="w-5 h-5" /> {t[language].expand}
@@ -2768,7 +2876,7 @@ const HackathonsEdit = () => {
                   {/* Step 3: Images & Branding */}
                   <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 ref={step3Ref} className="text-2xl font-bold">Step 3: Images & Branding</h2>
+                      <h2 ref={step3Ref} className="text-2xl font-bold">Images & Branding</h2>
                       {collapsed.images && (
                         <button onClick={() => setCollapsed({ ...collapsed, images: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
                           <ChevronRight className="w-5 h-5" /> {t[language].expand}
@@ -2945,7 +3053,7 @@ const HackathonsEdit = () => {
                   <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 ref={step4Ref} className="text-2xl font-bold">
-                        {formDataLatest.event === 'hackathon' ? 'Step 4: Participants & Prizes' : 'Step 4: Organizer'}
+                        {formDataLatest.event === 'hackathon' ? 'Participants & Prizes' : 'Organizer'}
                       </h2>
                       {collapsed.about && (
                         <button onClick={() => setCollapsed({ ...collapsed, about: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
@@ -3043,7 +3151,7 @@ const HackathonsEdit = () => {
                   {formDataLatest.event === 'hackathon' && (
                     <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
                       <div className="flex items-center justify-between mb-4">
-                        <h2 ref={step5Ref} className="text-2xl font-bold">Step 5: {t[language].trackText}</h2>
+                        <h2 ref={step5Ref} className="text-2xl font-bold">{t[language].trackText}</h2>
                         {collapsed.trackText && (
                           <button onClick={() => setCollapsed({ ...collapsed, trackText: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
                             <ChevronRight className="w-5 h-5" /> {t[language].expand}
@@ -3240,31 +3348,6 @@ const HackathonsEdit = () => {
                           {getInlineError('content.tracks_text') && (
                             <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.tracks_text')}</p>
                           )}
-
-                          <div className="flex gap-2 mb-4">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setRawTrackText(formDataContent.tracks_text || '');
-                              }}
-                              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
-                            >
-                              Load Current
-                            </button>
-                            <div className="text-green-400 text-sm flex items-center">
-                              ✓ Auto-converting to markdown as you type
-                            </div>
-                          </div>
-
-                          {formDataContent.tracks_text && (
-                            <div className="mb-4">
-                              <div className="text-zinc-700 dark:text-zinc-400 text-sm mb-2">Markdown Preview:</div>
-                              <div className="p-3 bg-zinc-800 border border-zinc-600 rounded-lg text-green-400 text-xs font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
-                                {formDataContent.tracks_text}
-                              </div>
-                            </div>
-                          )}
-
                           <div className="flex justify-end mt-4">
                             <button
                               type="button"
@@ -3285,7 +3368,7 @@ const HackathonsEdit = () => {
                   {/* Step 5: Content - Tracks, Schedule, etc. */}
                   <div ref={step6Ref} className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-bold">Step 6: {t[language].content}</h2>
+                      <h2 className="text-2xl font-bold">{t[language].content}</h2>
                       {collapsed.content && (
                         <button onClick={() => setCollapsed({ ...collapsed, content: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
                           <ChevronRight className="w-5 h-5" /> {t[language].expand}
@@ -3538,7 +3621,7 @@ const HackathonsEdit = () => {
                   </div>
                   <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6 mt-10">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 ref={step7Ref} className="text-2xl font-bold">Step 7: {t[language].lastDetails}</h2>
+                      <h2 ref={step7Ref} className="text-2xl font-bold">{t[language].lastDetails}</h2>
                       {collapsed.last && (
                         <button onClick={() => setCollapsed({ ...collapsed, last: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
                           <ChevronRight className="w-5 h-5" /> {t[language].expand}
