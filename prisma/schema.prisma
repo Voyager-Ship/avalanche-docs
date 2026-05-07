@@ -476,6 +476,14 @@ model Speaker {
   picture  String
 }
 
+model Resource {
+  id          String @id @default(uuid())
+  title       String
+  description String
+  link        String
+  icon        String
+}
+
 model ValidatorAlert {
   id                String              @id @default(uuid())
   user_id           String

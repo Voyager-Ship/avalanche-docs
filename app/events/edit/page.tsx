@@ -341,8 +341,8 @@ const IconPicker = ({ value, onChange }: { value: string; onChange: (val: string
                 type="button"
                 onClick={() => { onChange(v); setOpen(false); }}
                 className={`flex flex-col items-center gap-1 p-2 rounded-md text-xs transition-colors ${v === effective
-                    ? 'bg-red-50 dark:bg-red-900/30 ring-1 ring-red-400 text-red-600 dark:text-red-400'
-                    : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                  ? 'bg-red-50 dark:bg-red-900/30 ring-1 ring-red-400 text-red-600 dark:text-red-400'
+                  : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                   }`}
               >
                 <Icon className="w-4 h-4" />
@@ -760,6 +760,14 @@ type SpeakerTemplate = {
   icon: string;
 };
 
+type ResourceTemplate = {
+  id: string;
+  title : string;
+  description: string;
+  link: string;
+  icon: string;
+};
+
 const SpeakerItem = memo(function SpeakerItem({ speaker, index, collapsed, onChange, onDone, onExpand, onRemove, t, language, removing, speakersLength, onPictureChange, onImageFileTooLarge, onApplyTemplate, speakerTemplates, loadingSpeakerTemplates, fieldError }: SpeakerItemProps) {
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -947,10 +955,44 @@ type ResourceItemProps = {
   language: 'en' | 'es';
   removing: { [key: string]: number | null };
   resourcesLength: number;
+  onApplyTemplate: (index: number, template: ResourceTemplate) => void;
+  resourceTemplates: ResourceTemplate[];
+  loadingResourceTemplates: boolean;
   fieldError?: (field: string) => string | null;
 };
 
-const ResourceItem = memo(function ResourceItem({ resource, index, collapsed, onChange, onDone, onExpand, onRemove, t, language, removing, resourcesLength, fieldError }: ResourceItemProps) {
+const ResourceItem = memo(function ResourceItem({ resource, index, collapsed, onChange, onDone, onExpand, onRemove, t, language, removing, resourcesLength, onApplyTemplate, resourceTemplates, loadingResourceTemplates, fieldError }: ResourceItemProps) {
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
+  useEffect((): void => {
+    setIsMounted(true);
+  }, []);
+
+  const selectedTemplateId: string =
+    resourceTemplates.find(
+      (template: ResourceTemplate) =>
+        template.title === resource.title &&
+        template.description === resource.description &&
+        template.link === resource.link &&
+        template.icon === resource.icon
+    )?.id ?? '__none__';
+
+  const handleTemplateChange = (value: string): void => {
+    if (value === '__none__') {
+      return;
+    }
+
+    const selectedTemplate: ResourceTemplate | undefined = resourceTemplates.find(
+      (template: ResourceTemplate) => template.id === value
+    );
+
+    if (!selectedTemplate) {
+      return;
+    }
+
+    onApplyTemplate(index, selectedTemplate);
+  };
+
   return (
     <Accordion key={`resource-${index}`} type="single" collapsible className="w-full rounded-md border px-4 py-0.5">
       <AccordionItem value={`item-${index}`}>
@@ -973,6 +1015,34 @@ const ResourceItem = memo(function ResourceItem({ resource, index, collapsed, on
         </AccordionPrimitive.Header>
         <AccordionContent>
           <>
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">Default resource</div>
+
+            <div suppressHydrationWarning>
+              <Select
+                value={selectedTemplateId}
+                onValueChange={handleTemplateChange}
+                disabled={loadingResourceTemplates || !isMounted}
+              >
+                <SelectTrigger className="mb-3">
+                  <SelectValue
+                    placeholder={
+                      loadingResourceTemplates
+                        ? 'Loading resources...'
+                        : 'Select a default resource'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Custom resource</SelectItem>
+                  {isMounted && resourceTemplates.map((template: ResourceTemplate) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].resourceLink}</div>
             <Input
               type="text"
@@ -1020,6 +1090,8 @@ const ResourceItem = memo(function ResourceItem({ resource, index, collapsed, on
 const HackathonsEdit = () => {
   const [speakerTemplates, setSpeakerTemplates] = useState<SpeakerTemplate[]>([]);
   const [loadingSpeakerTemplates, setLoadingSpeakerTemplates] = useState<boolean>(false);
+  const [resourceTemplates, setResourceTemplates] = useState<ResourceTemplate[]>([]);
+  const [loadingResourceTemplates, setLoadingResourceTemplates] = useState<boolean>(false);
   const { data: session, status } = useSession();
   const [myHackathons, setMyHackathons] = useState<any[]>([]);
   const [loadingHackathons, setLoadingHackathons] = useState<boolean>(true);
@@ -1134,6 +1206,30 @@ const HackathonsEdit = () => {
       setLoadingSpeakerTemplates(false);
     }
   };
+  const getResources = async (): Promise<void> => {
+    setLoadingResourceTemplates(true);
+
+    try {
+      const response = await axios.get('/api/resources');
+
+      const resources: ResourceTemplate[] = Array.isArray(response.data)
+        ? response.data.map((resource: any): ResourceTemplate => ({
+          id: String(resource.id),
+          title: resource.title ?? '',
+          description: resource.description ?? '',
+          link: resource.link ?? '',
+          icon: resource.icon ?? '',
+        }))
+        : [];
+
+      setResourceTemplates(resources);
+    } catch (error: unknown) {
+      console.error('Error loading resources:', error);
+      setResourceTemplates([]);
+    } finally {
+      setLoadingResourceTemplates(false);
+    }
+  };
 
   const getMyHackathons = async () => {
     setLoadingHackathons(true);
@@ -1159,8 +1255,10 @@ const HackathonsEdit = () => {
     if (status === "authenticated" && session?.user) {
       getMyHackathons();
       getSpeakers()
+      getResources()
     }
   }, [session, status]);
+
   const handleApplySpeakerTemplate = useCallback(
     (idx: number, template: SpeakerTemplate): void => {
       setFormDataContent((prev: IDataContent) => {
@@ -1173,6 +1271,23 @@ const HackathonsEdit = () => {
           picture: template.picture,
         };
         return { ...prev, speakers: newSpeakers };
+      });
+    },
+    []
+  );
+
+  const handleApplyResourceTemplate = useCallback(
+    (idx: number, template: ResourceTemplate): void => {
+      setFormDataContent((prev: IDataContent) => {
+        const newResources = [...prev.resources];
+        newResources[idx] = {
+          ...newResources[idx],
+          title: template.title,
+          description: template.description,
+          link: template.link,
+          icon: template.icon,
+        };
+        return { ...prev, resources: newResources };
       });
     },
     []
@@ -3771,8 +3886,8 @@ const HackathonsEdit = () => {
                                     setScheduleMode('calendar');
                                   }}
                                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${scheduleMode === 'calendar'
-                                      ? 'bg-blue-600 text-white border-blue-600'
-                                      : 'bg-transparent text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'bg-transparent text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                     }`}
                                 >
                                   {t[language].scheduleModeCalendar}
@@ -3792,8 +3907,8 @@ const HackathonsEdit = () => {
                                     setScheduleMode('manual');
                                   }}
                                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${scheduleMode === 'manual'
-                                      ? 'bg-blue-600 text-white border-blue-600'
-                                      : 'bg-transparent text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'bg-transparent text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                     }`}
                                 >
                                   {t[language].scheduleModeManual}
@@ -3886,6 +4001,9 @@ const HackathonsEdit = () => {
                                   language={language}
                                   removing={removing}
                                   resourcesLength={formDataContent.resources.length}
+                                  onApplyTemplate={handleApplyResourceTemplate}
+                                  resourceTemplates={resourceTemplates}
+                                  loadingResourceTemplates={loadingResourceTemplates}
                                   fieldError={(f) => getInlineError(`content.resources.${index}.${f}`)}
                                 />
                               ))}
