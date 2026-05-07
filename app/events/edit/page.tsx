@@ -307,7 +307,7 @@ const IconPicker = ({ value, onChange }: { value: string; onChange: (val: string
     if (!ICON_OPTIONS.find((o) => o.value === value)) {
       onChange(ICON_OPTIONS[0].value);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -340,11 +340,10 @@ const IconPicker = ({ value, onChange }: { value: string; onChange: (val: string
                 key={v}
                 type="button"
                 onClick={() => { onChange(v); setOpen(false); }}
-                className={`flex flex-col items-center gap-1 p-2 rounded-md text-xs transition-colors ${
-                  v === effective
+                className={`flex flex-col items-center gap-1 p-2 rounded-md text-xs transition-colors ${v === effective
                     ? 'bg-red-50 dark:bg-red-900/30 ring-1 ring-red-400 text-red-600 dark:text-red-400'
                     : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-                }`}
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 <span className="truncate w-full text-center">{v.replace(/-/g, ' ')}</span>
@@ -411,203 +410,203 @@ const TrackItem = memo(function TrackItem({ track, index, collapsed, onChange, o
           </AccordionPrimitive.Trigger>
         </AccordionPrimitive.Header>
         <AccordionContent>
-        <>
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].trackName}</div>
-          <Input
-            type="text"
-            placeholder="Name"
-            value={track.name}
-            onChange={(e) => onChange(index, 'name', e.target.value)}
-            className="w-full mb-3"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="name" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].trackPartner}</div>
-          <Input
-            type="text"
-            placeholder="Partner"
-            value={track.partner}
-            onChange={(e) => onChange(index, 'partner', e.target.value)}
-            className="w-full mb-3"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="partner" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].trackDescription}</div>
-          <div className="mb-2 text-zinc-500 text-xs">Type a detailed description with formatting. Use the buttons below or type HTML directly.</div>
-          {/* Formatting Toolbar for Track Description */}
-          <div className="flex flex-wrap gap-2 mb-3 p-3 bg-zinc-800/50 border border-zinc-600 rounded-lg">
-            <button
-              type="button"
-              onClick={() => {
-                const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
-                if (textarea) {
-                  const start = textarea.selectionStart;
-                  const end = textarea.selectionEnd;
-                  const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
-                  const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<b>${selectedText}</b>` + (rawTrackDescriptions[index] || '').substring(end);
-                  setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
-                  const htmlText = convertToHTML(newText);
-                  onChange(index, 'description', htmlText);
-                }
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-bold"
-              title="Bold (Ctrl+B)"
-            >
-              B
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
-                if (textarea) {
-                  const start = textarea.selectionStart;
-                  const end = textarea.selectionEnd;
-                  const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
-                  const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<i>${selectedText}</i>` + (rawTrackDescriptions[index] || '').substring(end);
-                  setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
-                  const htmlText = convertToHTML(newText);
-                  onChange(index, 'description', htmlText);
-                }
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm italic"
-              title="Italic (Ctrl+I)"
-            >
-              I
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
-                if (textarea) {
-                  const start = textarea.selectionStart;
-                  const end = textarea.selectionEnd;
-                  const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
-                  const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<h1>${selectedText}</h1>` + (rawTrackDescriptions[index] || '').substring(end);
-                  setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
-                  // Auto-convert to HTML
-                  const htmlText = convertToHTML(newText);
-                  onChange(index, 'description', htmlText);
-                }
-              }}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
-              title="Main Title (H1)"
-            >
-              H1
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
-                if (textarea) {
-                  const start = textarea.selectionStart;
-                  const end = textarea.selectionEnd;
-                  const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
-                  const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<h2>${selectedText}</h2>` + (rawTrackDescriptions[index] || '').substring(end);
-                  setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
-                  // Auto-convert to HTML
-                  const htmlText = convertToHTML(newText);
-                  onChange(index, 'description', htmlText);
-                }
-              }}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
-              title="Secondary Title (H2)"
-            >
-              H2
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
-                if (textarea) {
-                  const start = textarea.selectionStart;
-                  const newText = (rawTrackDescriptions[index] || '').substring(0, start) + '\n<br />\n' + (rawTrackDescriptions[index] || '').substring(start);
-                  setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
-                  // Auto-convert to HTML
-                  const htmlText = convertToHTML(newText);
-                  onChange(index, 'description', htmlText);
-                }
-              }}
-              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
-              title="Line Break"
-            >
-              BR
-            </button>
-          </div>
-          <textarea
-            name={`track-description-${index}`}
-            placeholder="Enter your track description here... Use the formatting buttons above or type HTML directly. Changes are converted automatically."
-            value={rawTrackDescriptions[index] || ''}
-            onChange={(e) => {
-              setRawTrackDescriptions(prev => ({ ...prev, [index]: e.target.value }));
-              // Auto-convert to HTML on every change
-              const htmlText = convertToHTML(e.target.value);
-              onChange(index, 'description', htmlText);
-            }}
-            onKeyDown={(e) => {
-              if (e.ctrlKey || e.metaKey) {
-                const textarea = e.target as HTMLTextAreaElement;
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
-                if (e.key === 'b') {
-                  e.preventDefault();
-                  const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<b>${selectedText}</b>` + (rawTrackDescriptions[index] || '').substring(end);
-                  setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
-                  const htmlText = convertToHTML(newText);
-                  onChange(index, 'description', htmlText);
-                } else if (e.key === 'i') {
-                  e.preventDefault();
-                  const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<i>${selectedText}</i>` + (rawTrackDescriptions[index] || '').substring(end);
-                  setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
-                  const htmlText = convertToHTML(newText);
-                  onChange(index, 'description', htmlText);
-                }
-              }
-            }}
-            className="w-full mb-3 p-3 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 resize-none h-32"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="description" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].shortDescription}</div>
-          <Input
-            type="text"
-            placeholder="Short Description"
-            value={track.short_description}
-            onChange={(e) => onChange(index, 'short_description', e.target.value)}
-            className="w-full mb-1"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="short_description" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">Icon</div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-3">
-            <div className="relative min-w-0 flex-1">
-              <IconPicker
-                value={track.logo || track.icon}
-                onChange={(val) => {
-                  onChange(index, 'logo', val);
-                  onChange(index, 'icon', val);
-                  onScrollToPreview('tracks');
+          <>
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].trackName}</div>
+            <Input
+              type="text"
+              placeholder="Name"
+              value={track.name}
+              onChange={(e) => onChange(index, 'name', e.target.value)}
+              className="w-full mb-3"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="name" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].trackPartner}</div>
+            <Input
+              type="text"
+              placeholder="Partner"
+              value={track.partner}
+              onChange={(e) => onChange(index, 'partner', e.target.value)}
+              className="w-full mb-3"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="partner" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].trackDescription}</div>
+            <div className="mb-2 text-zinc-500 text-xs">Type a detailed description with formatting. Use the buttons below or type HTML directly.</div>
+            {/* Formatting Toolbar for Track Description */}
+            <div className="flex flex-wrap gap-2 mb-3 p-3 bg-zinc-800/50 border border-zinc-600 rounded-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
+                    const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<b>${selectedText}</b>` + (rawTrackDescriptions[index] || '').substring(end);
+                    setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
+                    const htmlText = convertToHTML(newText);
+                    onChange(index, 'description', htmlText);
+                  }
                 }}
-              />
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-bold"
+                title="Bold (Ctrl+B)"
+              >
+                B
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
+                    const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<i>${selectedText}</i>` + (rawTrackDescriptions[index] || '').substring(end);
+                    setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
+                    const htmlText = convertToHTML(newText);
+                    onChange(index, 'description', htmlText);
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm italic"
+                title="Italic (Ctrl+I)"
+              >
+                I
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
+                    const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<h1>${selectedText}</h1>` + (rawTrackDescriptions[index] || '').substring(end);
+                    setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
+                    // Auto-convert to HTML
+                    const htmlText = convertToHTML(newText);
+                    onChange(index, 'description', htmlText);
+                  }
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                title="Main Title (H1)"
+              >
+                H1
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
+                    const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<h2>${selectedText}</h2>` + (rawTrackDescriptions[index] || '').substring(end);
+                    setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
+                    // Auto-convert to HTML
+                    const htmlText = convertToHTML(newText);
+                    onChange(index, 'description', htmlText);
+                  }
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                title="Secondary Title (H2)"
+              >
+                H2
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.querySelector(`textarea[name="track-description-${index}"]`) as HTMLTextAreaElement;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const newText = (rawTrackDescriptions[index] || '').substring(0, start) + '\n<br />\n' + (rawTrackDescriptions[index] || '').substring(start);
+                    setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
+                    // Auto-convert to HTML
+                    const htmlText = convertToHTML(newText);
+                    onChange(index, 'description', htmlText);
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                title="Line Break"
+              >
+                BR
+              </button>
             </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="shrink-0 self-end border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  {t[language].previewTrack}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="dark:bg-zinc-900 bg-zinc-50 border-2">
-                <DialogTitle />
-                <TrackDialogContent track={trackFormToDialogTrack(track)} />
-              </DialogContent>
-            </Dialog>
-          </div>
-        </>
+            <textarea
+              name={`track-description-${index}`}
+              placeholder="Enter your track description here... Use the formatting buttons above or type HTML directly. Changes are converted automatically."
+              value={rawTrackDescriptions[index] || ''}
+              onChange={(e) => {
+                setRawTrackDescriptions(prev => ({ ...prev, [index]: e.target.value }));
+                // Auto-convert to HTML on every change
+                const htmlText = convertToHTML(e.target.value);
+                onChange(index, 'description', htmlText);
+              }}
+              onKeyDown={(e) => {
+                if (e.ctrlKey || e.metaKey) {
+                  const textarea = e.target as HTMLTextAreaElement;
+                  const start = textarea.selectionStart;
+                  const end = textarea.selectionEnd;
+                  const selectedText = rawTrackDescriptions[index]?.substring(start, end) || '';
+                  if (e.key === 'b') {
+                    e.preventDefault();
+                    const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<b>${selectedText}</b>` + (rawTrackDescriptions[index] || '').substring(end);
+                    setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
+                    const htmlText = convertToHTML(newText);
+                    onChange(index, 'description', htmlText);
+                  } else if (e.key === 'i') {
+                    e.preventDefault();
+                    const newText = (rawTrackDescriptions[index] || '').substring(0, start) + `<i>${selectedText}</i>` + (rawTrackDescriptions[index] || '').substring(end);
+                    setRawTrackDescriptions(prev => ({ ...prev, [index]: newText }));
+                    const htmlText = convertToHTML(newText);
+                    onChange(index, 'description', htmlText);
+                  }
+                }
+              }}
+              className="w-full mb-3 p-3 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 resize-none h-32"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="description" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].shortDescription}</div>
+            <Input
+              type="text"
+              placeholder="Short Description"
+              value={track.short_description}
+              onChange={(e) => onChange(index, 'short_description', e.target.value)}
+              className="w-full mb-1"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="short_description" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">Icon</div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-3">
+              <div className="relative min-w-0 flex-1">
+                <IconPicker
+                  value={track.logo || track.icon}
+                  onChange={(val) => {
+                    onChange(index, 'logo', val);
+                    onChange(index, 'icon', val);
+                    onScrollToPreview('tracks');
+                  }}
+                />
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0 self-end border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    {t[language].previewTrack}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="dark:bg-zinc-900 bg-zinc-50 border-2">
+                  <DialogTitle />
+                  <TrackDialogContent track={trackFormToDialogTrack(track)} />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -650,84 +649,84 @@ const ScheduleItem = memo(function ScheduleItem({ event, index, collapsed, onCha
           </AccordionPrimitive.Trigger>
         </AccordionPrimitive.Header>
         <AccordionContent>
-        <>
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleDate}</div>
-          <Input
-            type="datetime-local"
-            placeholder="Date"
-            value={toLocalDatetimeString(event.date)}
-            onChange={(e) => {
-              onChange(index, 'date', e.target.value);
-            }}
-            className="w-full mb-3"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="date" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleName}</div>
-          <Input
-            type="text"
-            placeholder="Name"
-            value={event.name}
-            onChange={(e) => onChange(index, 'name', e.target.value)}
-            className="w-full mb-3"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="name" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleCategory}</div>
-          <Select
-            value={event.category}
-            onValueChange={(value) => onChange(index, 'category', value)}
-          >
-            <SelectTrigger className="mb-3">
-              <SelectValue placeholder="Select Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Registration">Registration</SelectItem>
-              <SelectItem value="Food">Food</SelectItem>
-              <SelectItem value="Info session">Info session</SelectItem>
-              <SelectItem value="Networking">Networking</SelectItem>
-              <SelectItem value="Workshop">Workshop</SelectItem>
-              <SelectItem value="Hacking">Hacking</SelectItem>
-              <SelectItem value="Wellness">Wellness</SelectItem>
-              <SelectItem value="Deadline">Deadline</SelectItem>
-              <SelectItem value="Judging">Judging</SelectItem>
-              <SelectItem value="Ceremony">Ceremony</SelectItem>
-            </SelectContent>
-          </Select>
-          <SubformFieldError fieldError={fieldError} field="category" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleLocation}</div>
-          <Input
-            type="text"
-            placeholder="Location"
-            value={event.location}
-            onChange={(e) => onChange(index, 'location', e.target.value)}
-            className="w-full mb-3"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="location" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleDescription}</div>
-          <Input
-            type="text"
-            placeholder="Description"
-            value={event.description}
-            onChange={(e) => onChange(index, 'description', e.target.value)}
-            className="w-full mb-3"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="description" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleDuration}</div>
-          <Input
-            type="number"
-            placeholder="Duration (minutes)"
-            value={event.duration}
-            onChange={(e) => onChange(index, 'duration', e.target.value)}
-            className="w-full mb-1"
-            required
-            min="1"
-          />
-          <SubformFieldError fieldError={fieldError} field="duration" />
-          <SubformFieldError fieldError={fieldError} field="url" />
-        </>
+          <>
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleDate}</div>
+            <Input
+              type="datetime-local"
+              placeholder="Date"
+              value={toLocalDatetimeString(event.date)}
+              onChange={(e) => {
+                onChange(index, 'date', e.target.value);
+              }}
+              className="w-full mb-3"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="date" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleName}</div>
+            <Input
+              type="text"
+              placeholder="Name"
+              value={event.name}
+              onChange={(e) => onChange(index, 'name', e.target.value)}
+              className="w-full mb-3"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="name" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleCategory}</div>
+            <Select
+              value={event.category}
+              onValueChange={(value) => onChange(index, 'category', value)}
+            >
+              <SelectTrigger className="mb-3">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Registration">Registration</SelectItem>
+                <SelectItem value="Food">Food</SelectItem>
+                <SelectItem value="Info session">Info session</SelectItem>
+                <SelectItem value="Networking">Networking</SelectItem>
+                <SelectItem value="Workshop">Workshop</SelectItem>
+                <SelectItem value="Hacking">Hacking</SelectItem>
+                <SelectItem value="Wellness">Wellness</SelectItem>
+                <SelectItem value="Deadline">Deadline</SelectItem>
+                <SelectItem value="Judging">Judging</SelectItem>
+                <SelectItem value="Ceremony">Ceremony</SelectItem>
+              </SelectContent>
+            </Select>
+            <SubformFieldError fieldError={fieldError} field="category" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleLocation}</div>
+            <Input
+              type="text"
+              placeholder="Location"
+              value={event.location}
+              onChange={(e) => onChange(index, 'location', e.target.value)}
+              className="w-full mb-3"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="location" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleDescription}</div>
+            <Input
+              type="text"
+              placeholder="Description"
+              value={event.description}
+              onChange={(e) => onChange(index, 'description', e.target.value)}
+              className="w-full mb-3"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="description" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].scheduleDuration}</div>
+            <Input
+              type="number"
+              placeholder="Duration (minutes)"
+              value={event.duration}
+              onChange={(e) => onChange(index, 'duration', e.target.value)}
+              className="w-full mb-1"
+              required
+              min="1"
+            />
+            <SubformFieldError fieldError={fieldError} field="duration" />
+            <SubformFieldError fieldError={fieldError} field="url" />
+          </>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -812,36 +811,36 @@ const SpeakerItem = memo(function SpeakerItem({ speaker, index, collapsed, onCha
           </AccordionPrimitive.Trigger>
         </AccordionPrimitive.Header>
         <AccordionContent>
-        <>
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">Default speaker</div>
+          <>
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">Default speaker</div>
 
-          <div suppressHydrationWarning>
-            <Select
-              value={selectedTemplateId}
-              onValueChange={handleTemplateChange}
-              disabled={loadingSpeakerTemplates || !isMounted}
-            >
-              <SelectTrigger className="mb-3">
-                <SelectValue
-                  placeholder={
-                    loadingSpeakerTemplates
-                      ? 'Loading speakers...'
-                      : 'Select a default speaker'
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Custom speaker</SelectItem>
-                {isMounted && speakerTemplates.map((template: SpeakerTemplate) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div suppressHydrationWarning>
+              <Select
+                value={selectedTemplateId}
+                onValueChange={handleTemplateChange}
+                disabled={loadingSpeakerTemplates || !isMounted}
+              >
+                <SelectTrigger className="mb-3">
+                  <SelectValue
+                    placeholder={
+                      loadingSpeakerTemplates
+                        ? 'Loading speakers...'
+                        : 'Select a default speaker'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Custom speaker</SelectItem>
+                  {isMounted && speakerTemplates.map((template: SpeakerTemplate) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].speakerIcon}</div>
+            {/* <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].speakerIcon}</div>
           <Select
             value={speaker.icon || '__none__'}
             onValueChange={(value: string) =>
@@ -858,78 +857,78 @@ const SpeakerItem = memo(function SpeakerItem({ speaker, index, collapsed, onCha
             </SelectContent>
           </Select> */}
 
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].speakerName}</div>
-          <Input
-            type="text"
-            placeholder="Name"
-            value={speaker.name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              onChange(index, 'name', e.target.value)
-            }
-            className="w-full mb-3"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="name" />
-
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].speakerCompany}</div>
-          <Input
-            type="text"
-            placeholder="Category"
-            value={speaker.category}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              onChange(index, 'category', e.target.value)
-            }
-            className="w-full mb-1"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="category" />
-
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">Picture</div>
-          <div className="mb-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const file: File | undefined = e.target.files?.[0];
-                if (file) {
-                  if (file.size > MAX_FILE_SIZE) {
-                    onImageFileTooLarge(file.size);
-                    return;
-                  }
-                  const reader = new FileReader();
-                  reader.onload = (event) => {
-                    onPictureChange(index, event.target?.result as string);
-                  };
-                  reader.readAsDataURL(file);
-                }
-              }}
-              className="w-full p-2 border border-zinc-600 rounded bg-zinc-800 text-zinc-200 cursor-pointer"
-            />
-          </div>
-
-          <div className="mb-2">
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].speakerName}</div>
             <Input
               type="text"
-              placeholder="Or enter Picture URL"
-              value={speaker.picture}
+              placeholder="Name"
+              value={speaker.name}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                onPictureChange(index, e.target.value)
+                onChange(index, 'name', e.target.value)
               }
-              className="w-full"
+              className="w-full mb-3"
+              required
             />
-          </div>
-          <SubformFieldError fieldError={fieldError} field="picture" />
+            <SubformFieldError fieldError={fieldError} field="name" />
 
-          {speaker.picture && speaker.picture.trim() !== '' && (
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].speakerCompany}</div>
+            <Input
+              type="text"
+              placeholder="Category"
+              value={speaker.category}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                onChange(index, 'category', e.target.value)
+              }
+              className="w-full mb-1"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="category" />
+
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">Picture</div>
             <div className="mb-2">
-              <img
-                src={speaker.picture}
-                alt={speaker.name}
-                className="w-20 h-20 object-cover rounded border border-zinc-600"
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const file: File | undefined = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > MAX_FILE_SIZE) {
+                      onImageFileTooLarge(file.size);
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      onPictureChange(index, event.target?.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="w-full p-2 border border-zinc-600 rounded bg-zinc-800 text-zinc-200 cursor-pointer"
               />
             </div>
-          )}
-        </>
+
+            <div className="mb-2">
+              <Input
+                type="text"
+                placeholder="Or enter Picture URL"
+                value={speaker.picture}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onPictureChange(index, e.target.value)
+                }
+                className="w-full"
+              />
+            </div>
+            <SubformFieldError fieldError={fieldError} field="picture" />
+
+            {speaker.picture && speaker.picture.trim() !== '' && (
+              <div className="mb-2">
+                <img
+                  src={speaker.picture}
+                  alt={speaker.name}
+                  className="w-20 h-20 object-cover rounded border border-zinc-600"
+                />
+              </div>
+            )}
+          </>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -973,45 +972,45 @@ const ResourceItem = memo(function ResourceItem({ resource, index, collapsed, on
           </AccordionPrimitive.Trigger>
         </AccordionPrimitive.Header>
         <AccordionContent>
-        <>
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].resourceLink}</div>
-          <Input
-            type="text"
-            placeholder="Link"
-            value={resource.link}
-            onChange={(e) => onChange(index, 'link', e.target.value)}
-            className="w-full mb-3"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="link" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].resourceTitle}</div>
-          <Input
-            type="text"
-            placeholder="Title"
-            value={resource.title}
-            onChange={(e) => onChange(index, 'title', e.target.value)}
-            className="w-full mb-3"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="title" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].resourceDescription}</div>
-          <Input
-            type="text"
-            placeholder="Description"
-            value={resource.description}
-            onChange={(e) => onChange(index, 'description', e.target.value)}
-            className="w-full mb-1"
-            required
-          />
-          <SubformFieldError fieldError={fieldError} field="description" />
-          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].resourceIcon}</div>
-          <div className="relative mb-3">
-            <IconPicker
-              value={resource.icon}
-              onChange={(val) => onChange(index, 'icon', val)}
+          <>
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].resourceLink}</div>
+            <Input
+              type="text"
+              placeholder="Link"
+              value={resource.link}
+              onChange={(e) => onChange(index, 'link', e.target.value)}
+              className="w-full mb-3"
+              required
             />
-          </div>
-        </>
+            <SubformFieldError fieldError={fieldError} field="link" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].resourceTitle}</div>
+            <Input
+              type="text"
+              placeholder="Title"
+              value={resource.title}
+              onChange={(e) => onChange(index, 'title', e.target.value)}
+              className="w-full mb-3"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="title" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].resourceDescription}</div>
+            <Input
+              type="text"
+              placeholder="Description"
+              value={resource.description}
+              onChange={(e) => onChange(index, 'description', e.target.value)}
+              className="w-full mb-1"
+              required
+            />
+            <SubformFieldError fieldError={fieldError} field="description" />
+            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].resourceIcon}</div>
+            <div className="relative mb-3">
+              <IconPicker
+                value={resource.icon}
+                onChange={(val) => onChange(index, 'icon', val)}
+              />
+            </div>
+          </>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -1667,19 +1666,19 @@ const HackathonsEdit = () => {
         const label = issue.label?.trim()
           ? issue.label
           : (() => {
-              const seg = issue.path.split('.').pop() ?? '';
-              return fieldLabelMap[seg] ?? (seg.charAt(0).toUpperCase() + seg.slice(1).replace(/_/g, ' '));
-            })();
+            const seg = issue.path.split('.').pop() ?? '';
+            return fieldLabelMap[seg] ?? (seg.charAt(0).toUpperCase() + seg.slice(1).replace(/_/g, ' '));
+          })();
         const section = issue.section?.trim()
           ? issue.section
           : (() => {
-              const m = issue.path.match(/^content\.(schedule|tracks|resources)\.(\d+)\./);
-              if (m) {
-                const typeMap: Record<string, string> = { schedule: 'Schedule', tracks: 'Track', resources: 'Resource' };
-                return `${typeMap[m[1]]} ${Number(m[2]) + 1}`;
-              }
-              return issue.section;
-            })();
+            const m = issue.path.match(/^content\.(schedule|tracks|resources)\.(\d+)\./);
+            if (m) {
+              const typeMap: Record<string, string> = { schedule: 'Schedule', tracks: 'Track', resources: 'Resource' };
+              return `${typeMap[m[1]]} ${Number(m[2]) + 1}`;
+            }
+            return issue.section;
+          })();
         return { ...issue, label, section };
       });
       setValidationIssues(processed);
@@ -2400,8 +2399,8 @@ const HackathonsEdit = () => {
 
   return (
     <div className={`fixed inset-0 overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col ${loading ? 'pointer-events-none' : ''}`}
-    aria-busy={loading}
-    aria-hidden={loading}>
+      aria-busy={loading}
+      aria-hidden={loading}>
       <Toaster />
       {/* OverlaySpinner */}
       <OverlaySpinner open={loading} message={language === 'es' ? 'Guardando cambios...' : 'Saving Changes...'} />
@@ -2918,225 +2917,225 @@ const HackathonsEdit = () => {
                           </TabsList>
 
                           <TabsContent value="basicInfo">
-                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].mainName}</div>
-                        <Input
-                          type="text"
-                          name="title"
-                          placeholder="e.g., Avalanche Hackathon 2025, Build on Avalanche"
-                          value={formDataMain.title}
-                          onChange={(e) => {
-                            setFormDataMain(prev => ({ ...prev, title: e.target.value }));
-                            scrollToSection('about');
-                          }}
-                          className="w-full mb-4"
-                          required
-                        />
-                        {getInlineError('main.title') && (
-                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('main.title')}</p>
-                        )}
+                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].mainName}</div>
+                            <Input
+                              type="text"
+                              name="title"
+                              placeholder="e.g., Avalanche Hackathon 2025, Build on Avalanche"
+                              value={formDataMain.title}
+                              onChange={(e) => {
+                                setFormDataMain(prev => ({ ...prev, title: e.target.value }));
+                                scrollToSection('about');
+                              }}
+                              className="w-full mb-4"
+                              required
+                            />
+                            {getInlineError('main.title') && (
+                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('main.title')}</p>
+                            )}
 
-                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].description}</div>
-                        <textarea
-                          name="description"
-                          placeholder="Describe your hackathon, its goals, and what participants will build..."
-                          value={formDataMain.description}
-                          onChange={(e) => {
-                            setFormDataMain(prev => ({ ...prev, description: e.target.value }));
-                            scrollToSection('about');
-                          }}
-                          className="w-full mb-4 p-3 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 resize-none h-24"
-                          required
-                        />
-                        {getInlineError('main.description') && (
-                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('main.description')}</p>
-                        )}
+                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].description}</div>
+                            <textarea
+                              name="description"
+                              placeholder="Describe your hackathon, its goals, and what participants will build..."
+                              value={formDataMain.description}
+                              onChange={(e) => {
+                                setFormDataMain(prev => ({ ...prev, description: e.target.value }));
+                                scrollToSection('about');
+                              }}
+                              className="w-full mb-4 p-3 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 resize-none h-24"
+                              required
+                            />
+                            {getInlineError('main.description') && (
+                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('main.description')}</p>
+                            )}
 
-                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].city}</div>
-                        <Input
-                          type="text"
-                          name="location"
-                          placeholder="e.g., Online, New York, San Francisco"
-                          value={formDataMain.location}
-                          onChange={(e) => {
-                            setFormDataMain(prev => ({ ...prev, location: e.target.value }));
-                            scrollToSection('about');
-                          }}
-                          className="w-full mb-4"
-                          required
-                        />
-                        {getInlineError('main.location') && (
-                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('main.location')}</p>
-                        )}
+                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].city}</div>
+                            <Input
+                              type="text"
+                              name="location"
+                              placeholder="e.g., Online, New York, San Francisco"
+                              value={formDataMain.location}
+                              onChange={(e) => {
+                                setFormDataMain(prev => ({ ...prev, location: e.target.value }));
+                                scrollToSection('about');
+                              }}
+                              className="w-full mb-4"
+                              required
+                            />
+                            {getInlineError('main.location') && (
+                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('main.location')}</p>
+                            )}
 
-                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">
-                          {t[language].address}
-                        </div>
-                        <Input
-                          type="text"
-                          placeholder={language === 'es' ? 'Dirección del evento' : 'Event address'}
-                          value={formDataContent.address}
-                          onChange={(e) => {
-                            setFormDataContent(prev => ({ ...prev, address: e.target.value }));
-                            scrollToSection('about');
-                          }}
-                          className="w-full mb-4"
-                        />
-                        {getInlineError('content.address') && (
-                          <p className="text-red-500 text-sm -mt-2 mb-3">
-                            {getInlineError('content.address')}
-                          </p>
-                        )}
+                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">
+                              {t[language].address}
+                            </div>
+                            <Input
+                              type="text"
+                              placeholder={language === 'es' ? 'Dirección del evento' : 'Event address'}
+                              value={formDataContent.address}
+                              onChange={(e) => {
+                                setFormDataContent(prev => ({ ...prev, address: e.target.value }));
+                                scrollToSection('about');
+                              }}
+                              className="w-full mb-4"
+                            />
+                            {getInlineError('content.address') && (
+                              <p className="text-red-500 text-sm -mt-2 mb-3">
+                                {getInlineError('content.address')}
+                              </p>
+                            )}
 
-                        <div className="flex flex-col space-y-2 bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 my-4">
-                          <label className="font-medium">{t[language].tags}</label>
-                          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].tagsHelp}</div>
-                          <div className="flex flex-wrap gap-2 items-center">
-                            {formDataMain.tags.map((tag, idx) => (
-                              <div key={idx} className="flex items-center gap-1">
-                                <Input
-                                  type="text"
-                                  value={tag}
-                                  onChange={e => handleTagChange(idx, e.target.value)}
-                                  className="w-32 px-2 py-1 text-sm"
-                                  placeholder={`Tag ${idx + 1}`}
-                                />
-                                {formDataMain.tags.length > 1 && (
-                                  <button type="button" onClick={() => removeTag(idx)} className="text-red-500 hover:text-red-700 px-1">×</button>
-                                )}
+                            <div className="flex flex-col space-y-2 bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 my-4">
+                              <label className="font-medium">{t[language].tags}</label>
+                              <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].tagsHelp}</div>
+                              <div className="flex flex-wrap gap-2 items-center">
+                                {formDataMain.tags.map((tag, idx) => (
+                                  <div key={idx} className="flex items-center gap-1">
+                                    <Input
+                                      type="text"
+                                      value={tag}
+                                      onChange={e => handleTagChange(idx, e.target.value)}
+                                      className="w-32 px-2 py-1 text-sm"
+                                      placeholder={`Tag ${idx + 1}`}
+                                    />
+                                    {formDataMain.tags.length > 1 && (
+                                      <button type="button" onClick={() => removeTag(idx)} className="text-red-500 hover:text-red-700 px-1">×</button>
+                                    )}
+                                  </div>
+                                ))}
+                                <button type="button" onClick={addTag} className="text-green-500 hover:text-green-700 px-2 py-1 border border-green-500 rounded">+ Add Tag</button>
                               </div>
-                            ))}
-                            <button type="button" onClick={addTag} className="text-green-500 hover:text-green-700 px-2 py-1 border border-green-500 rounded">+ Add Tag</button>
-                          </div>
-                          {getInlineError('main.tags') && (
-                            <p className="text-red-500 text-sm">{getInlineError('main.tags')}</p>
-                          )}
-                          {formDataMain.tags.map((_tag, idx) => (
-                            <React.Fragment key={`tag-error-${idx}`}>
-                              {getInlineError(`main.tags.${idx}`) && (
-                                <p className="text-red-500 text-sm">{`Tag ${idx + 1}: ${getInlineError(`main.tags.${idx}`)}`}</p>
+                              {getInlineError('main.tags') && (
+                                <p className="text-red-500 text-sm">{getInlineError('main.tags')}</p>
                               )}
-                            </React.Fragment>
-                          ))}
-                        </div>
+                              {formDataMain.tags.map((_tag, idx) => (
+                                <React.Fragment key={`tag-error-${idx}`}>
+                                  {getInlineError(`main.tags.${idx}`) && (
+                                    <p className="text-red-500 text-sm">{`Tag ${idx + 1}: ${getInlineError(`main.tags.${idx}`)}`}</p>
+                                  )}
+                                </React.Fragment>
+                              ))}
+                            </div>
                           </TabsContent>
 
                           <TabsContent value="datesTime">
-                        <div className="space-y-4 mt-4">
-                          <div>
-                            <label className="font-medium text-xl mb-2 block">{t[language].startDate}:</label>
-                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].startDateHelp}</div>
-                            <Input
-                              type="datetime-local"
-                              placeholder="Start Date"
-                              value={formDataLatest.start_date}
-                              onChange={(e) => {
-                                const start = e.target.value;
-                                setFormDataLatest({ ...formDataLatest, start_date: start });
-                                setDateRangeError(getDateRangeError(start, formDataLatest.end_date));
-                                scrollToSection('about');
-                              }}
-                              className="w-full mb-4"
-                              required
-                            />
-                            {getInlineError('latest.start_date') && (
-                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.start_date')}</p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="font-medium text-xl mb-2 block">{t[language].endDate}:</label>
-                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].endDateHelp}</div>
-                            <Input
-                              type="datetime-local"
-                              placeholder="End Date"
-                              value={formDataLatest.end_date}
-                              onChange={(e) => {
-                                const end = e.target.value;
-                                setFormDataLatest({ ...formDataLatest, end_date: end });
-                                setDateRangeError(getDateRangeError(formDataLatest.start_date, end));
-                                scrollToSection('about');
-                              }}
-                              className="w-full mb-4"
-                              required
-                            />
-                            {getInlineError('latest.end_date') && (
-                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.end_date')}</p>
-                            )}
-                            {dateRangeError && (
-                              <p className="text-red-500 text-sm mt-1 mb-4">{dateRangeError}</p>
-                            )}
-                          </div>
-                          {formDataLatest.event === 'hackathon' && (
-                            <div>
-                              <label className="font-medium text-xl mb-2 block">{t[language].submissionDeadline}:</label>
-                              <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].submissionDeadlineHelp}</div>
-                              <Input
-                                type="datetime-local"
-                                placeholder="Submission Deadline"
-                                value={formDataContent.submission_deadline}
-                                onChange={(e) => setFormDataContent({ ...formDataContent, submission_deadline: e.target.value })}
-                                className="w-full mb-4"
-                              />
-                              {getInlineError('content.submission_deadline') && (
-                                <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.submission_deadline')}</p>
+                            <div className="space-y-4 mt-4">
+                              <div>
+                                <label className="font-medium text-xl mb-2 block">{t[language].startDate}:</label>
+                                <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].startDateHelp}</div>
+                                <Input
+                                  type="datetime-local"
+                                  placeholder="Start Date"
+                                  value={formDataLatest.start_date}
+                                  onChange={(e) => {
+                                    const start = e.target.value;
+                                    setFormDataLatest({ ...formDataLatest, start_date: start });
+                                    setDateRangeError(getDateRangeError(start, formDataLatest.end_date));
+                                    scrollToSection('about');
+                                  }}
+                                  className="w-full mb-4"
+                                  required
+                                />
+                                {getInlineError('latest.start_date') && (
+                                  <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.start_date')}</p>
+                                )}
+                              </div>
+                              <div>
+                                <label className="font-medium text-xl mb-2 block">{t[language].endDate}:</label>
+                                <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].endDateHelp}</div>
+                                <Input
+                                  type="datetime-local"
+                                  placeholder="End Date"
+                                  value={formDataLatest.end_date}
+                                  onChange={(e) => {
+                                    const end = e.target.value;
+                                    setFormDataLatest({ ...formDataLatest, end_date: end });
+                                    setDateRangeError(getDateRangeError(formDataLatest.start_date, end));
+                                    scrollToSection('about');
+                                  }}
+                                  className="w-full mb-4"
+                                  required
+                                />
+                                {getInlineError('latest.end_date') && (
+                                  <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.end_date')}</p>
+                                )}
+                                {dateRangeError && (
+                                  <p className="text-red-500 text-sm mt-1 mb-4">{dateRangeError}</p>
+                                )}
+                              </div>
+                              {formDataLatest.event === 'hackathon' && (
+                                <div>
+                                  <label className="font-medium text-xl mb-2 block">{t[language].submissionDeadline}:</label>
+                                  <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].submissionDeadlineHelp}</div>
+                                  <Input
+                                    type="datetime-local"
+                                    placeholder="Submission Deadline"
+                                    value={formDataContent.submission_deadline}
+                                    onChange={(e) => setFormDataContent({ ...formDataContent, submission_deadline: e.target.value })}
+                                    className="w-full mb-4"
+                                  />
+                                  {getInlineError('content.submission_deadline') && (
+                                    <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.submission_deadline')}</p>
+                                  )}
+                                </div>
                               )}
+                              <div>
+                                <label className="font-medium text-xl mb-2 block">{t[language].timezone}:</label>
+                                <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].timezoneHelp}</div>
+                                <Select
+                                  value={formDataLatest.timezone}
+                                  onValueChange={(value) => setFormDataLatest({ ...formDataLatest, timezone: value })}
+                                >
+                                  <SelectTrigger className="w-full mb-4">
+                                    <SelectValue placeholder="Select timezone" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="America/New_York">New York (EST/EDT) - GMT-5/-4</SelectItem>
+                                    <SelectItem value="America/Chicago">Chicago (CST/CDT) - GMT-6/-5</SelectItem>
+                                    <SelectItem value="America/Denver">Denver (MST/MDT) - GMT-7/-6</SelectItem>
+                                    <SelectItem value="America/Los_Angeles">Los Angeles (PST/PDT) - GMT-8/-7</SelectItem>
+                                    <SelectItem value="America/Toronto">Toronto (EST/EDT) - GMT-5/-4</SelectItem>
+                                    <SelectItem value="America/Vancouver">Vancouver (PST/PDT) - GMT-8/-7</SelectItem>
+                                    <SelectItem value="America/Mexico_City">Mexico City (CST/CDT) - GMT-6/-5</SelectItem>
+                                    <SelectItem value="America/Bogota">Bogotá, Colombia (COT) - GMT-5</SelectItem>
+                                    <SelectItem value="America/Costa_Rica">San José, Costa Rica (CST) - GMT-6</SelectItem>
+                                    <SelectItem value="America/Panama">Panama City, Panama (EST) - GMT-5</SelectItem>
+                                    <SelectItem value="America/Caracas">Caracas, Venezuela (VET) - GMT-4</SelectItem>
+                                    <SelectItem value="America/La_Paz">La Paz, Bolivia (BOT) - GMT-4</SelectItem>
+                                    <SelectItem value="America/Lima">Lima, Peru (PET) - GMT-5</SelectItem>
+                                    <SelectItem value="America/Sao_Paulo">São Paulo, Brazil (BRT) - GMT-3</SelectItem>
+                                    <SelectItem value="America/Santiago">Santiago, Chile (CLT) - GMT-3</SelectItem>
+                                    <SelectItem value="America/Buenos_Aires">Buenos Aires, Argentina (ART) - GMT-3</SelectItem>
+                                    <SelectItem value="Europe/London">London (GMT/BST) - GMT+0/+1</SelectItem>
+                                    <SelectItem value="Europe/Paris">Paris (CET/CEST) - GMT+1/+2</SelectItem>
+                                    <SelectItem value="Europe/Berlin">Berlin (CET/CEST) - GMT+1/+2</SelectItem>
+                                    <SelectItem value="Europe/Rome">Rome (CET/CEST) - GMT+1/+2</SelectItem>
+                                    <SelectItem value="Europe/Madrid">Madrid (CET/CEST) - GMT+1/+2</SelectItem>
+                                    <SelectItem value="Europe/Amsterdam">Amsterdam (CET/CEST) - GMT+1/+2</SelectItem>
+                                    <SelectItem value="Europe/Zurich">Zurich (CET/CEST) - GMT+1/+2</SelectItem>
+                                    <SelectItem value="Europe/Stockholm">Stockholm (CET/CEST) - GMT+1/+2</SelectItem>
+                                    <SelectItem value="Europe/Moscow">Moscow (MSK) - GMT+3</SelectItem>
+                                    <SelectItem value="Asia/Tokyo">Tokyo (JST) - GMT+9</SelectItem>
+                                    <SelectItem value="Asia/Shanghai">Shanghai (CST) - GMT+8</SelectItem>
+                                    <SelectItem value="Asia/Hong_Kong">Hong Kong (HKT) - GMT+8</SelectItem>
+                                    <SelectItem value="Asia/Singapore">Singapore (SGT) - GMT+8</SelectItem>
+                                    <SelectItem value="Asia/Seoul">Seoul (KST) - GMT+9</SelectItem>
+                                    <SelectItem value="Asia/Mumbai">Mumbai (IST) - GMT+5:30</SelectItem>
+                                    <SelectItem value="Asia/Dubai">Dubai (GST) - GMT+4</SelectItem>
+                                    <SelectItem value="Asia/Jerusalem">Jerusalem (IST) - GMT+2/+3</SelectItem>
+                                    <SelectItem value="Australia/Sydney">Sydney (AEST/AEDT) - GMT+10/+11</SelectItem>
+                                    <SelectItem value="Australia/Melbourne">Melbourne (AEST/AEDT) - GMT+10/+11</SelectItem>
+                                    <SelectItem value="Australia/Perth">Perth (AWST) - GMT+8</SelectItem>
+                                    <SelectItem value="Pacific/Auckland">Auckland (NZST/NZDT) - GMT+12/+13</SelectItem>
+                                    <SelectItem value="Pacific/Honolulu">Honolulu (HST) - GMT-10</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {getInlineError('latest.timezone') && (
+                                  <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.timezone')}</p>
+                                )}
+                              </div>
                             </div>
-                          )}
-                          <div>
-                            <label className="font-medium text-xl mb-2 block">{t[language].timezone}:</label>
-                            <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].timezoneHelp}</div>
-                            <Select
-                              value={formDataLatest.timezone}
-                              onValueChange={(value) => setFormDataLatest({ ...formDataLatest, timezone: value })}
-                            >
-                              <SelectTrigger className="w-full mb-4">
-                                <SelectValue placeholder="Select timezone" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="America/New_York">New York (EST/EDT) - GMT-5/-4</SelectItem>
-                                <SelectItem value="America/Chicago">Chicago (CST/CDT) - GMT-6/-5</SelectItem>
-                                <SelectItem value="America/Denver">Denver (MST/MDT) - GMT-7/-6</SelectItem>
-                                <SelectItem value="America/Los_Angeles">Los Angeles (PST/PDT) - GMT-8/-7</SelectItem>
-                                <SelectItem value="America/Toronto">Toronto (EST/EDT) - GMT-5/-4</SelectItem>
-                                <SelectItem value="America/Vancouver">Vancouver (PST/PDT) - GMT-8/-7</SelectItem>
-                                <SelectItem value="America/Mexico_City">Mexico City (CST/CDT) - GMT-6/-5</SelectItem>
-                                <SelectItem value="America/Bogota">Bogotá, Colombia (COT) - GMT-5</SelectItem>
-                                <SelectItem value="America/Costa_Rica">San José, Costa Rica (CST) - GMT-6</SelectItem>
-                                <SelectItem value="America/Panama">Panama City, Panama (EST) - GMT-5</SelectItem>
-                                <SelectItem value="America/Caracas">Caracas, Venezuela (VET) - GMT-4</SelectItem>
-                                <SelectItem value="America/La_Paz">La Paz, Bolivia (BOT) - GMT-4</SelectItem>
-                                <SelectItem value="America/Lima">Lima, Peru (PET) - GMT-5</SelectItem>
-                                <SelectItem value="America/Sao_Paulo">São Paulo, Brazil (BRT) - GMT-3</SelectItem>
-                                <SelectItem value="America/Santiago">Santiago, Chile (CLT) - GMT-3</SelectItem>
-                                <SelectItem value="America/Buenos_Aires">Buenos Aires, Argentina (ART) - GMT-3</SelectItem>
-                                <SelectItem value="Europe/London">London (GMT/BST) - GMT+0/+1</SelectItem>
-                                <SelectItem value="Europe/Paris">Paris (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Berlin">Berlin (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Rome">Rome (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Madrid">Madrid (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Amsterdam">Amsterdam (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Zurich">Zurich (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Stockholm">Stockholm (CET/CEST) - GMT+1/+2</SelectItem>
-                                <SelectItem value="Europe/Moscow">Moscow (MSK) - GMT+3</SelectItem>
-                                <SelectItem value="Asia/Tokyo">Tokyo (JST) - GMT+9</SelectItem>
-                                <SelectItem value="Asia/Shanghai">Shanghai (CST) - GMT+8</SelectItem>
-                                <SelectItem value="Asia/Hong_Kong">Hong Kong (HKT) - GMT+8</SelectItem>
-                                <SelectItem value="Asia/Singapore">Singapore (SGT) - GMT+8</SelectItem>
-                                <SelectItem value="Asia/Seoul">Seoul (KST) - GMT+9</SelectItem>
-                                <SelectItem value="Asia/Mumbai">Mumbai (IST) - GMT+5:30</SelectItem>
-                                <SelectItem value="Asia/Dubai">Dubai (GST) - GMT+4</SelectItem>
-                                <SelectItem value="Asia/Jerusalem">Jerusalem (IST) - GMT+2/+3</SelectItem>
-                                <SelectItem value="Australia/Sydney">Sydney (AEST/AEDT) - GMT+10/+11</SelectItem>
-                                <SelectItem value="Australia/Melbourne">Melbourne (AEST/AEDT) - GMT+10/+11</SelectItem>
-                                <SelectItem value="Australia/Perth">Perth (AWST) - GMT+8</SelectItem>
-                                <SelectItem value="Pacific/Auckland">Auckland (NZST/NZDT) - GMT+12/+13</SelectItem>
-                                <SelectItem value="Pacific/Honolulu">Honolulu (HST) - GMT-10</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            {getInlineError('latest.timezone') && (
-                              <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.timezone')}</p>
-                            )}
-                          </div>
-                        </div>
                           </TabsContent>
                         </Tabs>
 
@@ -3175,6 +3174,8 @@ const HackathonsEdit = () => {
                             <p className="text-red-500 text-sm mb-3">{getInlineError('content.stages')}</p>
                           )}
                           <HackathonsEditStages
+                            startDate={formDataLatest.start_date}
+                            endDate={formDataLatest.end_date}
                             formDataContent={formDataContent}
                             setFormDataContent={setFormDataContent}
                             setSelectedStageForm={setSelectedStageForm}
@@ -3215,8 +3216,8 @@ const HackathonsEdit = () => {
 
                         {/* Banner Image */}
                         <div className="mb-6">
-                          <label className="font-medium text-xl mb-2 block">{ t[language].banner }:</label>
-                          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{ t[language].bannerHelp }</div>
+                          <label className="font-medium text-xl mb-2 block">{t[language].banner}:</label>
+                          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].bannerHelp}</div>
 
                           <div className="mb-4">
                             <div className="flex gap-4 items-start">
@@ -3769,11 +3770,10 @@ const HackathonsEdit = () => {
                                     setPendingManualSwitch(false);
                                     setScheduleMode('calendar');
                                   }}
-                                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                                    scheduleMode === 'calendar'
+                                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${scheduleMode === 'calendar'
                                       ? 'bg-blue-600 text-white border-blue-600'
                                       : 'bg-transparent text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                                  }`}
+                                    }`}
                                 >
                                   {t[language].scheduleModeCalendar}
                                 </button>
@@ -3791,11 +3791,10 @@ const HackathonsEdit = () => {
                                     setPendingManualSwitch(false);
                                     setScheduleMode('manual');
                                   }}
-                                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                                    scheduleMode === 'manual'
+                                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${scheduleMode === 'manual'
                                       ? 'bg-blue-600 text-white border-blue-600'
                                       : 'bg-transparent text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                                  }`}
+                                    }`}
                                 >
                                   {t[language].scheduleModeManual}
                                 </button>
@@ -3955,72 +3954,72 @@ const HackathonsEdit = () => {
                     )}
                   </div>
                   <Accordion
-                  type="single"
-                  collapsible
-                  className="w-full rounded-md border mt-6 px-4 py-2"
+                    type="single"
+                    collapsible
+                    className="w-full rounded-md border mt-6 px-4 py-2"
                   >
                     <AccordionItem value={'options'}>
                       <AccordionPrimitive.Header className="flex">
                         <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between gap-2 py-1 text-sm font-medium outline-none [&[data-state=open]_svg.chevron]:rotate-180">
-                        <span>Advanced options</span>
-                        <div className="flex items-center gap-2">
-                        <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
-                        </div>
+                          <span>Advanced options</span>
+                          <div className="flex items-center gap-2">
+                            <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
+                          </div>
                         </AccordionPrimitive.Trigger>
                       </AccordionPrimitive.Header>
 
                       <AccordionContent>
-                      <div className='pt-4'>
-                        <label className="font-medium text-xl mb-2 block">{t[language].customLink}:</label>
-                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].customLinkHelp}</div>
-                        <Input
-                          type="text"
-                          name="custom_link"
-                          placeholder="e.g., https://hackathon.custom..."
-                          value={formDataLatest.custom_link ?? ''}
-                          onChange={(e) => {
-                            setFormDataLatest(prev => ({ ...prev, custom_link: e.target.value }));
-                          }}
-                          className="w-full mb-4"
-                        />
-                        {getInlineError('latest.custom_link') && (
-                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.custom_link')}</p>
-                        )}
-                        <label className="font-medium text-xl mb-2 block">{t[language].joinCustomLink}:</label>
-                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].joinCustomLinkHelp}</div>
-                        <Input
-                          type="text"
-                          name="join_custom_link"
-                          placeholder="e.g., https://hackathon.custom..."
-                          value={formDataContent.join_custom_link ?? ''}
-                          onChange={(e) => {
-                            setFormDataContent(prev => ({ ...prev, join_custom_link: e.target.value }));
-                          }}
-                          className="w-full mb-4"
-                        />
-                        {getInlineError('content.join_custom_link') && (
-                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.join_custom_link')}</p>
-                        )}
-                        <label className="font-medium text-xl mb-2 block">{t[language].submissionCustomLink}:</label>
-                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].submissionCustomLinkHelp}</div>
-                        <Input
-                          type="text"
-                          name="submission_custom_link"
-                          placeholder="e.g., https://hackathon.custom..."
-                          value={formDataContent.submission_custom_link ?? ''}
-                          onChange={(e) => {
-                            setFormDataContent(prev => ({ ...prev, submission_custom_link: e.target.value }));
-                          }}
-                          className="w-full mb-4"
-                        />
-                        {getInlineError('content.submission_custom_link') && (
-                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.submission_custom_link')}</p>
-                        )}
-                      </div>
+                        <div className='pt-4'>
+                          <label className="font-medium text-xl mb-2 block">{t[language].customLink}:</label>
+                          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].customLinkHelp}</div>
+                          <Input
+                            type="text"
+                            name="custom_link"
+                            placeholder="e.g., https://hackathon.custom..."
+                            value={formDataLatest.custom_link ?? ''}
+                            onChange={(e) => {
+                              setFormDataLatest(prev => ({ ...prev, custom_link: e.target.value }));
+                            }}
+                            className="w-full mb-4"
+                          />
+                          {getInlineError('latest.custom_link') && (
+                            <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('latest.custom_link')}</p>
+                          )}
+                          <label className="font-medium text-xl mb-2 block">{t[language].joinCustomLink}:</label>
+                          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].joinCustomLinkHelp}</div>
+                          <Input
+                            type="text"
+                            name="join_custom_link"
+                            placeholder="e.g., https://hackathon.custom..."
+                            value={formDataContent.join_custom_link ?? ''}
+                            onChange={(e) => {
+                              setFormDataContent(prev => ({ ...prev, join_custom_link: e.target.value }));
+                            }}
+                            className="w-full mb-4"
+                          />
+                          {getInlineError('content.join_custom_link') && (
+                            <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.join_custom_link')}</p>
+                          )}
+                          <label className="font-medium text-xl mb-2 block">{t[language].submissionCustomLink}:</label>
+                          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].submissionCustomLinkHelp}</div>
+                          <Input
+                            type="text"
+                            name="submission_custom_link"
+                            placeholder="e.g., https://hackathon.custom..."
+                            value={formDataContent.submission_custom_link ?? ''}
+                            onChange={(e) => {
+                              setFormDataContent(prev => ({ ...prev, submission_custom_link: e.target.value }));
+                            }}
+                            className="w-full mb-4"
+                          />
+                          {getInlineError('content.submission_custom_link') && (
+                            <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.submission_custom_link')}</p>
+                          )}
+                        </div>
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
-                    </form>
+                </form>
               </>
             )}
             {showForm && !hasEditPermission && (

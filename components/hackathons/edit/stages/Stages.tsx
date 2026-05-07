@@ -39,6 +39,8 @@ export enum StageComponentType {
 }
 
 type HackathonsEditStagesProps = {
+  startDate: string
+  endDate: string
   formDataContent: IDataContent
   setFormDataContent: (data: IDataContent) => void
   setSelectedStageForm: (index: string) => void
@@ -51,6 +53,7 @@ type StageFormProps = {
   index: number
   language: 'en' | 'es'
   selectedPredefinedFields: string[]
+  overlappingStageLabels: string[]
   onStageFieldChange: (
     index: number,
     field: keyof Pick<HackathonStage, 'label' | 'date' | 'deadline'>,
@@ -125,7 +128,78 @@ const createDefaultSubmitFormField = (
   }
 }
 
+const toStageDateInputValue = (value: string): string => {
+  if (!value) {
+    return ''
+  }
+
+  const dateOnlyMatch = value.match(/^(\d{4}-\d{2}-\d{2})/)
+  if (dateOnlyMatch) {
+    return dateOnlyMatch[1]
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const pad = (part: number): string => String(part).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+const getStageLabel = (stage: HackathonStage, index: number): string =>
+  stage.label?.trim() ? stage.label : `Stage ${index + 1}`
+
+const parseStageDate = (value: string): number | null => {
+  if (!value) {
+    return null
+  }
+
+  const timestamp = new Date(`${value}T00:00:00`).getTime()
+  return Number.isNaN(timestamp) ? null : timestamp
+}
+
+const doStageDatesOverlap = (
+  stage: HackathonStage,
+  otherStage: HackathonStage
+): boolean => {
+  const stageStart = parseStageDate(stage.date)
+  const stageEnd = parseStageDate(stage.deadline)
+  const otherStart = parseStageDate(otherStage.date)
+  const otherEnd = parseStageDate(otherStage.deadline)
+
+  if (
+    stageStart === null ||
+    stageEnd === null ||
+    otherStart === null ||
+    otherEnd === null ||
+    stageEnd <= stageStart ||
+    otherEnd <= otherStart
+  ) {
+    return false
+  }
+
+  return stageStart < otherEnd && otherStart < stageEnd
+}
+
+const getOverlappingStageLabels = (
+  stages: HackathonStage[],
+  stageIndex: number
+): string[] =>
+  stages.flatMap((otherStage: HackathonStage, otherIndex: number): string[] => {
+    if (
+      otherIndex === stageIndex ||
+      !doStageDatesOverlap(stages[stageIndex], otherStage)
+    ) {
+      return []
+    }
+
+    return [getStageLabel(otherStage, otherIndex)]
+  })
+
 export default function HackathonsEditStages({
+  startDate,
+  endDate,
   formDataContent,
   setFormDataContent,
   setSelectedStageForm,
@@ -165,6 +239,9 @@ export default function HackathonsEditStages({
     }
   }, [formDataContent])
 
+  const eventStartDate = toStageDateInputValue(startDate)
+  const eventEndDate = toStageDateInputValue(endDate)
+
   const syncStagesToParent = (updatedStages: HackathonStage[]): void => {
     setStages(updatedStages)
 
@@ -175,10 +252,11 @@ export default function HackathonsEditStages({
   }
 
   const addStage = (): void => {
+    const latestStage: HackathonStage | undefined = stages[stages.length - 1]
     const newStage: HackathonStage = {
       label: '',
-      date: '',
-      deadline: '',
+      date: latestStage?.deadline || eventStartDate,
+      deadline: eventEndDate,
       component: undefined,
       submitForm: undefined,
     }
@@ -384,8 +462,8 @@ export default function HackathonsEditStages({
         stages: [
           {
             label: 'First stage',
-            date: '',
-            deadline: '',
+            date: eventStartDate,
+            deadline: eventEndDate,
             component: undefined,
             submitForm: {
               fields: [BASE_SUBMIT_FORM_FIELDS.projectName.field],
@@ -393,14 +471,35 @@ export default function HackathonsEditStages({
           }
         ],
       } as IDataContent)
+      return
     }
+
     if (stages.length > 0 && !stages[0].submitForm?.fields.find((field) => field.id === 'projectName')) {
       setFormDataContent({
         ...formDataContent,
         stages: [{ ...stages[0], submitForm: { ...stages[0].submitForm, fields: [BASE_SUBMIT_FORM_FIELDS.projectName.field, ...(stages[0].submitForm?.fields ?? [])] } }, ...stages.slice(1)]
       })
+      return
     }
-  }, [stages])
+
+    const shouldFillFirstStageDates =
+      stages.length === 1 &&
+      ((eventStartDate && !stages[0].date) ||
+        (eventEndDate && !stages[0].deadline))
+
+    if (shouldFillFirstStageDates) {
+      setFormDataContent({
+        ...formDataContent,
+        stages: [
+          {
+            ...stages[0],
+            date: stages[0].date || eventStartDate,
+            deadline: stages[0].deadline || eventEndDate,
+          },
+        ],
+      } as IDataContent)
+    }
+  }, [eventEndDate, eventStartDate, formDataContent, setFormDataContent, stages])
 
   return (
     <div className="space-y-4">
@@ -431,6 +530,10 @@ export default function HackathonsEditStages({
                 stage={stage}
                 index={index}
                 language={language}
+                overlappingStageLabels={getOverlappingStageLabels(
+                  stages,
+                  index
+                )}
                 onStageFieldChange={updateStageField}
                 onStageComponentTypeChange={updateStageComponentType}
                 onStageComponentChange={updateStageComponent}
@@ -463,6 +566,7 @@ function StageForm({
   stage,
   index,
   language,
+  overlappingStageLabels,
   onStageFieldChange,
   onStageComponentTypeChange,
   onStageComponentChange,
@@ -535,6 +639,16 @@ function StageForm({
             <p className="text-sm text-red-500">{dateValidation.error}</p>
           )}
         </div>
+
+        {overlappingStageLabels.length > 0 && (
+          <div className="text-yellow-800">
+            This stage occurs at the same time than{' '}
+            {overlappingStageLabels
+              .map((label: string) => `"${label}"`)
+              .join(', ')}{' '}
+            stage
+          </div>
+        )}
 
         <Divider />
         <div>
