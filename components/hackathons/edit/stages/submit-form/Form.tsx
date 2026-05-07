@@ -128,13 +128,13 @@ export default function StageSubmitForm({
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
+          className='bg-green-500 text-white hover:bg-green-600'
           onClick={() => onAddField(stageIndex, SubmitFormFieldType.Text)}
         >
           Add field
         </Button>
         <Button
           type="button"
-          variant="secondary"
           onClick={() => setImportDialogOpen(true)}
         >
           Import from Google Forms
