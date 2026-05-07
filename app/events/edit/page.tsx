@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/accordion'
 import RemoveButton from '@/components/hackathons/edit/stages/RemoveButton';
 import { mapFormToHackathonHeader } from '@/lib/hackathons/map-form-to-hackathon-header';
+import { resolveFieldLabel } from '@/lib/events-field-labels';
 
 function toLocalDatetimeString(isoString: string) {
   if (!isoString) return '';
@@ -53,6 +54,56 @@ function toIso8601(datetimeLocal: string) {
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(datetimeLocal)) return datetimeLocal;
   const date = new Date(datetimeLocal);
   return date.toISOString();
+}
+
+type ChangedField = { key: string; oldValue: unknown; newValue: unknown };
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getDeepChangedFields(
+  oldValue: unknown,
+  newValue: unknown,
+  path = '',
+): ChangedField[] {
+  if (Object.is(oldValue, newValue)) return [];
+
+  if (Array.isArray(oldValue) && Array.isArray(newValue)) {
+    const maxLength = Math.max(oldValue.length, newValue.length);
+    const changedFields: ChangedField[] = [];
+    for (let index = 0; index < maxLength; index += 1) {
+      const nextPath = path ? `${path}.${index}` : String(index);
+      changedFields.push(...getDeepChangedFields(oldValue[index], newValue[index], nextPath));
+    }
+    return changedFields;
+  }
+
+  if (isPlainObject(oldValue) && isPlainObject(newValue)) {
+    const keys = new Set([...Object.keys(oldValue), ...Object.keys(newValue)]);
+    const changedFields: ChangedField[] = [];
+    keys.forEach((key) => {
+      const nextPath = path ? `${path}.${key}` : key;
+      changedFields.push(
+        ...getDeepChangedFields(oldValue[key], newValue[key], nextPath),
+      );
+    });
+    return changedFields;
+  }
+
+  return [{ key: path, oldValue, newValue }];
+}
+
+function formatChangedFieldValue(value: unknown): string {
+  if (value === undefined) return '(empty)';
+  if (value === null) return 'null';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
 }
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
@@ -150,32 +201,79 @@ const UpdateModal = ({ open, onClose, onConfirm, fieldsToUpdate, t, language }: 
   open: boolean,
   onClose: () => void,
   onConfirm: () => void,
-  fieldsToUpdate: { key: string, oldValue: any, newValue: any }[],
+  fieldsToUpdate: ChangedField[],
   t: any,
   language: 'en' | 'es',
 }) => {
   if (!open) return null;
+  const [showChanges, setShowChanges] = useState(false);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6 max-w-4xl w-full max-h-[90vh] flex flex-col">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+      style={{ WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
+    >
+      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6 max-w-2xl w-full max-h-[90vh] flex flex-col">
         <h2 className="text-lg font-bold mb-4 flex-shrink-0">{t[language].confirmUpdateTitle || 'Confirm Update'}</h2>
-        <p className="mb-2 flex-shrink-0">{t[language].confirmUpdateText || 'You are about to update the following fields:'}</p>
-        <ul className="list-disc pl-6 flex-1 min-h-0 overflow-y-auto overflow-x-auto mb-4">
-          {fieldsToUpdate.map(({ key, oldValue, newValue }) => (
-            <li key={key} className="mb-1">
-              <div className="font-semibold mb-1">{key}:</div>
-              <div className="overflow-x-auto max-w-full border border-gray-200 dark:border-gray-700 rounded p-2">
-                <div className="text-red-600 dark:text-red-500 line-through whitespace-nowrap text-sm min-w-max">{String(oldValue)}</div>
-              </div>
-              <div className="overflow-x-auto max-w-full border border-gray-200 dark:border-gray-700 rounded p-2">
-                <div className="text-green-600 dark:text-green-500 whitespace-nowrap text-sm min-w-max">{String(newValue)}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
-        <div className="flex justify-end gap-2 mt-4 flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 rounded bg-zinc-200 dark:bg-zinc-700 hover:bg-red-400">{t[language].cancel}</button>
-          <button onClick={onConfirm} className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">{t[language].update}</button>
+        <p className="mb-2 flex-shrink-0 text-sm text-zinc-500 dark:text-zinc-400">
+          {showChanges
+            ? (t[language].confirmUpdateText || 'You are about to update the following fields:')
+            : (language === 'es'
+              ? 'Haz clic en "Mostrar cambios" para ver el detalle.'
+              : 'Click "Show Changes" to view details.')}
+        </p>
+        {showChanges && (
+          <ul className="list-disc pl-6 flex-1 min-h-0 overflow-y-auto overflow-x-auto mb-4">
+            {fieldsToUpdate.map(({ key, oldValue, newValue }) => (
+              <li key={key} className="mb-1">
+                <div className="font-semibold mb-1">{resolveFieldLabel(key).label}:</div>
+                <div className="overflow-x-auto max-w-full border border-gray-200 dark:border-gray-700 rounded p-2">
+                  <div className="text-red-600 dark:text-red-500 line-through whitespace-pre-wrap break-all text-sm">
+                    {formatChangedFieldValue(oldValue)}
+                  </div>
+                </div>
+                <div className="overflow-x-auto max-w-full border border-gray-200 dark:border-gray-700 rounded p-2">
+                  <div className="text-green-600 dark:text-green-500 whitespace-pre-wrap break-all text-sm">
+                    {formatChangedFieldValue(newValue)}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!showChanges && fieldsToUpdate.length > 0 && <div className="flex-1 min-h-0 mb-4" />}
+        {!showChanges && fieldsToUpdate.length === 0 && (
+          <div className="flex-1 min-h-0 mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+            {language === 'es' ? 'No hay cambios detectados.' : 'No changes detected.'}
+          </div>
+        )}
+        <div className="flex justify-between items-center gap-2 mt-4 flex-shrink-0">
+          <Button
+            type="button"
+            onClick={() => setShowChanges((prev) => !prev)}
+            variant="outline"
+            className="bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          >
+            {showChanges
+              ? (language === 'es' ? 'Ocultar cambios' : 'Hide Changes')
+              : (language === 'es' ? 'Mostrar cambios' : 'Show Changes')}
+          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onClose}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {t[language].cancelAction}
+            </Button>
+            <Button
+              type="button"
+              onClick={onConfirm}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {t[language].update}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -1657,7 +1755,7 @@ const HackathonsEdit = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showEditActions]);
-  const [fieldsToUpdate, setFieldsToUpdate] = useState<{ key: string, oldValue: any, newValue: any }[]>([]);
+  const [fieldsToUpdate, setFieldsToUpdate] = useState<ChangedField[]>([]);
 
   const [loading, setLoading] = useState(false);
 
@@ -1913,20 +2011,16 @@ const HackathonsEdit = () => {
     }
     setDateRangeError(null);
     const dataToSend = getDataToSend();
-    const changedFields: { key: string, oldValue: any, newValue: any }[] = [];
+    const changedFields: ChangedField[] = [];
     if (selectedHackathon) {
-      Object.keys(dataToSend).forEach(key => {
-        const oldValue = (selectedHackathon as any)[key];
-        const newValue = (dataToSend as any)[key];
-        if (typeof newValue === 'object') {
-          if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-            changedFields.push({ key, oldValue: JSON.stringify(oldValue), newValue: JSON.stringify(newValue) });
-          }
-        } else {
-          if (oldValue !== newValue) {
-            changedFields.push({ key, oldValue, newValue });
-          }
-        }
+      Object.keys(dataToSend).forEach((key) => {
+        changedFields.push(
+          ...getDeepChangedFields(
+            (selectedHackathon as Record<string, unknown>)[key],
+            (dataToSend as Record<string, unknown>)[key],
+            key,
+          ),
+        );
       });
     }
     setFieldsToUpdate(changedFields);
