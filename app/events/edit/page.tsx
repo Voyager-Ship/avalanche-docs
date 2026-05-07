@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, memo, useCallback, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,6 +30,7 @@ import {
   AccordionItem,
 } from '@/components/ui/accordion'
 import RemoveButton from '@/components/hackathons/edit/stages/RemoveButton';
+import { mapFormToHackathonHeader } from '@/lib/hackathons/map-form-to-hackathon-header';
 
 function toLocalDatetimeString(isoString: string) {
   if (!isoString) return '';
@@ -902,6 +903,18 @@ const HackathonsEdit = () => {
     } as IDataContent);
   const formDataLatest = useWatch({ control, name: 'latest' }) ?? initialData.latest;
   const cohostsEmails = useWatch({ control, name: 'cohostsEmails' }) ?? [];
+
+  const previewHackathon = useMemo(
+    () =>
+      mapFormToHackathonHeader({
+        main: formDataMain,
+        content: formDataContent,
+        latest: formDataLatest,
+        id: selectedHackathon?.id,
+      }),
+    [formDataMain, formDataContent, formDataLatest, selectedHackathon?.id],
+  );
+
   const setFormDataMain = useCallback((nextState: React.SetStateAction<IDataMain>) => {
     const nextValue =
       typeof nextState === 'function'
@@ -2128,55 +2141,15 @@ const HackathonsEdit = () => {
   const renderHackathonPreviewTabs = (): React.JSX.Element => {
     return (
       <HackathonPreviewTabs
-        tabsProps={{
-          hackathonData: {
-            id: selectedHackathon?.id,
-            title: formDataMain.title,
-            description: formDataMain.description,
-            location: formDataMain.location,
-            total_prizes: formDataMain.total_prizes,
-            tags: formDataMain.tags,
-            participants: formDataMain.participants,
-            organizers: formDataMain.organizers,
-            banner: formDataLatest.banner,
-            content: {
-              language: formDataContent.language,
-              tracks_text: formDataContent.tracks_text,
-              tracks: formDataContent.tracks,
-              schedule: formDataContent.schedule,
-              speakers: formDataContent.speakers,
-              speakers_text: formDataContent.speakers_text,
-              resources: formDataContent.resources,
-              partners: formDataContent.partners
-                .map((p) => (typeof p === 'string' ? p : p.name))
-                .filter(Boolean),
-              join_custom_link:
-                formDataContent.join_custom_link || undefined,
-              join_custom_text:
-                formDataContent.join_custom_text || undefined,
-              submission_custom_link:
-                formDataContent.submission_custom_link || undefined,
-              judging_guidelines: formDataContent.judging_guidelines,
-              submission_deadline:
-                formDataContent.submission_deadline,
-              registration_deadline:
-                formDataContent.registration_deadline,
-              stages: formDataContent.stages,
-            },
-            start_date: formDataLatest.start_date,
-            end_date: formDataLatest.end_date,
-            status: 'UPCOMING',
-          },
-          isRegistered: false,
-          scrollTarget,
-        }}
-        hackathon={selectedHackathon}
+        previewHackathon={previewHackathon}
+        isRegistered={false}
+        scrollTarget={scrollTarget}
         activeTab={activePreviewTab}
         onActiveTabChange={setActivePreviewTab}
         selectedStageForm={selectedStageForm}
       />
-    )
-  }
+    );
+  };
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col">

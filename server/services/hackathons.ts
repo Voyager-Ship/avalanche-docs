@@ -438,6 +438,8 @@ export async function updateHackathon(
   if (hackathonData.new_layout !== undefined)
     updateData.new_layout = hackathonData.new_layout;
   if (userId) updateData.updated_by = userId;
+  if (hackathonData.google_calendar_id !== undefined)
+    updateData.google_calendar_id = hackathonData.google_calendar_id;
   if (hackathonData.content !== undefined) {
     const content = {
       ...hackathonData.content,
