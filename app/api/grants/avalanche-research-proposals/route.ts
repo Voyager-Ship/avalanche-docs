@@ -1,9 +1,30 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth/authSession";
 import { prisma } from "@/prisma/prisma";
 import { formSchema } from "@/types/researchProposalForm";
+import { recordReferralAttributionFromRequest } from "@/server/services/referrals";
+import { rateLimited } from "@/app/api/managed-testnet-nodes/utils";
 
-export async function POST(request: Request) {
+function getReferralAttribution(body: unknown) {
+  if (!body || typeof body !== "object" || !("referral_attribution" in body)) {
+    return null;
+  }
+
+  return (body as { referral_attribution?: unknown }).referral_attribution ?? null;
+}
+
+// Identifier for the rate limiter — uses the session email so each
+// account gets its own bucket. Throws on missing email so the wrapper
+// returns a 401 before consuming a slot in the limiter.
+async function rateLimitIdentifier(): Promise<string> {
+  if (process.env.NODE_ENV === "development") return "dev-user";
+  const session = await getAuthSession();
+  const email = session?.user?.email;
+  if (!email) throw new Error("Authentication required");
+  return `research-proposal:${email}`;
+}
+
+async function handlePost(request: NextRequest) {
   const session = await getAuthSession();
   const sessionUserId = session?.user?.id;
   const sessionEmail = session?.user?.email?.trim().toLowerCase();
@@ -48,6 +69,7 @@ export async function POST(request: Request) {
   }
 
   const data = parsed.data;
+  const referralAttribution = getReferralAttribution(body);
 
   try {
     const result = await prisma.researchProposalApplication.create({
@@ -71,7 +93,21 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, id: result.id }, { status: 201 });
+    let referralAttributed = false;
+    try {
+      const attribution = await recordReferralAttributionFromRequest(request, {
+        targetType: "grant_application",
+        targetId: "avalanche-research-proposals",
+        userId: sessionUserId,
+        userEmail: sessionEmail,
+        attribution: referralAttribution as any,
+      });
+      referralAttributed = Boolean(attribution);
+    } catch (error) {
+      console.error("[Referral] Failed to record research proposal attribution:", error);
+    }
+
+    return NextResponse.json({ success: true, id: result.id, referralAttributed }, { status: 201 });
   } catch (error) {
     console.error("[Research Proposal] DB save failed:", error);
     return NextResponse.json(
@@ -83,3 +119,12 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// 5 submissions per day per account in prod is well above legitimate
+// retries (typo fixes, last-minute edits) but stops a logged-in user
+// from spamming the form into a stuck queue.
+export const POST = rateLimited(handlePost, {
+  dev: { windowMs: 24 * 60 * 60 * 1000, max: 1000 },
+  prod: { windowMs: 24 * 60 * 60 * 1000, max: 5 },
+  identifier: rateLimitIdentifier,
+});

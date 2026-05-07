@@ -70,10 +70,10 @@ type BasicProfileFormValues = z.infer<typeof basicProfileSchema>;
 
 interface BasicProfileSetupProps {
   userId: string;
-  onSuccess?: () => void;
+  onCompleteProfile?: () => void;
 }
 
-export function BasicProfileSetup({ userId, onSuccess }: BasicProfileSetupProps) {
+export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSetupProps) {
   const [isSaving, setIsSaving] = useState(false);
   const { update } = useSession();
 
@@ -189,7 +189,7 @@ export function BasicProfileSetup({ userId, onSuccess }: BasicProfileSetupProps)
       // Update session
       await update();
 
-      onSuccess?.();
+      onCompleteProfile?.();
     } catch (error) {
       console.error('Error saving basic profile:', error);
     } finally {
@@ -198,7 +198,7 @@ export function BasicProfileSetup({ userId, onSuccess }: BasicProfileSetupProps)
   };
 
   const onSubmit = (data: BasicProfileFormValues) => {
-    handleSave(data);
+    void handleSave(data);
   };
 
   return (

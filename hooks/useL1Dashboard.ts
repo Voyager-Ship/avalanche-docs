@@ -2,13 +2,12 @@
 
 import { useMemo, useEffect, useState, useRef } from "react";
 import { useWalletStore, useNetworkInfo } from "@/components/toolbox/stores/walletStore";
-import { useL1List, type L1ListItem } from "@/components/toolbox/stores/l1ListStore";
+import { getL1ListStore, useL1List, type L1ListItem } from "@/components/toolbox/stores/l1ListStore";
 import { createPublicClient, http, formatEther } from "viem";
+import { networkIDs } from "@avalabs/avalanchejs";
+import { useActiveWalletProvider, useLiveWalletChainId } from "@/components/toolbox/hooks/useLiveWalletChainId";
+import { resolveL1DashboardConnection } from "@/lib/console/l1-dashboard";
 const GLACIER_API = "https://glacier-api.avax.network";
-
-// C-Chain IDs
-const C_CHAIN_FUJI = 43113;
-const C_CHAIN_MAINNET = 43114;
 
 export type L1HealthStatus = "healthy" | "degraded" | "stale" | "offline" | "unknown";
 
@@ -49,8 +48,25 @@ export function useL1Dashboard(): L1DashboardData {
   const walletEVMAddress = useWalletStore((s) => s.walletEVMAddress);
   const walletChainId = useWalletStore((s) => s.walletChainId);
   const balances = useWalletStore((s) => s.balances);
+  const setWalletChainId = useWalletStore((s) => s.setWalletChainId);
+  const setIsTestnet = useWalletStore((s) => s.setIsTestnet);
+  const setAvalancheNetworkID = useWalletStore((s) => s.setAvalancheNetworkID);
   const { isTestnet } = useNetworkInfo();
   const l1List = useL1List();
+  const testnetL1List = getL1ListStore(true)((state: { l1List: L1ListItem[] }) => state.l1List);
+  const mainnetL1List = getL1ListStore(false)((state: { l1List: L1ListItem[] }) => state.l1List);
+
+  // Determine if connected
+  const isConnected = Boolean(walletEVMAddress);
+  const activeProvider = useActiveWalletProvider({
+    enabled: isConnected,
+    refreshKey: walletChainId,
+  });
+  const liveChainId = useLiveWalletChainId({
+    provider: activeProvider,
+    enabled: isConnected,
+    refreshKey: walletChainId,
+  });
 
   const [healthStatus, setHealthStatus] = useState<L1HealthStatus>("unknown");
   const [blockTime, setBlockTime] = useState<number | null>(null);
@@ -58,17 +74,37 @@ export function useL1Dashboard(): L1DashboardData {
   const [validatorCount, setValidatorCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Determine if connected
-  const isConnected = Boolean(walletEVMAddress);
+  const { effectiveChainId, isConnectedToCChain, currentL1 } = useMemo(
+    () =>
+      resolveL1DashboardConnection({
+        isConnected,
+        walletChainId,
+        liveChainId,
+        l1Lists: [l1List, testnetL1List, mainnetL1List],
+      }),
+    [isConnected, walletChainId, liveChainId, l1List, testnetL1List, mainnetL1List],
+  );
 
-  // Check if connected to C-Chain
-  const isConnectedToCChain = walletChainId === C_CHAIN_FUJI || walletChainId === C_CHAIN_MAINNET;
+  useEffect(() => {
+    if (!currentL1 || liveChainId !== currentL1.evmChainId) return;
 
-  // Find current L1 from the list
-  const currentL1 = useMemo((): L1ListItem | null => {
-    if (!walletChainId || isConnectedToCChain) return null;
-    return l1List.find((l1: L1ListItem) => l1.evmChainId === walletChainId) || null;
-  }, [walletChainId, l1List, isConnectedToCChain]);
+    if (walletChainId !== currentL1.evmChainId) {
+      setWalletChainId(currentL1.evmChainId);
+    }
+
+    if (isTestnet !== currentL1.isTestnet) {
+      setIsTestnet(currentL1.isTestnet);
+      setAvalancheNetworkID(currentL1.isTestnet ? networkIDs.FujiID : networkIDs.MainnetID);
+    }
+  }, [
+    currentL1,
+    liveChainId,
+    walletChainId,
+    isTestnet,
+    setWalletChainId,
+    setIsTestnet,
+    setAvalancheNetworkID,
+  ]);
 
   const isConnectedToL1 = Boolean(currentL1);
 
@@ -78,10 +114,10 @@ export function useL1Dashboard(): L1DashboardData {
       return balances.cChain;
     }
     if (currentL1) {
-      return balances.l1Chains[walletChainId.toString()] || 0;
+      return balances.l1Chains[effectiveChainId.toString()] || 0;
     }
     return 0;
-  }, [isConnectedToCChain, currentL1, balances, walletChainId]);
+  }, [isConnectedToCChain, currentL1, balances, effectiveChainId]);
 
   // Request-id guard for validator count (separate from health check)
   const validatorRequestIdRef = useRef(0);
