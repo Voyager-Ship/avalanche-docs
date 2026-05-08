@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession, signOut, getSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogOverlay, DialogContent, DialogTitle } from '../toolbox/components/ui/dialog';
@@ -131,18 +131,15 @@ export function LoginModalWrapper() {
     if (typeof window !== "undefined" && userIdForStorage) {
       const termsKey = `shouldShowTerms_${userIdForStorage}`;
       localStorage.setItem(termsKey, "false");
-      // Also clean up the pending user key if it exists
       if (termsUserId?.startsWith("pending_")) {
         localStorage.removeItem(`shouldShowTerms_${termsUserId}`);
       }
     }
 
-    // Update termsUserId with the real user ID for BasicProfileSetup
     if (realUserId && !realUserId.startsWith("pending_")) {
       setTermsUserId(realUserId);
     }
 
-    // Close terms modal and show basic profile setup
     setShowTerms(false);
     setShowBasicProfile(true);
   };
@@ -234,7 +231,7 @@ export function LoginModalWrapper() {
             <Dialog.Portal>
               <DialogOverlay />
               <DialogContent
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl focus:outline-none w-[90vw] max-w-[400px] max-h-[90vh] overflow-hidden z-[10000] p-0"
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl focus:outline-none w-[90vw] max-w-[400px] max-h-[90vh] overflow-hidden z-10000 p-0"
                 showCloseButton={false}
               >
                 <VisuallyHidden>
@@ -268,7 +265,7 @@ export function LoginModalWrapper() {
             <Dialog.Portal>
               <DialogOverlay />
               <DialogContent
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl focus:outline-none w-[90vw] max-w-[500px] max-h-[90vh] overflow-hidden z-[10000] p-0"
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl focus:outline-none w-[90vw] max-w-[500px] max-h-[90vh] overflow-hidden z-10000 p-0"
                 showCloseButton={false}
               >
                 <VisuallyHidden>

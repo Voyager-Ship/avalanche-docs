@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/zodResolver';
 import * as z from 'zod';
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
@@ -56,6 +56,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
 
   const form = useForm<BasicProfileFormValues>({
     resolver: zodResolver(basicProfileSchema),
+    mode: 'onChange',
     defaultValues: {
       name: '',
       country: '',
