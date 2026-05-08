@@ -96,7 +96,6 @@ model VerificationToken {
 
 model RegisterForm {
   id                      String    @id @default(uuid())
-  utm                     String
   city                    String
   dietary                 String?
   email                   String
@@ -429,8 +428,6 @@ model BuildGamesApplication {
   project_description        String
   area_of_focus              String
   why_you                    String
-  how_did_you_hear           String
-  how_did_you_hear_specify   String?
   university_affiliation     String
   avalanche_ecosystem_member String
   privacy_policy_read        Boolean  @default(false)
