@@ -26,14 +26,17 @@ type RemoveButtonProps = {
  */
 export default function RemoveButton({
   onRemove,
-  tooltipLabel = 'Delete',
-  confirmPrompt = 'Confirm delete?',
+  tooltipLabel,
+  confirmPrompt,
   language = 'en',
   size = 18,
   className = '',
 }: RemoveButtonProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
+
+  const effectivePrompt = confirmPrompt ?? t[language]?.confirmDeletePrompt ?? (language === 'es' ? '¿Confirmar eliminación?' : '¿Confirm delete?')
+  const effectiveLabel = tooltipLabel ?? (language === 'es' ? 'Eliminar' : 'Delete')
 
   const handleTriggerClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -58,8 +61,8 @@ export default function RemoveButton({
           <button
             type="button"
             onClick={handleTriggerClick}
-            className={`inline-flex items-center justify-center p-1.5 rounded-md hover:bg-red-500/10 hover:text-red-500 text-zinc-500 dark:text-zinc-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/30 ${className}`}
-            aria-label={tooltipLabel}
+            className={`inline-flex items-center justify-center p-1.5 rounded-md hover:bg-red-500/10 text-zinc-500 dark:text-zinc-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/30 ${className}`}
+            aria-label={effectiveLabel}
           >
             <X size={size} strokeWidth={2} />
           </button>
@@ -70,10 +73,10 @@ export default function RemoveButton({
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           {!confirming ? (
-            tooltipLabel
+            effectiveLabel
           ) : (
-            <div className="flex flex-col gap-2">
-              <span>{confirmPrompt}</span>
+            <div className="flex flex-col items-center justify-center text-center">
+              <span className="block text-xs">{effectivePrompt}</span>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -88,21 +91,9 @@ export default function RemoveButton({
                     e.preventDefault()
                     e.stopPropagation()
                   }}
-                  className="underline text-xs hover:text-red-400 cursor-pointer"
+                  className="underline text-xs cursor-pointer"
                 >
                   {t[language].confirmAction}
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setConfirming(false)
-                    setOpen(false)
-                  }}
-                  className="underline text-xs hover:text-zinc-300 cursor-pointer"
-                >
-                  {t[language].cancelAction}
                 </button>
               </div>
             </div>

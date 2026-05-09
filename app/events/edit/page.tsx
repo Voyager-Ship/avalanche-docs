@@ -1412,6 +1412,7 @@ const HackathonsEdit = () => {
 
   const [activeStep, setActiveStep] = useState<'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6'>('step1');
   const [contentTab, setContentTab] = useState<'tracks' | 'schedule' | 'resources' | 'speakers'>('tracks');
+  const [step1Tab, setStep1Tab] = useState<'basicInfo' | 'datesTime'>('basicInfo');
   const [scheduleMode, setScheduleMode] = useState<'calendar' | 'manual'>('calendar');
   const [pendingManualSwitch, setPendingManualSwitch] = useState(false);
 
@@ -1777,7 +1778,7 @@ const HackathonsEdit = () => {
         link: 'Link', title: 'Title', logo: 'Logo', partner: 'Partner',
         short_description: 'Short Description',
       };
-      const processed = issues.map((issue) => {
+      let processed = issues.map((issue) => {
         const label = issue.label?.trim()
           ? issue.label
           : (() => {
@@ -1796,6 +1797,25 @@ const HackathonsEdit = () => {
           })();
         return { ...issue, label, section };
       });
+
+      // Also include cross-field date-range error (custom validation) so it shows in the modal
+      const dateErr = getDateRangeError(formDataLatest.start_date, formDataLatest.end_date);
+      if (dateErr) {
+        setDateRangeError(dateErr);
+        const already = processed.some((i) => i.path === 'latest.end_date' || i.path === 'main.end_date');
+        if (!already) {
+          const seg = 'end_date';
+          const label = fieldLabelMap[seg] ?? 'End Date';
+          const synthetic: ValidationIssue = {
+            path: 'latest.end_date',
+            message: dateErr,
+            label,
+            section: 'Basic Info',
+          };
+          processed = [synthetic, ...processed];
+        }
+      }
+
       setValidationIssues(processed);
       setShowValidationModal(true);
     },
@@ -1822,10 +1842,7 @@ const HackathonsEdit = () => {
       collapsedKey = 'trackText'; targetRef = step5Ref; stepKey = 'step5';
     } else if (
       section === 'Last Details' ||
-      path === 'latest.start_date' ||
-      path === 'latest.end_date' ||
-      path === 'latest.timezone' ||
-      path === 'content.submission_deadline'
+      /(^|\.)(start_date|end_date|timezone|submission_deadline)$/.test(path)
     ) {
       collapsedKey = 'main'; targetRef = step1Ref; stepKey = 'step1';
     } else if (/^content\.schedule\.\d+\./.test(path)) {
@@ -1855,17 +1872,12 @@ const HackathonsEdit = () => {
       const containerRect = container.getBoundingClientRect();
       const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
       container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
-      // Click the correct Step 1 sub-tab if navigating to step1
+      // Programmatically set the correct Step 1 sub-tab if navigating to step1
       if (stepKey === 'step1') {
-        if (
-          path === 'latest.start_date' ||
-          path === 'latest.end_date' ||
-          path === 'latest.timezone' ||
-          path === 'content.submission_deadline'
-        ) {
-          step1DatesTabRef.current?.click();
+        if (/(^|\.)(start_date|end_date|timezone|submission_deadline)$/.test(path)) {
+          setStep1Tab('datesTime');
         } else {
-          step1BasicTabRef.current?.click();
+          setStep1Tab('basicInfo');
         }
       }
     });
@@ -2570,9 +2582,9 @@ const HackathonsEdit = () => {
                       {!cancelEditConfirming ? (
                         t[language].cancel
                       ) : (
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col items-center justify-center text-center">
                           <span>{t[language].confirmDiscardPrompt}</span>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center">
                             <button
                               type="button"
                               onMouseDown={(e) => {
@@ -2586,21 +2598,9 @@ const HackathonsEdit = () => {
                                 e.preventDefault();
                                 e.stopPropagation();
                               }}
-                              className="underline text-xs hover:text-red-400 cursor-pointer"
+                              className="underline text-xs cursor-pointer"
                             >
                               {t[language].confirmAction}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setCancelEditConfirming(false);
-                                setCancelEditTooltipOpen(false);
-                              }}
-                              className="underline text-xs hover:text-zinc-300 cursor-pointer"
-                            >
-                              {t[language].cancelAction}
                             </button>
                           </div>
                         </div>
@@ -3028,7 +3028,7 @@ const HackathonsEdit = () => {
                           <p className="text-sm text-purple-800 dark:text-purple-200">Let's start with the basic information that will appear in your hackathon preview.</p>
                         </div>
 
-                        <Tabs defaultValue="basicInfo" className="w-full">
+                        <Tabs value={step1Tab} onValueChange={(v) => setStep1Tab(v as 'basicInfo' | 'datesTime')} className="w-full">
                           <TabsList className="w-full mb-4">
                             <TabsTrigger ref={step1BasicTabRef} value="basicInfo" className="flex-1">
                               {language === 'es' ? t['es'].basicInfo : t['en'].basicInfo}

@@ -51,6 +51,7 @@ type StageSubmitFormProps = {
   setSelectedStageForm: (index: string) => void
   setActivePreviewTab: (tab: string) => void
   selectedPredefinedFields: string[]
+  language?: 'en' | 'es'
 }
 
 function replaceSubmitFormFieldType(
@@ -114,7 +115,8 @@ export default function StageSubmitForm({
   onRemoveSubmitForm,
   setSelectedStageForm,
   setActivePreviewTab,
-  selectedPredefinedFields
+  selectedPredefinedFields,
+  language = 'en',
 }: StageSubmitFormProps): React.JSX.Element {
   const [importDialogOpen, setImportDialogOpen] = React.useState(false)
 
@@ -195,6 +197,7 @@ export default function StageSubmitForm({
                       onRemove={() => onRemoveField(stageIndex, fieldIndex)}
                       tooltipLabel="Delete field"
                       size={18}
+                      language={language}
                     />
                   </div>
                 </AccordionPrimitive.Trigger>

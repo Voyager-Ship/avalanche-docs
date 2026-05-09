@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import * as AccordionPrimitive from '@radix-ui/react-accordion'
-import { ChevronDownIcon } from 'lucide-react'
+import { ChevronDownIcon, TriangleAlert as TriangleAlertIcon } from 'lucide-react'
 import {
   Accordion,
   AccordionContent,
@@ -522,6 +522,7 @@ export default function HackathonsEditStages({
                     onRemove={() => removeStage(index)}
                     tooltipLabel="Delete stage"
                     size={18}
+                    language={language}
                   />
                 </div>
               </AccordionPrimitive.Trigger>
@@ -585,35 +586,35 @@ function StageForm({
   setActivePreviewTab,
   selectedPredefinedFields,
 }: StageFormProps): React.JSX.Element {
-  const validateDates = (): { error: string | null } => {
+  const validateDates = (): { error: string | null; warning: string | null } => {
     if (stage.date && stage.deadline) {
       const stageStart = new Date(stage.date)
       const stageEnd = new Date(stage.deadline)
       const eventStart = new Date(eventStartDate)
       const eventEnd = new Date(eventEndDate)
-      
-      // Validar que la fecha de fin sea mayor que la de inicio del stage
+
+      // Validar que la fecha de fin sea mayor que la de inicio del stage (error)
       if (stageEnd < stageStart) {
-        return { error: t[language].stageEndDateBeforeStartDate }
+        return { error: t[language].stageEndDateBeforeStartDate, warning: null }
       }
-      
-      // Validar que la fecha de inicio del stage no sea antes de la del hackathon
+
+      // Validar que la fecha de inicio del stage no sea antes de la del hackathon (error)
       if (eventStartDate && stageStart < eventStart) {
-        const errorMsg = language === 'es' 
+        const errorMsg = language === 'es'
           ? 'La fecha de inicio del stage no puede ser antes de la fecha de inicio del hackathon'
           : 'Stage start date cannot be before the hackathon start date'
-        return { error: errorMsg }
+        return { error: errorMsg, warning: null }
       }
-      
-      // Validar que la fecha de fin del stage no sea después de la del hackathon
+
+      // Validar que la fecha de fin del stage no sea después de la del hackathon (warning — permitimos extender)
       if (eventEndDate && stageEnd > eventEnd) {
-        const errorMsg = language === 'es'
-          ? 'La fecha de fin del stage no puede ser después de la fecha de fin del hackathon'
-          : 'Stage end date cannot be after the hackathon end date'
-        return { error: errorMsg }
+        const warnMsg = t[language].stageEndDateAfterHackathonWarning ?? (language === 'es'
+          ? 'La fecha de fin del stage no debería ser después de la fecha de fin del Hackathon'
+          : 'Stage end date should not be after the hackathon end date')
+        return { error: null, warning: warnMsg }
       }
     }
-    return { error: null }
+    return { error: null, warning: null }
   }
 
   const dateValidation = validateDates()
@@ -664,6 +665,12 @@ function StageForm({
           {dateValidation.error && (
             <p className="text-sm text-red-500">{dateValidation.error}</p>
           )}
+          {dateValidation.warning && (
+            <div className="mt-1 flex items-center gap-2 text-yellow-500">
+              <TriangleAlertIcon className="w-4 h-4 shrink-0 text-yellow-500" />
+              <p className="text-sm text-yellow-500">{dateValidation.warning}</p>
+            </div>
+          )}
         </div>
 
         {overlappingStageLabels.length > 0 && (
@@ -713,6 +720,7 @@ function StageForm({
             index={index}
             component={stage.component}
             onChange={onStageComponentChange}
+            language={language}
           />
         )}
 
@@ -721,6 +729,7 @@ function StageForm({
             index={index}
             component={stage.component}
             onChange={onStageComponentChange}
+            language={language}
           />
         )}
       </TabsContent>
@@ -737,6 +746,7 @@ function StageForm({
           setSelectedStageForm={setSelectedStageForm}
           setActivePreviewTab={setActivePreviewTab}
           selectedPredefinedFields={selectedPredefinedFields}
+          language={language}
         />
       </TabsContent>
     </Tabs>
