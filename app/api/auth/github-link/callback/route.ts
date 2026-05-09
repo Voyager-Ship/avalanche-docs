@@ -21,12 +21,29 @@ interface GitHubUserResponse {
 function redirectAndClearState(target: string): NextResponse {
   const response = NextResponse.redirect(target);
   response.cookies.delete('gh_link_state');
+  response.cookies.delete('gh_link_return_to');
   return response;
+}
+
+function buildReturnTarget(req: NextRequest, base: string, status: 'linked' | 'already_linked' | 'error'): string {
+  const fallback =
+    status === 'linked'
+      ? `${base}/profile?tab=personal&gh=linked`
+      : `${base}/profile?gh=${status}`;
+
+  const returnTo = req.cookies.get('gh_link_return_to')?.value;
+  if (!returnTo || !returnTo.startsWith('/') || returnTo.startsWith('//')) {
+    return fallback;
+  }
+
+  const target = new URL(returnTo, base);
+  target.searchParams.set('gh', status);
+  return target.toString();
 }
 
 export async function GET(req: NextRequest) {
   const base = process.env.NEXTAUTH_URL ?? '';
-  const errorRedirect = `${base}/profile?gh=error`;
+  const errorRedirect = buildReturnTarget(req, base, 'error');
 
   const session = await getAuthSession();
   if (!session) {
@@ -82,7 +99,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (alreadyLinkedUser) {
-    return redirectAndClearState(`${base}/profile?gh=already_linked`);
+    return redirectAndClearState(buildReturnTarget(req, base, 'already_linked'));
   }
 
   await prisma.user.update({
@@ -93,5 +110,5 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return redirectAndClearState(`${base}/profile?tab=personal&gh=linked`);
+  return redirectAndClearState(buildReturnTarget(req, base, 'linked'));
 }

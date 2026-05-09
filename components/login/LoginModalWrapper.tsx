@@ -287,20 +287,21 @@ export function LoginModalWrapper() {
         </>
       )}
 
-      {/* Basic Profile Modal - Shows after accepting terms */}
+      {/* Basic Profile Modal - Shows after accepting terms.
+          Intentionally non-dismissible: the gate effect above re-opens it
+          whenever required social accounts are missing, so allowing outside
+          click / Escape would just flicker the modal closed-and-back-open. */}
       {showBasicProfile && (termsUserId || session?.user?.id) && (
         <>
-          <Dialog.Root open={true} onOpenChange={(open) => {
-            if (!open) {
-              setShowBasicProfile(false);
-              closeLoginModal();
-            }
-          }}>
+          <Dialog.Root open={true}>
             <Dialog.Portal>
               <DialogOverlay />
               <DialogContent
                 className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl focus:outline-none w-[90vw] max-w-[500px] max-h-[90vh] overflow-hidden z-10000 p-0"
                 showCloseButton={false}
+                onPointerDownOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+                onInteractOutside={(e) => e.preventDefault()}
               >
                 <VisuallyHidden>
                   <DialogTitle>Basic Profile Setup</DialogTitle>

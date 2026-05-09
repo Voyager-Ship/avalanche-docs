@@ -457,13 +457,13 @@ export default function Profile({
                   )}
                 />
 
-                {/* X (Twitter) handle */}
+                {/* X handle */}
                 <FormField
                   control={form.control}
                   name="x_account"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center gap-4">
-                      <FormLabel className="w-32 shrink-0">X (Twitter) *</FormLabel>
+                      <FormLabel className="w-32 shrink-0">X *</FormLabel>
                       <div className="flex-1">
                         <FormControl>
                           <Input
