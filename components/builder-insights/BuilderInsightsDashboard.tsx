@@ -38,6 +38,7 @@ import {
   type ReferralLinkResponse,
 } from "@/lib/referrals/client";
 import type { ReferralTargetPreset } from "@/lib/referrals/targets";
+import { ReferralLinkGenerator } from "@/components/referrals/ReferralLinkGenerator";
 
 interface ReferralLinkSummary {
   id: string;
@@ -45,7 +46,7 @@ interface ReferralLinkSummary {
   target_type: string;
   target_id: string | null;
   destination_url: string;
-  created_at: string | Date;
+  created_at: string;
   shareUrl: string;
 }
 
@@ -225,14 +226,8 @@ export function BuilderInsightsDashboard({
   data,
   referralLinks: initialReferralLinks,
 }: BuilderInsightsDashboardProps) {
-  const [referralLinks, setReferralLinks] = useState(initialReferralLinks);
-  const [creatingTargetKey, setCreatingTargetKey] = useState<string | null>(null);
-  const [qrLinkId, setQrLinkId] = useState<string | null>(null);
   const [topReferrerTeamFilter, setTopReferrerTeamFilter] = useState("all");
   const [topReferrerPage, setTopReferrerPage] = useState(0);
-  const { copiedId: copiedLinkId, copyToClipboard } = useCopyToClipboard({
-    resetDelay: 1600,
-  });
 
   const monthlyData = data.monthlySignups;
   const referrerData = data.signupsByReferrer.map((row) => ({
@@ -289,42 +284,6 @@ export function BuilderInsightsDashboard({
     }),
     [data.referralTargets]
   );
-  const selectedQrLink = referralLinks.find((link) => link.id === qrLinkId) ?? null;
-
-  const getLatestLinkForTarget = (target: ReferralTargetPreset) =>
-    referralLinks.find(
-      (link) =>
-        link.target_type === target.targetType &&
-        (link.target_id ?? null) === target.targetId &&
-        link.destination_url === target.destinationUrl
-    );
-
-  const handleCopy = async (link: ReferralLinkSummary) => {
-    await copyToClipboard(link.shareUrl, link.id);
-  };
-
-  const handleGenerateAndCopy = async (target: ReferralTargetPreset) => {
-    const existingLink = getLatestLinkForTarget(target);
-    if (existingLink && /^[A-Z]{5}$/.test(existingLink.code)) {
-      await handleCopy(existingLink);
-      setQrLinkId(existingLink.id);
-      return;
-    }
-
-    setCreatingTargetKey(target.key);
-    try {
-      const link: ReferralLinkResponse = await createReferralLink({
-        targetType: target.targetType,
-        targetId: target.targetId,
-        destinationUrl: target.destinationUrl,
-      });
-      setReferralLinks((current) => [link, ...current.filter((item) => item.id !== link.id)].slice(0, 25));
-      setQrLinkId(link.id);
-      await handleCopy(link);
-    } finally {
-      setCreatingTargetKey(null);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-white px-4 py-8 text-neutral-950 dark:bg-neutral-950 dark:text-neutral-50 sm:px-6 lg:px-8">
@@ -385,55 +344,7 @@ export function BuilderInsightsDashboard({
           />
         </div>
 
-        <Card className="rounded-lg border-neutral-200 shadow-none dark:border-neutral-800">
-          <CardHeader className="px-4 py-2 pb-1">
-            <CardTitle className="text-base">Referral Link Generator</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2 px-4 pb-4 pt-1">
-            <div className="flex flex-wrap gap-1.5">
-              <ReferralTargetGroup
-                targets={targetsByGroup.signup}
-                getLatestLinkForTarget={getLatestLinkForTarget}
-                creatingTargetKey={creatingTargetKey}
-                copiedLinkId={copiedLinkId}
-                onGenerateAndCopy={handleGenerateAndCopy}
-              />
-              <ReferralTargetGroup
-                targets={targetsByGroup.event}
-                emptyLabel="No active or upcoming public events found."
-                getLatestLinkForTarget={getLatestLinkForTarget}
-                creatingTargetKey={creatingTargetKey}
-                copiedLinkId={copiedLinkId}
-                onGenerateAndCopy={handleGenerateAndCopy}
-              />
-              <ReferralTargetGroup
-                targets={targetsByGroup.grant}
-                getLatestLinkForTarget={getLatestLinkForTarget}
-                creatingTargetKey={creatingTargetKey}
-                copiedLinkId={copiedLinkId}
-                onGenerateAndCopy={handleGenerateAndCopy}
-              />
-            </div>
-
-            {selectedQrLink && (
-              <div className="grid gap-3 rounded-md border border-neutral-200 p-4 dark:border-neutral-800 md:grid-cols-[auto_1fr_auto] md:items-center">
-                <div className="rounded-md bg-white p-3">
-                  <QRCodeSVG value={selectedQrLink.shareUrl} size={132} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium">QR Code</div>
-                  <div className="truncate text-sm text-neutral-600 dark:text-neutral-400">
-                    {selectedQrLink.shareUrl}
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => handleCopy(selectedQrLink)}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  {copiedLinkId === selectedQrLink.id ? "Copied" : "Copy link"}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ReferralLinkGenerator initialLinks={initialReferralLinks} targets={targetsByGroup} />
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <ChartCard title="Builder Hub Visits By Month (unique visitors)">
@@ -717,53 +628,6 @@ export function BuilderInsightsDashboard({
           </Card>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ReferralTargetGroup({
-  targets,
-  emptyLabel = "No referral targets available.",
-  getLatestLinkForTarget,
-  creatingTargetKey,
-  copiedLinkId,
-  onGenerateAndCopy,
-}: {
-  targets: ReferralTargetPreset[];
-  emptyLabel?: string;
-  getLatestLinkForTarget: (target: ReferralTargetPreset) => ReferralLinkSummary | undefined;
-  creatingTargetKey: string | null;
-  copiedLinkId: string | null;
-  onGenerateAndCopy: (target: ReferralTargetPreset) => Promise<void>;
-}) {
-  return (
-    <div className="grid gap-1.5">
-      {targets.length ? (
-        <div className="flex flex-wrap gap-1.5">
-          {targets.map((target) => {
-            const existingLink = getLatestLinkForTarget(target);
-            const isCreating = creatingTargetKey === target.key;
-            const isCopied = existingLink ? copiedLinkId === existingLink.id : false;
-
-            return (
-              <Button
-                key={target.key}
-                size="sm"
-                onClick={() => onGenerateAndCopy(target)}
-                disabled={isCreating}
-                title={target.detail}
-              >
-                {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isCopied ? "Copied" : target.label}
-              </Button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="rounded-md border border-dashed border-neutral-200 px-3 py-6 text-center text-sm text-neutral-500 dark:border-neutral-800">
-          {emptyLabel}
-        </div>
-      )}
     </div>
   );
 }

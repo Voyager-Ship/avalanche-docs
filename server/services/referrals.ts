@@ -222,6 +222,38 @@ export async function listReferralLinksForUser(userId: string) {
   });
 }
 
+export async function getActiveReferralTargets() {
+  const { ACTIVE_GRANT_TARGETS, BUILDER_HUB_SIGNUP_TARGET } = await import(
+    "@/lib/referrals/targets"
+  );
+
+  const activeEvents = await prisma.hackathon.findMany({
+    where: {
+      end_date: { gte: new Date() },
+      OR: [{ is_public: true }, { is_public: null }],
+    },
+    select: { id: true, title: true, start_date: true, end_date: true },
+    orderBy: [{ start_date: "asc" }],
+    take: 25,
+  });
+
+  const eventTargets = activeEvents.map((event) => ({
+    key: `event-${event.id}`,
+    group: "event" as const,
+    label: event.title,
+    detail: "Active or upcoming event",
+    targetType: "hackathon_registration" as const,
+    targetId: event.id,
+    destinationUrl: `/events/registration-form?event=${event.id}`,
+  }));
+
+  return {
+    signup: [BUILDER_HUB_SIGNUP_TARGET],
+    event: eventTargets,
+    grant: ACTIVE_GRANT_TARGETS,
+  };
+}
+
 export async function recordReferralAttribution(input: RecordReferralAttributionInput) {
   const attribution = input.attribution ?? null;
   const referralCode = normalizeNullable(attribution?.referralCode);
