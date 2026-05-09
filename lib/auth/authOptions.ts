@@ -5,10 +5,12 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import TwitterProvider from 'next-auth/providers/twitter';
 import { prisma } from '../../prisma/prisma';
 import { encode, JWT } from 'next-auth/jwt';
+import { randomInt } from 'crypto';
 import type { VerifyOTPResult } from '@/types/verifyOTPResult';
 import { upsertUser } from '@/server/services/auth';
 import { badgeAssignmentService } from '@/server/services/badgeAssignmentService';
 import { BadgeCategory } from '@/server/services/badge';
+import type { User as PrismaUser } from '@prisma/client';
 
 
 declare module 'next-auth' {
@@ -65,8 +67,14 @@ async function verifyOTP(
   return { isValid: true };
 }
 
-export function generate6DigitCode() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+/**
+ * Generates a cryptographically secure 6-digit code (100000-999999).
+ *
+ * Uses `crypto.randomInt` instead of `Math.random`, which is not suitable for
+ * security-sensitive values such as OTPs / verification codes.
+ */
+export function generate6DigitCode(): string {
+  return randomInt(100000, 1000000).toString();
 }
 
 const authUserSelect = {
@@ -121,17 +129,20 @@ export const AuthOptions: NextAuthOptions = {
           }
         }
 
-        const user = await prisma.user.findUnique({
+        let user = await prisma.user.findUnique({
           where: { email: normalizedEmail },
           select: authUserSelect,
         });
         if (!user) {
-          return {
-            id: `pending_${normalizedEmail}`,
-            email: normalizedEmail,
-            name: '',
-            image: '',
-          };
+          user = {
+            email, notification_email: email, name: '', image: '', last_login: new Date(), authentication_mode: '', bio: '',
+            custom_attributes: [], id: '', integration: '', notifications: null, profile_privacy: null,
+            additional_social_media: [], telegram_account: '', github_account: null, x_account: null, linkedin_account: null,
+            user_name: '', created_at: new Date(),
+            country: null, user_type: null, wallet: [], skills: [], team_id: null, noun_avatar_seed: null, noun_avatar_enabled: false,
+            notification_means: null,
+            github_access_token: null,
+          } as unknown as PrismaUser;
         }
 
         return user;
