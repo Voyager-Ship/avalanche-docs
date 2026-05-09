@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/form";
 import { countries } from "@/constants/countries";
 import { hsEmploymentRoles } from "@/constants/hs_employment_role";
-import { X, Link2, Wallet, User, FileText, Zap } from "lucide-react";
+import { X, Link2, Wallet, User, FileText, Zap, Check } from "lucide-react";
 import { WalletConnectButton } from "./WalletConnectButton";
 import { SkillsAutocomplete } from "./SkillsAutocomplete";
 import type { UseFormReturn } from "react-hook-form";
@@ -422,6 +422,12 @@ export default function Profile({
                             <Input
                               placeholder="https://github.com/username"
                               {...field}
+                              value={
+                                githubConnected
+                                  ? (field.value || "").replace(/^https?:\/\/(?:www\.)?github\.com\//i, "")
+                                  : field.value
+                              }
+                              readOnly={githubConnected}
                             />
                           </FormControl>
                           {githubConnected ? (
@@ -429,10 +435,11 @@ export default function Profile({
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="shrink-0"
+                              className="shrink-0 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-950 dark:hover:text-green-300"
                               onClick={onGithubDisconnect}
                             >
-                              Desconectar
+                              <Check className="h-4 w-4 mr-2" />
+                              Connected
                             </Button>
                           ) : (
                             <Button
@@ -450,7 +457,7 @@ export default function Profile({
                                 >
                                   <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
                                 </svg>
-                                Conectar
+                                Connect
                               </a>
                             </Button>
                           )}
@@ -474,7 +481,12 @@ export default function Profile({
                             <Input
                               placeholder="https://x.com/yourhandle"
                               {...field}
-                              value={field.value ?? ""}
+                              value={
+                                xConnected
+                                  ? ((field.value as string) || "").replace(/^https?:\/\/(?:www\.)?(?:x|twitter)\.com\//i, "")
+                                  : (field.value ?? "")
+                              }
+                              readOnly={xConnected}
                             />
                           </FormControl>
                           {xConnected ? (
@@ -482,10 +494,11 @@ export default function Profile({
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="shrink-0"
+                              className="shrink-0 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-950 dark:hover:text-green-300"
                               onClick={onXDisconnect}
                             >
-                              Disconnect
+                              <Check className="h-4 w-4 mr-2" />
+                              Connected
                             </Button>
                           ) : (
                             <Button
