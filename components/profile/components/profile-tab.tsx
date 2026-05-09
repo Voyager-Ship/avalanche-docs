@@ -41,6 +41,8 @@ export default function ProfileTab({ achievements, referralPanel, teamLabel }: P
     isAutoSaving,
     githubConnected,
     setGithubConnected,
+    xConnected,
+    setXConnected,
     handleRemoveSkill,
     handleAddSocial,
     handleRemoveSocial,
@@ -53,6 +55,12 @@ export default function ProfileTab({ achievements, referralPanel, teamLabel }: P
     await fetch('/api/auth/github-link/disconnect', { method: 'DELETE' });
     setGithubConnected(false);
     form.setValue('github_account', '', { shouldDirty: false });
+  };
+
+  const handleXDisconnect = async () => {
+    await fetch('/api/auth/x-link/disconnect', { method: 'DELETE' });
+    setXConnected(false);
+    form.setValue('x_account', '', { shouldDirty: false });
   };
 
   // Load Noun avatar data and sincronizar con contexto (para que UserButton lo muestre)
@@ -179,6 +187,8 @@ export default function ProfileTab({ achievements, referralPanel, teamLabel }: P
                 isAutoSaving={isAutoSaving}
                 githubConnected={githubConnected}
                 onGithubDisconnect={handleGithubDisconnect}
+                xConnected={xConnected}
+                onXDisconnect={handleXDisconnect}
                 handleRemoveSkill={handleRemoveSkill}
                 handleAddSocial={handleAddSocial}
                 handleRemoveSocial={handleRemoveSocial}

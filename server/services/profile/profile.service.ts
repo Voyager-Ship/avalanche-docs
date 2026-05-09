@@ -54,6 +54,7 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
         github_account: user.github_account || null,
         githubConnected: Boolean(user.github_access_token),
         x_account: user.x_account || null,
+        xConnected: Boolean(user.x_verified_at),
         linkedin_account: user.linkedin_account || null,
         wallet: Array.isArray(user.wallet) ? (user.wallet.length > 0 ? user.wallet : null) : (user.wallet ? [user.wallet] : null),
         additional_social_media: user.additional_social_media || [],

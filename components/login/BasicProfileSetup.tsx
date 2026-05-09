@@ -78,6 +78,7 @@ interface BasicProfileSetupProps {
 export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSetupProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [githubConnected, setGithubConnected] = useState(false);
+  const [xConnected, setXConnected] = useState(false);
   const pathname = usePathname();
   const { update } = useSession();
 
@@ -137,6 +138,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
           is_enthusiast: Boolean(userType.is_enthusiast),
         });
         setGithubConnected(Boolean(profile.githubConnected));
+        setXConnected(Boolean(profile.xConnected));
       } catch {
         // silent: blank defaults are fine if the fetch fails
       }
@@ -156,7 +158,18 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
     }
   };
 
+  const handleXDisconnect = async () => {
+    try {
+      await axios.delete('/api/auth/x-link/disconnect');
+      setXConnected(false);
+      form.setValue('x_account', '', { shouldDirty: false, shouldValidate: true });
+    } catch (error) {
+      console.error('Error disconnecting X:', error);
+    }
+  };
+
   const githubConnectHref = `/api/auth/github-link?returnTo=${encodeURIComponent(pathname || '/')}`;
+  const xConnectHref = `/api/auth/x-link?returnTo=${encodeURIComponent(pathname || '/')}`;
 
   const handleSave = async (data: BasicProfileFormValues) => {
     setIsSaving(true);
@@ -237,6 +250,18 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
         <p className="text-xs sm:text-sm text-muted-foreground">
           A few details so we can send you personalized hackathon invites, rewards, and more as they roll out on Builder Hub.
         </p>
+        <p className="text-xs text-muted-foreground mt-2">
+          We collect your social handles to verify identity and send you hackathon invites, prizes, and event updates. Your information is handled per the{' '}
+          <a
+            href="https://www.avax.network/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-foreground"
+          >
+            Avalanche Privacy Policy
+          </a>
+          .
+        </p>
       </CardHeader>
 
       <CardContent className="px-4 sm:px-6">
@@ -302,13 +327,45 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm sm:text-base">X *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://x.com/yourhandle"
-                        {...field}
-                        className="bg-zinc-50 dark:bg-zinc-950 text-sm sm:text-base"
-                      />
-                    </FormControl>
+                    <div className="flex items-center gap-2">
+                      <FormControl>
+                        <Input
+                          placeholder="https://x.com/yourhandle"
+                          {...field}
+                          className="bg-zinc-50 dark:bg-zinc-950 text-sm sm:text-base"
+                        />
+                      </FormControl>
+                      {xConnected ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0"
+                          onClick={handleXDisconnect}
+                        >
+                          Disconnect
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0"
+                          asChild
+                        >
+                          <a href={xConnectHref}>
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="h-4 w-4 mr-2 fill-current"
+                              aria-hidden="true"
+                            >
+                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                            Connect
+                          </a>
+                        </Button>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -105,6 +105,7 @@ export function useProfileForm() {
   const isInitialLoadRef = useRef(true);
   const lastSavedDataRef = useRef<string>("");
   const [githubConnected, setGithubConnected] = useState(false);
+  const [xConnected, setXConnected] = useState(false);
 
   // Initialize form with react-hook-form and Zod
   const form = useForm<ProfileFormValues>({
@@ -197,6 +198,7 @@ export function useProfileForm() {
         };
 
         setGithubConnected(Boolean(profile.githubConnected));
+        setXConnected(Boolean(profile.xConnected));
         form.reset(formValues);
         lastSavedDataRef.current = JSON.stringify(formValues);
         setTimeout(() => { isInitialLoadRef.current = false; }, 500);
@@ -619,6 +621,8 @@ export function useProfileForm() {
     isAutoSaving,
     githubConnected,
     setGithubConnected,
+    xConnected,
+    setXConnected,
     handleFileSelect,
     handleAddSkill,
     handleRemoveSkill,
