@@ -38,37 +38,60 @@ import {
 } from '@/lib/profile/socialAccountValidation';
 
 // Form schema
-const basicProfileSchema = z.object({
-  name: z.string().min(1, 'Full name is required'),
-  country: z.string().optional(),
-  x_account: z
-    .string()
-    .min(1, 'X profile URL is required')
-    .regex(X_ACCOUNT_PATTERN, 'Enter a URL like https://x.com/yourhandle'),
-  linkedin_account: z
-    .string()
-    .min(1, 'LinkedIn URL is required')
-    .regex(LINKEDIN_ACCOUNT_PATTERN, 'Enter a LinkedIn URL like https://www.linkedin.com/in/username'),
-  github_account: z
-    .string()
-    .min(1, 'GitHub profile is required')
-    .regex(GITHUB_ACCOUNT_PATTERN, 'Enter a valid GitHub username or github.com URL'),
-  telegram_account: z
-    .string()
-    .min(1, 'Telegram username is required')
-    .regex(TELEGRAM_ACCOUNT_PATTERN, 'Enter a valid Telegram username (5-32 chars, starts with a letter)'),
-  is_student: z.boolean().default(false),
-  student_institution: z.string().optional(),
-  is_founder: z.boolean().default(false),
-  founder_company_name: z.string().optional(),
-  is_employee: z.boolean().default(false),
-  employee_company_name: z.string().optional(),
-  employee_role: z.string().optional(),
-  is_developer: z.boolean().default(false),
-  is_enthusiast: z.boolean().default(false),
-});
+const basicProfileSchema = z
+  .object({
+    name: z.string().min(1, 'Full name is required'),
+    country: z.string().min(1, 'Country is required'),
+    x_account: z
+      .string()
+      .min(1, 'X profile URL is required')
+      .regex(X_ACCOUNT_PATTERN, 'Enter a URL like https://x.com/yourhandle'),
+    linkedin_account: z
+      .string()
+      .min(1, 'LinkedIn URL is required')
+      .regex(LINKEDIN_ACCOUNT_PATTERN, 'Enter valid LinkedIn URL'),
+    github_account: z
+      .string()
+      .min(1, 'GitHub profile is required')
+      .regex(GITHUB_ACCOUNT_PATTERN, 'Enter a valid GitHub username or github.com URL'),
+    telegram_account: z
+      .string()
+      .min(1, 'Telegram username is required')
+      .regex(TELEGRAM_ACCOUNT_PATTERN, 'Enter a valid Telegram username (5-32 chars, starts with a letter)'),
+    is_student: z.boolean().default(false),
+    student_institution: z.string().optional(),
+    is_founder: z.boolean().default(false),
+    founder_company_name: z.string().optional(),
+    is_employee: z.boolean().default(false),
+    employee_company_name: z.string().optional(),
+    employee_role: z.string().optional(),
+    is_developer: z.boolean().default(false),
+    is_enthusiast: z.boolean().default(false),
+  })
+  .refine(
+    (data) =>
+      data.is_student ||
+      data.is_founder ||
+      data.is_employee ||
+      data.is_developer ||
+      data.is_enthusiast,
+    {
+      message: 'Select at least one role',
+      path: ['is_enthusiast'],
+    }
+  );
 
 type BasicProfileFormValues = z.infer<typeof basicProfileSchema>;
+
+// Normalize names: keep only letters (incl. accented), spaces, hyphens, and
+// apostrophes; lowercase everything then capitalize the first letter of each
+// word (handling O'Connor, Mary-Jane). Strips digits, all-caps shouting, etc.
+function normalizeFullName(input: string): string {
+  const cleaned = input.replace(/[^\p{L}\s'\-]/gu, '');
+  return cleaned
+    .toLocaleLowerCase()
+    .replace(/(^|[\s'\-])(\p{L})/gu, (_, sep: string, ch: string) => sep + ch.toLocaleUpperCase());
+}
 
 interface BasicProfileSetupProps {
   userId: string;
@@ -281,6 +304,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
                         <Input
                           placeholder="Enter your full name"
                           {...field}
+                          onChange={(e) => field.onChange(normalizeFullName(e.target.value))}
                           className="bg-zinc-50 dark:bg-zinc-950 text-sm sm:text-base"
                         />
                       </FormControl>
@@ -297,7 +321,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
                   name="country"
                   render={({ field }) => (
                     <FormItem className="w-full">
-                      <FormLabel className="text-sm sm:text-base">country</FormLabel>
+                      <FormLabel className="text-sm sm:text-base">Country *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="bg-zinc-50 dark:bg-zinc-950 text-sm sm:text-base w-full min-w-0">
@@ -455,7 +479,12 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
 
             {/* Roles */}
             <div className="space-y-3 sm:space-y-4">
-              <FormLabel className="text-sm sm:text-base">Select all roles that apply.</FormLabel>
+              <FormLabel className="text-sm sm:text-base">Select all roles that apply. *</FormLabel>
+              {form.formState.errors.is_enthusiast?.message && (
+                <p className="text-sm font-medium text-destructive">
+                  {String(form.formState.errors.is_enthusiast.message)}
+                </p>
+              )}
 
               {/* Student */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
