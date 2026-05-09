@@ -28,11 +28,12 @@ import Modal from "@/components/ui/Modal";
 import ProcessCompletedDialog from "./ProcessCompletedDialog";
 import { useUTMPreservation } from "@/hooks/use-utm-preservation";
 import { normalizeEventsLang, t } from "@/lib/events/i18n";
+import { clearStoredReferralAttribution } from "@/lib/referrals/client";
 import {
-  captureReferralAttributionFromUrl,
-  clearStoredReferralAttribution,
-  getStoredReferralAttribution,
-} from "@/lib/referrals/client";
+  ReferralFormSection,
+  buildReferralAttributionPayload,
+} from "@/components/referrals/ReferralFormSection";
+import { EMPTY_REFERRER, type ReferrerPickerValue } from "@/components/referrals/ReferrerPicker";
 
 // Esquema de validación
 const createRegisterSchema = (isOnline: boolean) => z.object({
@@ -88,14 +89,10 @@ export function RegisterForm({
   const router = useRouter();
   const [isSavingLater, setIsSavingLater] = useState(false);
   const isAdvancingStepRef = useRef(false);
+  const [referrer, setReferrer] = useState<ReferrerPickerValue>(EMPTY_REFERRER);
 
   // Use UTM preservation hook
   useUTMPreservation();
-
-  // Capture referral attribution from URL on mount
-  useEffect(() => {
-    captureReferralAttributionFromUrl();
-  }, []);
 
   // Determine if hackathon is online based on location
   const isOnlineHackathon = hackathon?.location?.toLowerCase().includes("online") || false;
@@ -422,7 +419,7 @@ export function RegisterForm({
       const finalData = {
         ...data,
         hackathon_id: hackathon_id,
-        referral_attribution: captureReferralAttributionFromUrl() ?? getStoredReferralAttribution(),
+        ...buildReferralAttributionPayload(referrer),
         interests: data.interests ?? [],
         languages: data.languages ?? [],
         roles: data.roles ?? [],
@@ -568,7 +565,12 @@ export function RegisterForm({
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {step === 1 && <RegisterFormStep1 user={session?.user} lang={lang} />}
+          {step === 1 && (
+            <>
+              <RegisterFormStep1 user={session?.user} lang={lang} />
+              <ReferralFormSection value={referrer} onChange={setReferrer} />
+            </>
+          )}
           {step === 2 && <RegisterFormStep3 isOnlineHackathon={isOnlineHackathon} lang={lang} />}
           <Separator className="border-red-300 dark:border-red-300 mt-4" />
           <div className="mt-8 flex flex-col md:flex-row md:justify-between md:items-center">
