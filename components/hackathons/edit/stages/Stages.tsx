@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import * as AccordionPrimitive from '@radix-ui/react-accordion'
-import { ChevronDownIcon, TriangleAlert as TriangleAlertIcon } from 'lucide-react'
+import { ChevronDownIcon, TriangleAlert as TriangleAlertIcon, CircleX } from 'lucide-react'
 import {
   Accordion,
   AccordionContent,
@@ -600,10 +600,10 @@ function StageForm({
 
       // Validar que la fecha de inicio del stage no sea antes de la del hackathon (error)
       if (eventStartDate && stageStart < eventStart) {
-        const errorMsg = language === 'es'
-          ? 'La fecha de inicio del stage no puede ser antes de la fecha de inicio del hackathon'
-          : 'Stage start date cannot be before the hackathon start date'
-        return { error: errorMsg, warning: null }
+        const warnMsg = language === 'es'
+          ? 'La fecha de inicio del stage no debería ser antes de la fecha de inicio del hackathon'
+          : 'Stage start date should not be before the hackathon start date'
+        return { error: null, warning: warnMsg }
       }
 
       // Validar que la fecha de fin del stage no sea después de la del hackathon (warning — permitimos extender)
@@ -663,7 +663,10 @@ function StageForm({
             }
           />
           {dateValidation.error && (
-            <p className="text-sm text-red-500">{dateValidation.error}</p>
+            <div className="mt-1 flex items-center gap-2 text-red-500">
+              <CircleX className="w-4 h-4 inline-block" />
+              <p className="text-sm text-red-500">{dateValidation.error}</p>
+            </div>
           )}
           {dateValidation.warning && (
             <div className="mt-1 flex items-center gap-2 text-yellow-500">

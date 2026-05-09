@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash, ChevronDown, ChevronRight, Database, PlusCircle, FileText, Layers, ImageIcon, Users, AlignLeft, LayoutGrid, X, Save, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Plus, Trash, ChevronDown, ChevronRight, Database, PlusCircle, FileText, Layers, ImageIcon, Users, AlignLeft, LayoutGrid, X, Save, Eye, EyeOff, ExternalLink, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import TrackDialogContent from '@/components/hackathons/hackathon/TrackDialogContent';
 import type { Track } from '@/types/hackathons';
@@ -35,6 +35,7 @@ import {
 import RemoveButton from '@/components/hackathons/edit/stages/RemoveButton';
 import { OverlaySpinner } from '@/components/ui/overlay-spinner';
 import { mapFormToHackathonHeader } from '@/lib/hackathons/map-form-to-hackathon-header';
+import { UserButton } from '@/components/login/user-button/UserButton';
 import { resolveFieldLabel } from '@/lib/events-field-labels';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
@@ -1410,6 +1411,27 @@ const HackathonsEdit = () => {
   const step1BasicTabRef = useRef<HTMLButtonElement | null>(null);
   const step1DatesTabRef = useRef<HTMLButtonElement | null>(null);
 
+  // Preview error flags and refs to clear any leftover inline styles
+  const [bannerPreviewError, setBannerPreviewError] = useState<boolean>(false);
+  const [smallBannerPreviewError, setSmallBannerPreviewError] = useState<boolean>(false);
+  const bannerFallbackRef = useRef<HTMLDivElement | null>(null);
+  const smallBannerFallbackRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    // Clear any inline display style that might have been set imperatively
+    if (bannerFallbackRef.current) {
+      bannerFallbackRef.current.style.display = '';
+    }
+    setBannerPreviewError(false);
+  }, [formDataLatest?.banner]);
+
+  useEffect(() => {
+    if (smallBannerFallbackRef.current) {
+      smallBannerFallbackRef.current.style.display = '';
+    }
+    setSmallBannerPreviewError(false);
+  }, [formDataLatest?.small_banner]);
+
   const [activeStep, setActiveStep] = useState<'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6'>('step1');
   const [contentTab, setContentTab] = useState<'tracks' | 'schedule' | 'resources' | 'speakers'>('tracks');
   const [step1Tab, setStep1Tab] = useState<'basicInfo' | 'datesTime'>('basicInfo');
@@ -2687,6 +2709,7 @@ const HackathonsEdit = () => {
                 <TooltipContent>{t[language].addNewEvent}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            <UserButton />
           </div>
         </div>
       </div>
@@ -3267,7 +3290,7 @@ const HackathonsEdit = () => {
                             onClick={() => handleDone('main')}
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded flex items-center gap-1 cursor-pointer"
                           >
-                            {t[language].done} <ChevronDown className="w-4 h-4" />
+                            {t[language].done} <Check className="w-4 h-4" />
                           </button>
                         </div>
                       </>
@@ -3310,7 +3333,7 @@ const HackathonsEdit = () => {
                               onClick={() => handleDone('stages')}
                               className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded flex items-center gap-1 cursor-pointer"
                             >
-                              {t[language].done} <ChevronDown className="w-4 h-4" />
+                              {t[language].done} <Check className="w-4 h-4" />
                             </button>
                           </div>
                         </>
@@ -3373,12 +3396,17 @@ const HackathonsEdit = () => {
 
                               {/* Or URL Input */}
                               <div className="flex-1">
-                                <Input
+                                <input
                                   type="text"
                                   placeholder="Or enter banner URL"
-                                  value={formDataLatest.banner}
-                                  onChange={e => { setFormDataLatest({ ...formDataLatest, banner: e.target.value }); scrollToSection('about'); }}
-                                  className="w-full"
+                                  value={formDataLatest.banner || ''}
+                                  onChange={(e) => { 
+                                    setFormDataLatest({ ...formDataLatest, banner: e.target.value }); 
+                                    scrollToSection('about'); 
+                                  }}
+                                  className="w-full p-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                                  disabled={false}
+                                  autoComplete="off"
                                 />
                                 {getInlineError('latest.banner') && (
                                   <p className="text-red-500 text-sm mt-2">{getInlineError('latest.banner')}</p>
@@ -3392,15 +3420,17 @@ const HackathonsEdit = () => {
                                 <div className="text-zinc-700 dark:text-zinc-400 text-sm mb-2">Preview (1600 x 909):</div>
                                 <div className="relative w-full max-w-2xl mx-auto bg-zinc-800 border border-zinc-600 rounded-lg overflow-hidden" style={{ aspectRatio: '1600/909' }}>
                                   <img
+                                    key={formDataLatest.banner}
                                     src={formDataLatest.banner}
                                     alt="Banner preview"
                                     className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                      (e.currentTarget.nextElementSibling as HTMLElement)!.style.display = 'flex';
-                                    }}
+                                    onError={() => setBannerPreviewError(true)}
+                                    onLoad={() => setBannerPreviewError(false)}
                                   />
-                                  <div className="hidden absolute inset-0 items-center justify-center text-zinc-500">
+                                  <div
+                                    ref={bannerFallbackRef}
+                                    className={`absolute inset-0 items-center justify-center text-zinc-500 ${bannerPreviewError ? 'flex' : 'hidden'}`}
+                                  >
                                     Invalid image URL
                                   </div>
                                 </div>
@@ -3444,12 +3474,17 @@ const HackathonsEdit = () => {
                               </div>
 
                               <div className="flex-1">
-                                <Input
+                                <input
                                   type="text"
                                   placeholder="Or enter small banner URL"
-                                  value={formDataLatest.small_banner}
-                                  onChange={e => { setFormDataLatest({ ...formDataLatest, small_banner: e.target.value }); scrollToSection('about'); }}
-                                  className="w-full"
+                                  value={formDataLatest.small_banner || ''}
+                                  onChange={(e) => { 
+                                    setFormDataLatest({ ...formDataLatest, small_banner: e.target.value }); 
+                                    scrollToSection('about'); 
+                                  }}
+                                  className="w-full p-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                                  disabled={false}
+                                  autoComplete="off"
                                 />
                                 {getInlineError('latest.small_banner') && (
                                   <p className="text-red-500 text-sm mt-2">{getInlineError('latest.small_banner')}</p>
@@ -3462,15 +3497,17 @@ const HackathonsEdit = () => {
                                 <div className="text-zinc-700 dark:text-zinc-400 text-sm mb-2">Preview (601 x 1028):</div>
                                 <div className="relative w-32 mx-auto bg-zinc-800 border border-zinc-600 rounded-lg overflow-hidden" style={{ aspectRatio: '601/1028' }}>
                                   <img
+                                    key={formDataLatest.small_banner}
                                     src={formDataLatest.small_banner}
                                     alt="Small banner preview"
                                     className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                      (e.currentTarget.nextElementSibling as HTMLElement)!.style.display = 'flex';
-                                    }}
+                                    onError={() => setSmallBannerPreviewError(true)}
+                                    onLoad={() => setSmallBannerPreviewError(false)}
                                   />
-                                  <div className="hidden absolute inset-0 items-center justify-center text-zinc-500 text-xs">
+                                  <div
+                                    ref={smallBannerFallbackRef}
+                                    className={`absolute inset-0 items-center justify-center text-zinc-500 text-xs ${smallBannerPreviewError ? 'flex' : 'hidden'}`}
+                                  >
                                     Invalid image URL
                                   </div>
                                 </div>
@@ -3485,7 +3522,7 @@ const HackathonsEdit = () => {
                             onClick={() => handleDone('images')}
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded flex items-center gap-1 cursor-pointer"
                           >
-                            {t[language].done} <ChevronDown className="w-4 h-4" />
+                            {t[language].done} <Check className="w-4 h-4" />
                           </button>
                         </div>
                       </>
@@ -3581,7 +3618,7 @@ const HackathonsEdit = () => {
                             onClick={() => handleDone('about')}
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded flex items-center gap-1 cursor-pointer"
                           >
-                            {t[language].done} <ChevronDown className="w-4 h-4" />
+                            {t[language].done} <Check className="w-4 h-4" />
                           </button>
                         </div>
                       </>
@@ -3800,7 +3837,7 @@ const HackathonsEdit = () => {
                               onClick={() => handleDone('trackText')}
                               className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded flex items-center gap-1 cursor-pointer"
                             >
-                              {t[language].done} <ChevronDown className="w-4 h-4" />
+                              {t[language].done} <Check className="w-4 h-4" />
                             </button>
                           </div>
                         </>
@@ -4069,7 +4106,7 @@ const HackathonsEdit = () => {
                             onClick={() => handleDone('content')}
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded flex items-center gap-1 cursor-pointer"
                           >
-                            {t[language].done} <ChevronDown className="w-4 h-4" />
+                            {t[language].done} <Check className="w-4 h-4" />
                           </button>
                         </div>
                       </>

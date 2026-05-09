@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 interface JoinBannerLinkProps {
   isRegistered: boolean;
@@ -40,13 +39,13 @@ export default function JoinBannerLink({
       href={getHref()}
       target={getTarget()}
     >
-      <Image
+      <img
         src={bannerSrc}
         alt={altText}
-        width={1270}
-        height={760}
-        className="w-full h-full"
-        priority
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+        }}
       />
     </Link>
   );
