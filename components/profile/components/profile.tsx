@@ -422,7 +422,9 @@ export default function Profile({
                             <Input
                               placeholder="username"
                               {...field}
-                              value={(field.value || "").replace(/^https?:\/\/(?:www\.)?github\.com\//i, "")}
+                              value={(field.value || "")
+                                .replace(/^(?:https?:\/\/)?(?:www\.)?github\.com\//i, "")
+                                .replace(/\/+$/, "")}
                               readOnly={githubConnected}
                             />
                           </FormControl>
@@ -477,7 +479,9 @@ export default function Profile({
                             <Input
                               placeholder="yourhandle"
                               {...field}
-                              value={((field.value as string) || "").replace(/^https?:\/\/(?:www\.)?(?:x|twitter)\.com\//i, "")}
+                              value={((field.value as string) || "")
+                                .replace(/^(?:https?:\/\/)?(?:www\.)?(?:x|twitter)\.com\//i, "")
+                                .replace(/\/+$/, "")}
                               readOnly={xConnected}
                             />
                           </FormControl>
@@ -530,7 +534,9 @@ export default function Profile({
                         <FormControl>
                           <Input
                             placeholder="username"
-                            value={(field.value ?? "").replace(/^https?:\/\/(?:www\.)?linkedin\.com\/(?:in|pub)\//i, "")}
+                            value={(field.value ?? "")
+                              .replace(/^(?:https?:\/\/)?(?:www\.)?linkedin\.com\/(?:in|pub)\//i, "")
+                              .replace(/\/+$/, "")}
                             onChange={(e) => {
                               const v = e.target.value.trim();
                               if (!v) {
@@ -613,7 +619,7 @@ export default function Profile({
                         </FormControl>
                         <FormMessage />
                         <FormDescription className="text-sm text-zinc-500 dark:text-zinc-400">
-                          Connect multiple wallets to receive rewards. Each wallet address must be a valid Ethereum address (0x + 40 hex characters).
+                          Connect any wallets you'd like to receive rewards on.
                         </FormDescription>
                       </div>
                     </FormItem>
