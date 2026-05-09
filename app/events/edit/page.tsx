@@ -38,6 +38,8 @@ import { mapFormToHackathonHeader } from '@/lib/hackathons/map-form-to-hackathon
 import { UserButton } from '@/components/login/user-button/UserButton';
 import { resolveFieldLabel } from '@/lib/events-field-labels';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { AvalancheLogo } from '@/components/navigation/avalanche-logo';
+import { ThemeToggle } from '@/components/console/theme-toggle';
 
 function toLocalDatetimeString(isoString: string) {
   if (!isoString) return '';
@@ -2555,19 +2557,15 @@ const HackathonsEdit = () => {
       {/* OverlaySpinner */}
       <OverlaySpinner open={loading} message={language === 'es' ? 'Guardando cambios...' : 'Saving Changes...'} />
       {/* Header */}
-      <div className="bg-fd-background/80 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700 pr-4 h-14 flex items-center justify-center">
+      <div className="backdrop-blur-lg bg-fd-background/80 dark:bg-black border-b border-zinc-200 dark:border-zinc-700 h-14 flex items-center justify-center">
         <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <AvalancheLogo className="size-7" fill="currentColor"/>
             <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t[language].editEvents}</h1>
             <div className="flex items-center gap-2 px-3 py-1 bg-green-600 rounded-full text-sm">
               <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
               <span className="text-white">Live Preview</span>
             </div>
-            <LanguageButton
-              language={language}
-              onLanguageChange={setLanguage}
-              t={t}
-            />
           </div>
           <div className="flex items-center gap-1.5">
             {isSelectedHackathon && (
@@ -2709,6 +2707,15 @@ const HackathonsEdit = () => {
                 <TooltipContent>{t[language].addNewEvent}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            {/* User, Language, Theme */}
+            <div className="flex items-center gap-2.5 ml-5">
+              <LanguageButton
+                language={language}
+                onLanguageChange={setLanguage}
+                t={t}
+              />
+              <ThemeToggle />
+            </div>
             <UserButton />
           </div>
         </div>
