@@ -71,7 +71,7 @@ const PROFILE_COMPLETION_CRITERIA = 9;
 export function getProfileCompletionPercentage(values: Partial<ProfileFormValues> | undefined): number {
   if (!values) return 0;
   const v = values;
-  const has = (s: string | undefined) => (s?.trim() ?? "") !== "";
+  const has = (s: unknown) => typeof s === "string" && s.trim() !== "";
   const hasRole =
     v.is_developer === true ||
     v.is_enthusiast === true ||
