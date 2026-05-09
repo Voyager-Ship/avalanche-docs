@@ -420,13 +420,9 @@ export default function Profile({
                         <div className="flex items-center gap-2">
                           <FormControl>
                             <Input
-                              placeholder="https://github.com/username"
+                              placeholder="username"
                               {...field}
-                              value={
-                                githubConnected
-                                  ? (field.value || "").replace(/^https?:\/\/(?:www\.)?github\.com\//i, "")
-                                  : field.value
-                              }
+                              value={(field.value || "").replace(/^https?:\/\/(?:www\.)?github\.com\//i, "")}
                               readOnly={githubConnected}
                             />
                           </FormControl>
@@ -474,18 +470,14 @@ export default function Profile({
                   name="x_account"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center gap-4">
-                      <FormLabel className="w-32 shrink-0">X *</FormLabel>
+                      <FormLabel className="w-32 shrink-0">X</FormLabel>
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
                           <FormControl>
                             <Input
-                              placeholder="https://x.com/yourhandle"
+                              placeholder="yourhandle"
                               {...field}
-                              value={
-                                xConnected
-                                  ? ((field.value as string) || "").replace(/^https?:\/\/(?:www\.)?(?:x|twitter)\.com\//i, "")
-                                  : (field.value ?? "")
-                              }
+                              value={((field.value as string) || "").replace(/^https?:\/\/(?:www\.)?(?:x|twitter)\.com\//i, "")}
                               readOnly={xConnected}
                             />
                           </FormControl>
@@ -533,13 +525,44 @@ export default function Profile({
                   name="linkedin_account"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center gap-4">
-                      <FormLabel className="w-32 shrink-0">LinkedIn *</FormLabel>
+                      <FormLabel className="w-32 shrink-0">LinkedIn</FormLabel>
                       <div className="flex-1">
                         <FormControl>
                           <Input
-                            placeholder="https://www.linkedin.com/in/username"
+                            placeholder="username"
+                            value={(field.value ?? "").replace(/^https?:\/\/(?:www\.)?linkedin\.com\/(?:in|pub)\//i, "")}
+                            onChange={(e) => {
+                              const v = e.target.value.trim();
+                              if (!v) {
+                                field.onChange("");
+                                return;
+                              }
+                              if (/^https?:\/\//i.test(v)) {
+                                field.onChange(v);
+                              } else {
+                                field.onChange(`https://www.linkedin.com/in/${v}`);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Telegram */}
+                <FormField
+                  control={form.control}
+                  name="telegram_account"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center gap-4">
+                      <FormLabel className="w-32 shrink-0">Telegram</FormLabel>
+                      <div className="flex-1">
+                        <FormControl>
+                          <Input
+                            placeholder="username"
                             {...field}
-                            value={field.value ?? ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -592,26 +615,6 @@ export default function Profile({
                         <FormDescription className="text-sm text-zinc-500 dark:text-zinc-400">
                           Connect multiple wallets to receive rewards. Each wallet address must be a valid Ethereum address (0x + 40 hex characters).
                         </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                {/* Telegram */}
-                <FormField
-                  control={form.control}
-                  name="telegram_account"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center gap-4">
-                      <FormLabel className="w-32 shrink-0">Telegram *</FormLabel>
-                      <div className="flex-1">
-                        <FormControl>
-                          <Input
-                            placeholder="Enter your Telegram username (without @)"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
                       </div>
                     </FormItem>
                   )}

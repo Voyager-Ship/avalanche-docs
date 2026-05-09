@@ -58,7 +58,7 @@ const basicProfileSchema = z
     telegram_account: z
       .string()
       .min(1, 'Telegram username is required')
-      .regex(TELEGRAM_ACCOUNT_PATTERN, 'Enter a valid Telegram username (5-32 chars, starts with a letter)'),
+      .regex(TELEGRAM_ACCOUNT_PATTERN, 'Enter valid username'),
     is_student: z.boolean().default(false),
     student_institution: z.string().optional(),
     is_founder: z.boolean().default(false),
