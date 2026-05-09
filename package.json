@@ -23,8 +23,6 @@
     "enrich:chains": "tsx ./scripts/enrich-chains.mts",
     "enrich:chains:prune": "tsx ./scripts/enrich-chains.mts --prune",
     "index-repos": "tsx ./scripts/index-repos.mts",
-    "seed:build-games:stages": "tsx ./scripts/import-build-games-stage-progression.mts",
-    "check:build-games:stages": "tsx ./scripts/check-build-games-stage-progression.mts",
     "postinstall": "prisma generate && fumadocs-mdx && node ./scripts/update_docker_tags.mjs && tsx ./scripts/generate-event-signatures.mts",
     "postbuild": "tsx ./utils/update-index.ts",
     "commitlint": "commitlint --edit",
