@@ -28,9 +28,11 @@ export interface ReferralTargetGroups {
 export function ReferralLinkGenerator({
   initialLinks,
   targets,
+  buttonVariant = "default",
 }: {
   initialLinks: ReferralLinkSummary[];
   targets: ReferralTargetGroups;
+  buttonVariant?: "default" | "outline";
 }) {
   const [referralLinks, setReferralLinks] = useState<ReferralLinkSummary[]>(initialLinks);
   const [creatingTargetKey, setCreatingTargetKey] = useState<string | null>(null);
@@ -101,6 +103,7 @@ export function ReferralLinkGenerator({
             icon={<UserPlus className="h-4 w-4" />}
             title="Builder Hub"
             targets={targets.signup}
+            buttonVariant={buttonVariant}
             getLatestLinkForTarget={getLatestLinkForTarget}
             creatingTargetKey={creatingTargetKey}
             copiedLinkId={copiedLinkId}
@@ -111,6 +114,7 @@ export function ReferralLinkGenerator({
             title="Active And Upcoming Events"
             targets={targets.event}
             emptyLabel="No active or upcoming public events found."
+            buttonVariant={buttonVariant}
             getLatestLinkForTarget={getLatestLinkForTarget}
             creatingTargetKey={creatingTargetKey}
             copiedLinkId={copiedLinkId}
@@ -120,6 +124,7 @@ export function ReferralLinkGenerator({
             icon={<Gift className="h-4 w-4" />}
             title="Active Grants"
             targets={targets.grant}
+            buttonVariant={buttonVariant}
             getLatestLinkForTarget={getLatestLinkForTarget}
             creatingTargetKey={creatingTargetKey}
             copiedLinkId={copiedLinkId}
@@ -154,6 +159,7 @@ function TargetGroup({
   icon: _icon,
   targets,
   emptyLabel = "No referral targets available.",
+  buttonVariant = "default",
   getLatestLinkForTarget,
   creatingTargetKey,
   copiedLinkId,
@@ -163,6 +169,7 @@ function TargetGroup({
   icon: ReactNode;
   targets: ReferralTargetPreset[];
   emptyLabel?: string;
+  buttonVariant?: "default" | "outline";
   getLatestLinkForTarget: (target: ReferralTargetPreset) => ReferralLinkSummary | undefined;
   creatingTargetKey: string | null;
   copiedLinkId: string | null;
@@ -182,6 +189,7 @@ function TargetGroup({
           <Button
             key={target.key}
             size="sm"
+            variant={buttonVariant}
             onClick={() => onGenerateAndCopy(target)}
             disabled={isCreating}
             title={target.detail}

@@ -71,22 +71,25 @@ export default async function ProfileWrapper({
     shareUrl: buildReferralUrl(origin, link.destination_url, link.code),
   }));
 
+  const referralPanel = (
+    <ReferralLinkGenerator
+      initialLinks={initialLinks}
+      targets={referralTargets}
+      buttonVariant="outline"
+    />
+  );
+
   return (
     <UTMPreservationWrapper>
-      <main className='container relative max-w-[1400px] py-4 lg:py-16 flex flex-col gap-4'>
-        {teamLabel && (
-          <div className='flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 px-1'>
-            <span>Team:</span>
-            <span className='inline-flex items-center rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100'>
-              {teamLabel}
-            </span>
-          </div>
-        )}
-
-        <ReferralLinkGenerator initialLinks={initialLinks} targets={referralTargets} />
-
+      <main className='container relative max-w-[1400px] py-4 lg:py-16 '>
         <div className='border border-zinc-300 dark:border-transparent shadow-sm dark:bg-zinc-950 bg-zinc-50 rounded-md'>
-          <ProfileForm initialData={profileData} id={session.user.id} achievements={<Achievements />} />
+          <ProfileForm
+            initialData={profileData}
+            id={session.user.id}
+            achievements={<Achievements />}
+            referralPanel={referralPanel}
+            teamLabel={teamLabel}
+          />
         </div>
       </main>
     </UTMPreservationWrapper>
