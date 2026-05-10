@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  LINKEDIN_ACCOUNT_PATTERN,
+  TELEGRAM_ACCOUNT_PATTERN,
+} from "@/lib/profile/socialAccountValidation";
 
 /**
  * Shared Zod schemas for the extended user profile.
@@ -10,6 +14,11 @@ import { z } from "zod";
 
 /** A notification preference tuple: [inHub, byEmail]. */
 const NotificationPreferenceSchema = z.tuple([z.boolean(), z.boolean()]);
+const nullableProfileAccount = (pattern: RegExp, message: string) =>
+  z
+    .union([z.string().trim().regex(pattern, message), z.literal("")])
+    .nullable()
+    .optional();
 
 /** Map from notification key to its preference tuple. */
 export const NotificationMeansSchema = z.record(
@@ -57,15 +66,20 @@ export const UpdateExtendedProfileSchema = z
       .optional(),
     image: z.string().nullable().optional(),
     country: z.string().nullable().optional(),
-    github_account: z.string().nullable().optional(),
-    x_account: z.string().nullable().optional(),
-    linkedin_account: z.string().nullable().optional(),
+    // GitHub and X are OAuth-owned; manual writes are intentionally stripped.
+    linkedin_account: nullableProfileAccount(
+      LINKEDIN_ACCOUNT_PATTERN,
+      "Invalid LinkedIn URL.",
+    ),
     wallet: z.array(z.string()).nullable().optional(),
     additional_social_media: z.array(z.string()).optional(),
     skills: z.array(z.string()).optional(),
     notifications: z.boolean().nullable().optional(),
     profile_privacy: z.string().nullable().optional(),
-    telegram_account: z.string().nullable().optional(),
+    telegram_account: nullableProfileAccount(
+      TELEGRAM_ACCOUNT_PATTERN,
+      "Invalid Telegram username.",
+    ),
     notification_means: NotificationMeansSchema.nullable().optional(),
     user_type: UserTypeSchema.optional(),
   })

@@ -42,7 +42,7 @@ function buildReturnTarget(req: NextRequest, base: string, status: 'linked' | 'a
 }
 
 export async function GET(req: NextRequest) {
-  const base = process.env.NEXTAUTH_URL ?? '';
+  const base = process.env.NEXTAUTH_URL ?? req.nextUrl.origin;
   const errorRedirect = buildReturnTarget(req, base, 'error');
 
   const session = await getAuthSession();
@@ -59,8 +59,13 @@ export async function GET(req: NextRequest) {
     return redirectAndClearState(errorRedirect);
   }
 
-  const clientId = process.env.GITHUB_LINK_ID!;
-  const clientSecret = process.env.GITHUB_LINK_SECRET!;
+  const clientId = process.env.GITHUB_LINK_ID;
+  const clientSecret = process.env.GITHUB_LINK_SECRET;
+  if (!clientId || !clientSecret) {
+    console.error('Missing GITHUB_LINK_ID or GITHUB_LINK_SECRET for GitHub account linking');
+    return redirectAndClearState(errorRedirect);
+  }
+
   const redirectUri = `${base}/api/auth/github-link/callback`;
 
   const tokenRes = await fetch('https://github.com/login/oauth/access_token', {

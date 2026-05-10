@@ -196,6 +196,23 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
   const xConnectHref = `/api/auth/x-link?returnTo=${encodeURIComponent(pathname || '/')}`;
 
   const handleSave = async (data: BasicProfileFormValues) => {
+    let hasConnectionError = false;
+    if (!xConnected) {
+      form.setError('x_account', {
+        type: 'manual',
+        message: 'Connect your X account to continue',
+      });
+      hasConnectionError = true;
+    }
+    if (!githubConnected) {
+      form.setError('github_account', {
+        type: 'manual',
+        message: 'Connect your GitHub account to continue',
+      });
+      hasConnectionError = true;
+    }
+    if (hasConnectionError) return;
+
     setIsSaving(true);
     try {
       // Format data to match the API expected format
@@ -211,9 +228,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
         is_enthusiast,
         name,
         country,
-        x_account,
         linkedin_account,
-        github_account,
         telegram_account,
       } = data;
 
@@ -221,9 +236,7 @@ export function BasicProfileSetup({ userId, onCompleteProfile }: BasicProfileSet
       const profileData = {
         name,
         country,
-        x_account,
         linkedin_account,
-        github_account,
         telegram_account,
         user_type: {
           is_student,

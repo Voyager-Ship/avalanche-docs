@@ -425,7 +425,7 @@ export default function Profile({
                               value={(field.value || "")
                                 .replace(/^(?:https?:\/\/)?(?:www\.)?github\.com\//i, "")
                                 .replace(/\/+$/, "")}
-                              readOnly={githubConnected}
+                              readOnly
                             />
                           </FormControl>
                           {githubConnected ? (
@@ -482,7 +482,7 @@ export default function Profile({
                               value={((field.value as string) || "")
                                 .replace(/^(?:https?:\/\/)?(?:www\.)?(?:x|twitter)\.com\//i, "")
                                 .replace(/\/+$/, "")}
-                              readOnly={xConnected}
+                              readOnly
                             />
                           </FormControl>
                           {xConnected ? (
@@ -527,34 +527,39 @@ export default function Profile({
                 <FormField
                   control={form.control}
                   name="linkedin_account"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center gap-4">
-                      <FormLabel className="w-32 shrink-0">LinkedIn</FormLabel>
-                      <div className="flex-1">
-                        <FormControl>
-                          <Input
-                            placeholder="username"
-                            value={(field.value ?? "")
-                              .replace(/^(?:https?:\/\/)?(?:www\.)?linkedin\.com\/(?:in|pub)\//i, "")
-                              .replace(/\/+$/, "")}
-                            onChange={(e) => {
-                              const v = e.target.value.trim();
-                              if (!v) {
-                                field.onChange("");
-                                return;
-                              }
-                              if (/^https?:\/\//i.test(v)) {
-                                field.onChange(v);
-                              } else {
-                                field.onChange(`https://www.linkedin.com/in/${v}`);
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const hasLinkedin = typeof field.value === "string" && field.value.trim() !== "";
+                    return (
+                      <FormItem className="flex flex-row items-center gap-4">
+                        <FormLabel className="w-32 shrink-0">LinkedIn</FormLabel>
+                        <div className="flex-1">
+                          <FormControl>
+                            <Input
+                              placeholder="username"
+                              value={(field.value ?? "")
+                                .replace(/^(?:https?:\/\/)?(?:www\.)?linkedin\.com\/(?:in|pub)\//i, "")
+                                .replace(/\/+$/, "")}
+                              readOnly={hasLinkedin}
+                              onChange={(e) => {
+                                if (hasLinkedin) return;
+                                const v = e.target.value.trim();
+                                if (!v) {
+                                  field.onChange("");
+                                  return;
+                                }
+                                if (/^https?:\/\//i.test(v)) {
+                                  field.onChange(v);
+                                } else {
+                                  field.onChange(`https://www.linkedin.com/in/${v}`);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 {/* Telegram */}
@@ -572,55 +577,6 @@ export default function Profile({
                           />
                         </FormControl>
                         <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                {/* Wallets */}
-                <FormField
-                  control={form.control}
-                  name="wallet"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start gap-4">
-                      <FormLabel className="w-32 shrink-0 pt-2">EVM Wallet</FormLabel>
-                      <div className="flex-1">
-                        <FormControl>
-                          <div className="space-y-2">
-                            {field.value?.map((walletAddress, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                        <FormControl>
-                          <Input
-                                    value={walletAddress}
-                                    readOnly
-                            className="font-mono text-sm"
-                                    placeholder="0x... (Wallet address)"
-                          />
-                        </FormControl>
-                          <Button
-                            type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleRemoveWallet(index)}
-                          >
-                                  <X className="h-4 w-4" />
-                          </Button>
-                              </div>
-                            ))}
-                          <div className="shrink-0">
-                            <WalletConnectButton
-                              onWalletConnected={(address) => {
-                                  handleAddWallet(address);
-                              }}
-                                currentAddress={field.value?.[field.value.length - 1]}
-                            />
-                            </div>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                        <FormDescription className="text-sm text-zinc-500 dark:text-zinc-400">
-                          Connect any wallets you'd like to receive rewards on.
-                        </FormDescription>
                       </div>
                     </FormItem>
                   )}
@@ -704,6 +660,56 @@ export default function Profile({
                     );
                   }}
                 />
+
+                {/* Wallets */}
+                <FormField
+                  control={form.control}
+                  name="wallet"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start gap-4">
+                      <FormLabel className="w-32 shrink-0 pt-2">EVM Wallet</FormLabel>
+                      <div className="flex-1">
+                        <FormControl>
+                          <div className="space-y-2">
+                            {field.value?.map((walletAddress, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <FormControl>
+                                  <Input
+                                    value={walletAddress}
+                                    readOnly
+                                    className="font-mono text-sm"
+                                    placeholder="0x... (Wallet address)"
+                                  />
+                                </FormControl>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleRemoveWallet(index)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <div className="shrink-0">
+                              <WalletConnectButton
+                                onWalletConnected={(address) => {
+                                  handleAddWallet(address);
+                                }}
+                                currentAddress={field.value?.[field.value.length - 1]}
+                              />
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                        <FormDescription className="text-sm text-zinc-500 dark:text-zinc-400">
+                          Connect any wallets you'd like to receive rewards on.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
               </div>
 
               {/* Skills Section */}

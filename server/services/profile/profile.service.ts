@@ -72,8 +72,17 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
  * Applies an explicit whitelist of fields (no request-body spread) and maps
  * frontend-facing names to their database column names:
  *   - username      -> user_name
- *   - socials       -> social_media
+ *   - additional_social_media -> additional_social_media
+ *
+ * GitHub and X are intentionally not handled here. Those fields are owned by
+ * their OAuth link routes so users cannot self-attest verified accounts.
  */
+function nullableTrimmedString(value: string | null | undefined): string | null {
+    if (value == null) return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
 function buildUserUpdateData(
     profileData: UpdateExtendedProfileData
 ): Prisma.UserUpdateInput {
@@ -86,14 +95,12 @@ function buildUserUpdateData(
     if (profileData.notification_email !== undefined) updateData.notification_email = profileData.notification_email;
     if (profileData.image !== undefined) updateData.image = profileData.image;
     if (profileData.country !== undefined) updateData.country = profileData.country;
-    if (profileData.github_account !== undefined) updateData.github_account = profileData.github_account;
-    if (profileData.x_account !== undefined) updateData.x_account = profileData.x_account;
-    if (profileData.linkedin_account !== undefined) updateData.linkedin_account = profileData.linkedin_account;
+    if (profileData.linkedin_account !== undefined) updateData.linkedin_account = nullableTrimmedString(profileData.linkedin_account);
     if (profileData.wallet !== undefined) updateData.wallet = profileData.wallet ?? [];
     if (profileData.skills !== undefined) updateData.skills = profileData.skills;
     if (profileData.notifications !== undefined) updateData.notifications = profileData.notifications;
     if (profileData.profile_privacy !== undefined) updateData.profile_privacy = profileData.profile_privacy;
-    if (profileData.telegram_account !== undefined) updateData.telegram_account = profileData.telegram_account;
+    if (profileData.telegram_account !== undefined) updateData.telegram_account = nullableTrimmedString(profileData.telegram_account);
 
     if (profileData.username !== undefined) {
         updateData.user_name = profileData.username.trim();

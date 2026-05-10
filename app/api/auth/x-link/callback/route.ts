@@ -41,7 +41,7 @@ function buildReturnTarget(req: NextRequest, base: string, status: 'linked' | 'a
 }
 
 export async function GET(req: NextRequest) {
-  const base = process.env.NEXTAUTH_URL ?? '';
+  const base = process.env.NEXTAUTH_URL ?? req.nextUrl.origin;
   const errorRedirect = buildReturnTarget(req, base, 'error');
 
   const session = await getAuthSession();
@@ -59,8 +59,13 @@ export async function GET(req: NextRequest) {
     return redirectAndClearState(errorRedirect);
   }
 
-  const clientId = process.env.X_ID!;
-  const clientSecret = process.env.X_SECRET!;
+  const clientId = process.env.X_LINK_ID;
+  const clientSecret = process.env.X_LINK_SECRET;
+  if (!clientId || !clientSecret) {
+    console.error('Missing X_LINK_ID or X_LINK_SECRET for X account linking');
+    return redirectAndClearState(errorRedirect);
+  }
+
   const redirectUri = `${base}/api/auth/x-link/callback`;
   const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 

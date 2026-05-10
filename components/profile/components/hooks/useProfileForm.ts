@@ -188,13 +188,15 @@ export function useProfileForm() {
           student_institution: basicProfileData?.student_institution || profile.user_type?.student_institution || "",
           company_name: profile.user_type?.company_name || "",
           role: profile.user_type?.role || "",
-          github: profile.github || "",
+          github_account: profile.github_account || "",
+          x_account: profile.x_account || "",
+          linkedin_account: profile.linkedin_account || "",
           wallet: Array.isArray(profile.wallet) ? profile.wallet : (profile.wallet ? [profile.wallet] : []),
-          socials: profile.socials || [],
+          additional_social_media: profile.additional_social_media || [],
           skills: profile.skills || [],
           notifications: profile.notifications || false,
           profile_privacy: profile.profile_privacy || "public",
-          telegram_user: profile.telegram_user || "",
+          telegram_account: profile.telegram_account || "",
         };
 
         setGithubConnected(Boolean(profile.githubConnected));
@@ -218,11 +220,14 @@ export function useProfileForm() {
   
   useEffect(() => {
     const gh = searchParams.get('gh');
-    if (!gh) return;
+    const x = searchParams.get('x');
+    if (!gh && !x) return;
 
     const params = new URLSearchParams(searchParams.toString());
     params.delete('gh');
-    router.replace(`${pathname}?${params.toString()}`);
+    params.delete('x');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
   }, []);
 
   // Load profile data on component mount
@@ -307,6 +312,8 @@ export function useProfileForm() {
         company_name,
         role,
         wallet,
+        github_account: _githubAccount,
+        x_account: _xAccount,
         ...restData
       } = data;
 
@@ -474,6 +481,8 @@ export function useProfileForm() {
         company_name,
         role,
         wallet,
+        github_account: _githubAccount,
+        x_account: _xAccount,
         ...restData
       } = data;
 

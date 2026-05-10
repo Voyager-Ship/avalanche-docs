@@ -32,7 +32,7 @@ export async function upsertUser(user: User, account: Account | null, profile: P
 
   const githubData = account?.provider === 'github' && (profile as { login?: string })?.login
     ? {
-        github: `https://github.com/${(profile as { login: string }).login}`,
+        github_account: `https://github.com/${(profile as { login: string }).login}`,
         ...(account.access_token
           ? { github_access_token: encryptToken(account.access_token) }
           : {}),

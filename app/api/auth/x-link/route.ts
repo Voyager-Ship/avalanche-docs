@@ -16,6 +16,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const base = process.env.NEXTAUTH_URL ?? req.nextUrl.origin;
+  const clientId = process.env.X_LINK_ID;
+  if (!clientId) {
+    console.error('Missing X_LINK_ID for X account linking');
+    return NextResponse.redirect(`${base}/profile?x=error`);
+  }
+
   const state = crypto.randomUUID();
   const codeVerifier = base64UrlEncode(crypto.randomBytes(64));
   const codeChallenge = base64UrlEncode(
@@ -24,10 +31,10 @@ export async function GET(req: NextRequest) {
 
   const url = new URL('https://twitter.com/i/oauth2/authorize');
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('client_id', process.env.X_ID!);
+  url.searchParams.set('client_id', clientId);
   url.searchParams.set(
     'redirect_uri',
-    `${process.env.NEXTAUTH_URL}/api/auth/x-link/callback`
+    `${base}/api/auth/x-link/callback`
   );
   url.searchParams.set('scope', 'users.read tweet.read');
   url.searchParams.set('state', state);

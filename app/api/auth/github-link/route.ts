@@ -8,12 +8,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const base = process.env.NEXTAUTH_URL ?? req.nextUrl.origin;
+  const clientId = process.env.GITHUB_LINK_ID;
+  if (!clientId) {
+    console.error('Missing GITHUB_LINK_ID for GitHub account linking');
+    return NextResponse.redirect(`${base}/profile?gh=error`);
+  }
+
   const state = crypto.randomUUID();
   const url = new URL('https://github.com/login/oauth/authorize');
-  url.searchParams.set('client_id', process.env.GITHUB_LINK_ID!);
+  url.searchParams.set('client_id', clientId);
   url.searchParams.set(
     'redirect_uri',
-    `${process.env.NEXTAUTH_URL}/api/auth/github-link/callback`
+    `${base}/api/auth/github-link/callback`
   );
   url.searchParams.set('scope', 'read:user repo');
   url.searchParams.set('state', state);
