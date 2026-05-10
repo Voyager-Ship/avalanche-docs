@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash, ChevronDown, ChevronRight, Database, PlusCircle, FileText, Layers, ImageIcon, Users, AlignLeft, LayoutGrid, X, Save, Eye, EyeOff, ExternalLink, Check } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Database, PlusCircle, FileText, Layers, ImageIcon, Users, AlignLeft, LayoutGrid, X, Save, Eye, EyeOff, ExternalLink, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import TrackDialogContent from '@/components/hackathons/hackathon/TrackDialogContent';
 import type { Track } from '@/types/hackathons';
@@ -17,6 +17,7 @@ import { useSession, SessionProvider } from "next-auth/react";
 import axios from 'axios';
 import { initialData, IDataMain, IDataContent, IDataLatest, ITrack, ISchedule, ISpeaker, IResource, IPartner } from './initials';
 import { LanguageButton } from './language-button';
+import PartnerItem from '@/components/hackathons/edit/PartnerItem';
 import { EmailListInput } from '@/components/common/EmailListInput';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -399,16 +400,14 @@ const TrackItem = memo(function TrackItem({ track, index, collapsed, onChange, o
           <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between gap-2 py-1 text-sm font-medium outline-none [&[data-state=open]_svg.chevron]:rotate-180">
             <h3 className="text-lg font-semibold my-1">Track {index + 1}</h3>
             <div className="flex items-center gap-2">
-              <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
-              {tracksLength > 1 && (
-                <RemoveButton
-                  onRemove={() => onRemove(index)}
-                  tooltipLabel={t[language].removeTrack}
-                  confirmPrompt={t[language].confirmDeletePrompt}
-                  size={18}
-                  language={language}
-                />
-              )}
+            <ChevronDown className="chevron text-muted-foreground size-4 shrink-0 transition-transform duration-200" />
+              <RemoveButton
+                onRemove={() => onRemove(index)}
+                tooltipLabel={t[language].removeTrack}
+                confirmPrompt={t[language].confirmDeletePrompt}
+                size={18}
+                language={language}
+              />
             </div>
           </AccordionPrimitive.Trigger>
         </AccordionPrimitive.Header>
@@ -771,7 +770,7 @@ type ResourceTemplate = {
   icon: string;
 };
 
-const SpeakerItem = memo(function SpeakerItem({ speaker, index, collapsed, onChange, onDone, onExpand, onRemove, t, language, removing, speakersLength, onPictureChange, onImageFileTooLarge, onApplyTemplate, speakerTemplates, loadingSpeakerTemplates, fieldError }: SpeakerItemProps) {
+const SpeakerItem = memo(function SpeakerItem({ speaker, index, onChange, onDone, onRemove, t, language, removing, speakersLength, onPictureChange, onImageFileTooLarge, onApplyTemplate, speakerTemplates, loadingSpeakerTemplates, fieldError }: SpeakerItemProps) {
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect((): void => {
@@ -1371,12 +1370,13 @@ const HackathonsEdit = () => {
       main: initialData.main,
       content: {
         ...initialData.content,
-        partners: [{ name: '', logo: '' }],
+        partners: [],
         stages: [],
       },
       latest: initialData.latest,
       cohostsEmails: [],
     });
+    setRawTrackText("");
     setShowForm(false);
   };
 
@@ -1435,7 +1435,9 @@ const HackathonsEdit = () => {
   }, [formDataLatest?.small_banner]);
 
   const [activeStep, setActiveStep] = useState<'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6'>('step1');
-  const [contentTab, setContentTab] = useState<'tracks' | 'schedule' | 'resources' | 'speakers'>('tracks');
+  const [contentTab, setContentTab] = useState<
+    'tracks' | 'schedule' | 'resources' | 'speakers' | 'partners'
+  >('tracks');
   const [step1Tab, setStep1Tab] = useState<'basicInfo' | 'datesTime'>('basicInfo');
   const [scheduleMode, setScheduleMode] = useState<'calendar' | 'manual'>('calendar');
   const [pendingManualSwitch, setPendingManualSwitch] = useState(false);
@@ -1665,15 +1667,6 @@ const HackathonsEdit = () => {
     setFormDataMain({ ...formDataMain, tags: newTags });
   };
 
-  const handlePartnerInputChange = (index: number, value: string) => {
-    const newPartners = [...formDataContent.partners];
-    newPartners[index] = { ...newPartners[index], name: value };
-    setFormDataContent({
-      ...formDataContent,
-      partners: newPartners,
-    });
-  };
-
   const addPartner = () => {
     setFormDataContent({
       ...formDataContent,
@@ -1745,10 +1738,8 @@ const HackathonsEdit = () => {
   };
 
   const removeTrack = (index: number) => {
-    if (formDataContent.tracks.length > 1) {
-      const newTracks = formDataContent.tracks.filter((_, i) => i !== index);
-      setFormDataContent({ ...formDataContent, tracks: newTracks });
-    }
+    const newTracks = formDataContent.tracks.filter((_, i) => i !== index);
+    setFormDataContent({ ...formDataContent, tracks: newTracks });
   };
 
   const removeSchedule = (index: number) => {
@@ -1812,9 +1803,17 @@ const HackathonsEdit = () => {
         const section = issue.section?.trim()
           ? issue.section
           : (() => {
-            const m = issue.path.match(/^content\.(schedule|tracks|resources)\.(\d+)\./);
+            const m = issue.path.match(
+              /^content\.(schedule|tracks|resources|speakers|partners)\.(\d+)\./
+            );
             if (m) {
-              const typeMap: Record<string, string> = { schedule: 'Schedule', tracks: 'Track', resources: 'Resource' };
+              const typeMap: Record<string, string> = {
+                schedule: 'Schedule',
+                tracks: 'Track',
+                resources: 'Resource',
+                speakers: 'Speaker',
+                partners: 'Partner',
+              };
               return `${typeMap[m[1]]} ${Number(m[2]) + 1}`;
             }
             return issue.section;
@@ -1878,6 +1877,12 @@ const HackathonsEdit = () => {
     } else if (/^content\.resources\.\d+\./.test(path)) {
       collapsedKey = 'content'; targetRef = step6Ref; stepKey = 'step6';
       setContentTab('resources');
+    } else if (/^content\.speakers\.\d+\./.test(path)) {
+      collapsedKey = 'content'; targetRef = step6Ref; stepKey = 'step6';
+      setContentTab('speakers');
+    } else if (/^content\.partners\.\d+\./.test(path)) {
+      collapsedKey = 'content'; targetRef = step6Ref; stepKey = 'step6';
+      setContentTab('partners');
     } else if (section.startsWith('Content') || path.startsWith('content.')) {
       collapsedKey = 'content'; targetRef = step6Ref; stepKey = 'step6';
     }
@@ -2324,6 +2329,19 @@ const HackathonsEdit = () => {
     scrollToSection('resources');
   }, [setFormDataContent]);
 
+  const handlePartnerFieldChange = useCallback(
+    (idx: number, field: 'name' | 'logo', value: string) => {
+      setFormDataContent((prev) => {
+        const newPartners = [...prev.partners];
+        const current = newPartners[idx] ?? { name: '', logo: '' };
+        newPartners[idx] = { ...current, [field]: value };
+        return { ...prev, partners: newPartners };
+      });
+      scrollToSection('partners');
+    },
+    [setFormDataContent]
+  );
+
   const loadMockData = () => {
     setFormDataMain({
       title: "Avalanche 2025",
@@ -2347,7 +2365,7 @@ const HackathonsEdit = () => {
       custom_link: null,
       top_most: false,
       google_calendar_id: null,
-      new_layout: false,
+      new_layout: true,
     });
 
     setFormDataContent({
@@ -2454,9 +2472,9 @@ const HackathonsEdit = () => {
       ],
       address: "Virtual Event - Join from anywhere in the world!",
       partners: [],
-      tracks_text: "# 🚀 Avalanche Hackathon 2025\n\n## Welcome to the Future of Web3\n\nJoin us for an incredible 48-hour hackathon where developers, designers, and entrepreneurs come together to build the next generation of blockchain applications on **Avalanche**.\n\n### 🎯 What We're Looking For\n\n- **Innovation**: Breakthrough ideas that push the boundaries of what's possible\n- **Technical Excellence**: Well-architected, secure, and scalable solutions\n- **User Experience**: Applications that are intuitive and accessible to everyone\n- **Real-World Impact**: Solutions that solve actual problems and create value\n\n### 🏆 Prizes & Recognition\n\n- **1st Place**: $25,000 + Incubation Program\n- **2nd Place**: $15,000 + Mentorship\n- **3rd Place**: $10,000 + Community Support\n- **Special Tracks**: Additional prizes for DeFi, Gaming, and Security innovations\n\n### 🤝 Community & Support\n\nOur team of mentors, technical experts, and community members will be available throughout the hackathon to help you succeed. Don't hesitate to reach out for guidance, technical support, or just to chat about your ideas!\n\n---\n\n**Ready to build the future? Let's make it happen together!** 🚀",
       speakers_text: "Students will have access to the Avalanche Academy curriculum, as well as Avalanche documentation and the Avalanche faucet.",
       join_custom_link: "",
+      tracks_text: "# 🚀 Avalanche Hackathon 2025\n\n## Welcome to the Future of Web3\n\nJoin us for an incredible 48-hour hackathon where developers, designers, and entrepreneurs come together to build the next generation of blockchain applications on **Avalanche**.\n\n### 🎯 What We're Looking For\n\n- **Innovation**: Breakthrough ideas that push the boundaries of what's possible\n- **Technical Excellence**: Well-architected, secure, and scalable solutions\n- **User Experience**: Applications that are intuitive and accessible to everyone\n- **Real-World Impact**: Solutions that solve actual problems and create value\n\n### 🏆 Prizes & Recognition\n\n- **1st Place**: $25,000 + Incubation Program\n- **2nd Place**: $15,000 + Mentorship\n- **3rd Place**: $10,000 + Community Support\n- **Special Tracks**: Additional prizes for DeFi, Gaming, and Security innovations\n\n### 🤝 Community & Support\n\nOur team of mentors, technical experts, and community members will be available throughout the hackathon to help you succeed. Don't hesitate to reach out for guidance, technical support, or just to chat about your ideas!\n\n---\n\n**Ready to build the future? Let's make it happen together!** 🚀",
       join_custom_text: "Join now",
       judging_guidelines: "Projects will be evaluated based on innovation, technical implementation, user experience, and potential impact.",
       submission_deadline: "2026-03-17T16:00:00.000-04:00",
@@ -2467,6 +2485,8 @@ const HackathonsEdit = () => {
       stages: []
     });
 
+    setRawTrackText("# 🚀 Avalanche Hackathon 2025\n\n## Welcome to the Future of Web3\n\nJoin us for an incredible 48-hour hackathon where developers, designers, and entrepreneurs come together to build the next generation of blockchain applications on **Avalanche**.\n\n### 🎯 What We're Looking For\n\n- **Innovation**: Breakthrough ideas that push the boundaries of what's possible\n- **Technical Excellence**: Well-architected, secure, and scalable solutions\n- **User Experience**: Applications that are intuitive and accessible to everyone\n- **Real-World Impact**: Solutions that solve actual problems and create value\n\n### 🏆 Prizes & Recognition\n\n- **1st Place**: $25,000 + Incubation Program\n- **2nd Place**: $15,000 + Mentorship\n- **3rd Place**: $10,000 + Community Support\n- **Special Tracks**: Additional prizes for DeFi, Gaming, and Security innovations\n\n### 🤝 Community & Support\n\nOur team of mentors, technical experts, and community members will be available throughout the hackathon to help you succeed. Don't hesitate to reach out for guidance, technical support, or just to chat about your ideas!\n\n---\n\n**Ready to build the future? Let's make it happen together!** 🚀");
+
     setCollapsed({
       main: true,
       images: true,
@@ -2475,6 +2495,7 @@ const HackathonsEdit = () => {
       trackText: true,
       content: true,
     });
+
 
     setShowForm(true);
     setSelectedHackathon(null);
@@ -2803,6 +2824,37 @@ const HackathonsEdit = () => {
                           <button
                             type="button"
                             onClick={() => {
+                              if (collapsed.trackText) {
+                                setCollapsed((prev) => ({ ...prev, trackText: false }));
+                              }
+                              setActiveStep('step5');
+                              requestAnimationFrame(() => {
+                                const container = leftPanelRef.current;
+                                const el = step5Ref.current;
+                                if (!container || !el) return;
+                                const elRect = el.getBoundingClientRect();
+                                const containerRect = container.getBoundingClientRect();
+                                const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
+                                container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
+                              });
+                            }}
+                            className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step5'
+                              ? 'bg-[#D66666] text-white border-[#D66666]'
+                              : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800'
+                              }`}
+                          >
+                            <AlignLeft className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t[language].about}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => {
                               if (collapsed.stages) {
                                 setCollapsed((prev) => ({ ...prev, stages: false }));
                               }
@@ -2859,70 +2911,6 @@ const HackathonsEdit = () => {
                         <TooltipContent>Images & Branding</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (collapsed.about) {
-                                setCollapsed((prev) => ({ ...prev, about: false }));
-                              }
-                              setActiveStep('step4');
-                              requestAnimationFrame(() => {
-                                const container = leftPanelRef.current;
-                                const el = step4Ref.current;
-                                if (!container || !el) return;
-                                const elRect = el.getBoundingClientRect();
-                                const containerRect = container.getBoundingClientRect();
-                                const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
-                                container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
-                              });
-                            }}
-                            className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step4'
-                              ? 'bg-[#D66666] text-white border-[#D66666]'
-                              : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800'
-                              }`}
-                          >
-                            <Users className="h-3.5 w-3.5" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>{formDataLatest.event === 'hackathon' ? 'Participants & Prizes' : 'Organizer'}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    {formDataLatest.event === 'hackathon' && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (collapsed.trackText) {
-                                  setCollapsed((prev) => ({ ...prev, trackText: false }));
-                                }
-                                setActiveStep('step5');
-                                requestAnimationFrame(() => {
-                                  const container = leftPanelRef.current;
-                                  const el = step5Ref.current;
-                                  if (!container || !el) return;
-                                  const elRect = el.getBoundingClientRect();
-                                  const containerRect = container.getBoundingClientRect();
-                                  const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
-                                  container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
-                                });
-                              }}
-                              className={`shrink-0 p-1.5 rounded-full border transition-colors ${activeStep === 'step5'
-                                ? 'bg-[#D66666] text-white border-[#D66666]'
-                                : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800'
-                                }`}
-                            >
-                              <AlignLeft className="h-3.5 w-3.5" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>{t[language].trackText}</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -2989,7 +2977,6 @@ const HackathonsEdit = () => {
                         value={formDataLatest.event}
                         onValueChange={(value) => {
                           setFormDataLatest(prev => ({ ...prev, event: value }));
-                          console.log(value);
                         }}
                       >
                         <SelectTrigger className="w-full">
@@ -3026,18 +3013,18 @@ const HackathonsEdit = () => {
                   <div className="flex items-center gap-3">
                     <Switch
                       id="new-layout"
-                      checked={formDataLatest.new_layout}
+                      checked={!formDataLatest.new_layout}
                       onCheckedChange={(checked) => {
-                        setFormDataLatest(prev => ({ ...prev, new_layout: checked }));
+                        setFormDataLatest(prev => ({ ...prev, new_layout: !checked }));
                       }}
                       className="cursor-pointer"
                     />
                     <label htmlFor="new-layout" className="text-sm font-medium cursor-pointer">
-                      Use new layout (modern event page)
+                      Use legacy layout (legacy event page)
                     </label>
                   </div>
                   <p className="text-zinc-700 dark:text-zinc-400 text-sm mt-2">
-                    Toggle on for the modern layout (workshop-style), off for the legacy hackathon layout.
+                    Toggle on for the legacy layout (old-hackathon-style), off for the modern event layout.
                   </p>
                 </div>
 
@@ -3306,6 +3293,223 @@ const HackathonsEdit = () => {
                       <div className="text-zinc-600 dark:text-zinc-400 italic">✓ {t[language].mainTopicsCompleted}</div>
                     )}
                   </div>
+
+                  {/* Step 4: Track Text - Only for Hackathons */}
+                  <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 ref={step5Ref} className="text-2xl font-bold">{t[language].about}</h2>
+                      {collapsed.trackText && (
+                        <button onClick={() => setCollapsed({ ...collapsed, trackText: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
+                          <ChevronRight className="w-5 h-5" /> {t[language].expand}
+                        </button>
+                      )}
+                    </div>
+                    {!collapsed.trackText && (
+                      <>
+                        <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-500/30 rounded-lg">
+                          <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-2">Event Description</h3>
+                          <p className="text-sm text-purple-800 dark:text-purple-200">Write detailed information about your event's tracks, program structure, and timeline. Use paragraphs and line breaks - they will be converted to markdown format.</p>
+                        </div>
+
+                        <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].about}</div>
+                        <div className="mb-2 text-zinc-500 text-xs">Write a step-by-step schedule outlining what will happen, either hour by hour or week by week. Use the formatting buttons below or type markdown directly.</div>
+
+                        {/* Formatting Toolbar */}
+                        <div className="flex flex-wrap gap-2 mb-3 p-3 bg-zinc-800/50 border border-zinc-600 rounded-lg">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
+                              if (textarea) {
+                                const start = textarea.selectionStart;
+                                const end = textarea.selectionEnd;
+                                const selectedText = rawTrackText.substring(start, end);
+                                const newText = rawTrackText.substring(0, start) + `**${selectedText}**` + rawTrackText.substring(end);
+                                setRawTrackText(newText);
+                                // Auto-convert to markdown
+                                const markdownText = convertToMarkdown(newText);
+                                setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                              }
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-bold"
+                            title="Bold (Ctrl+B)"
+                          >
+                            B
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
+                              if (textarea) {
+                                const start = textarea.selectionStart;
+                                const end = textarea.selectionEnd;
+                                const selectedText = rawTrackText.substring(start, end);
+                                const newText = rawTrackText.substring(0, start) + `*${selectedText}*` + rawTrackText.substring(end);
+                                setRawTrackText(newText);
+                                // Auto-convert to markdown
+                                const markdownText = convertToMarkdown(newText);
+                                setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                              }
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm italic"
+                            title="Italic (Ctrl+I)"
+                          >
+                            I
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
+                              if (textarea) {
+                                const start = textarea.selectionStart;
+                                const end = textarea.selectionEnd;
+                                const selectedText = rawTrackText.substring(start, end);
+                                const newText = rawTrackText.substring(0, start) + `# ${selectedText}` + rawTrackText.substring(end);
+                                setRawTrackText(newText);
+                                // Auto-convert to markdown
+                                const markdownText = convertToMarkdown(newText);
+                                setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                              }
+                            }}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                            title="Main Title (H1)"
+                          >
+                            H1
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
+                              if (textarea) {
+                                const start = textarea.selectionStart;
+                                const end = textarea.selectionEnd;
+                                const selectedText = rawTrackText.substring(start, end);
+                                const newText = rawTrackText.substring(0, start) + `## ${selectedText}` + rawTrackText.substring(end);
+                                setRawTrackText(newText);
+                                // Auto-convert to markdown
+                                const markdownText = convertToMarkdown(newText);
+                                setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                              }
+                            }}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                            title="Secondary Title (H2)"
+                          >
+                            H2
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
+                              if (textarea) {
+                                const start = textarea.selectionStart;
+                                const end = textarea.selectionEnd;
+                                const selectedText = rawTrackText.substring(start, end);
+                                const newText = rawTrackText.substring(0, start) + `### ${selectedText}` + rawTrackText.substring(end);
+                                setRawTrackText(newText);
+                                // Auto-convert to markdown
+                                const markdownText = convertToMarkdown(newText);
+                                setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                              }
+                            }}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                            title="Subtitle (H3)"
+                          >
+                            H3
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
+                              if (textarea) {
+                                const start = textarea.selectionStart;
+                                const newText = rawTrackText.substring(0, start) + '\n---\n' + rawTrackText.substring(start);
+                                setRawTrackText(newText);
+                                // Auto-convert to markdown
+                                const markdownText = convertToMarkdown(newText);
+                                setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                              }
+                            }}
+                            className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm"
+                            title="Horizontal Rule"
+                          >
+                            ---
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
+                              if (textarea) {
+                                const start = textarea.selectionStart;
+                                const newText = rawTrackText.substring(0, start) + '\n\n' + rawTrackText.substring(start);
+                                setRawTrackText(newText);
+                                // Auto-convert to markdown
+                                const markdownText = convertToMarkdown(newText);
+                                setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                              }
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                            title="New Paragraph"
+                          >
+                            ¶
+                          </button>
+                        </div>
+
+                        <textarea
+                          name="tracks_text"
+                          placeholder="Enter your event description here... Use the formatting buttons above or type markdown directly. Changes are converted automatically."
+                          value={rawTrackText}
+                          onChange={(e) => {
+                            setRawTrackText(e.target.value);
+                            // Auto-convert to markdown on every change
+                            const markdownText = convertToMarkdown(e.target.value);
+                            setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                            scrollToSection('about');
+                          }}
+                          onKeyDown={(e) => {
+                            // Keyboard shortcuts
+                            if (e.ctrlKey || e.metaKey) {
+                              const textarea = e.target as HTMLTextAreaElement;
+                              const start = textarea.selectionStart;
+                              const end = textarea.selectionEnd;
+                              const selectedText = rawTrackText.substring(start, end);
+
+                              if (e.key === 'b') {
+                                e.preventDefault();
+                                const newText = rawTrackText.substring(0, start) + `**${selectedText}**` + rawTrackText.substring(end);
+                                setRawTrackText(newText);
+                                const markdownText = convertToMarkdown(newText);
+                                setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                              } else if (e.key === 'i') {
+                                e.preventDefault();
+                                const newText = rawTrackText.substring(0, start) + `*${selectedText}*` + rawTrackText.substring(end);
+                                setRawTrackText(newText);
+                                const markdownText = convertToMarkdown(newText);
+                                setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
+                              }
+                            }
+                          }}
+                          className="w-full mb-4 p-3 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 resize-none h-48"
+                          required
+                        />
+                        {getInlineError('content.tracks_text') && (
+                          <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.tracks_text')}</p>
+                        )}
+                        <div className="flex justify-end mt-4">
+                          <button
+                            type="button"
+                            onClick={() => handleDone('trackText')}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded flex items-center gap-1 cursor-pointer"
+                          >
+                            {t[language].done} <Check className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                    {collapsed.trackText && (
+                      <div className="text-zinc-600 dark:text-zinc-400 italic">✓ About section completed</div>
+                    )}
+                  </div>
+
                   <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 ref={step2Ref} className="text-2xl font-bold">Stages</h2>
@@ -3637,224 +3841,6 @@ const HackathonsEdit = () => {
                     )}
                   </div>
 
-                  {/* Step 4: Track Text - Only for Hackathons */}
-                  {formDataLatest.event === 'hackathon' && (
-                    <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 ref={step5Ref} className="text-2xl font-bold">{t[language].trackText}</h2>
-                        {collapsed.trackText && (
-                          <button onClick={() => setCollapsed({ ...collapsed, trackText: false })} className="flex items-center gap-1 text-zinc-400 hover:text-red-500 cursor-pointer">
-                            <ChevronRight className="w-5 h-5" /> {t[language].expand}
-                          </button>
-                        )}
-                      </div>
-                      {!collapsed.trackText && (
-                        <>
-                          <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-500/30 rounded-lg">
-                            <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-2">Track Description</h3>
-                            <p className="text-sm text-purple-800 dark:text-purple-200">Write detailed information about your hackathon tracks, program structure, and timeline. Use paragraphs and line breaks - they will be converted to markdown format.</p>
-                          </div>
-
-                          <div className="mb-2 text-zinc-700 dark:text-zinc-400 text-sm">{t[language].trackText}</div>
-                          <div className="mb-2 text-zinc-500 text-xs">Write a step-by-step schedule outlining what will happen, either hour by hour or week by week. Use the formatting buttons below or type markdown directly.</div>
-
-                          {/* Formatting Toolbar */}
-                          <div className="flex flex-wrap gap-2 mb-3 p-3 bg-zinc-800/50 border border-zinc-600 rounded-lg">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
-                                if (textarea) {
-                                  const start = textarea.selectionStart;
-                                  const end = textarea.selectionEnd;
-                                  const selectedText = rawTrackText.substring(start, end);
-                                  const newText = rawTrackText.substring(0, start) + `**${selectedText}**` + rawTrackText.substring(end);
-                                  setRawTrackText(newText);
-                                  // Auto-convert to markdown
-                                  const markdownText = convertToMarkdown(newText);
-                                  setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                                }
-                              }}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-bold"
-                              title="Bold (Ctrl+B)"
-                            >
-                              B
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
-                                if (textarea) {
-                                  const start = textarea.selectionStart;
-                                  const end = textarea.selectionEnd;
-                                  const selectedText = rawTrackText.substring(start, end);
-                                  const newText = rawTrackText.substring(0, start) + `*${selectedText}*` + rawTrackText.substring(end);
-                                  setRawTrackText(newText);
-                                  // Auto-convert to markdown
-                                  const markdownText = convertToMarkdown(newText);
-                                  setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                                }
-                              }}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm italic"
-                              title="Italic (Ctrl+I)"
-                            >
-                              I
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
-                                if (textarea) {
-                                  const start = textarea.selectionStart;
-                                  const end = textarea.selectionEnd;
-                                  const selectedText = rawTrackText.substring(start, end);
-                                  const newText = rawTrackText.substring(0, start) + `# ${selectedText}` + rawTrackText.substring(end);
-                                  setRawTrackText(newText);
-                                  // Auto-convert to markdown
-                                  const markdownText = convertToMarkdown(newText);
-                                  setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                                }
-                              }}
-                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
-                              title="Main Title (H1)"
-                            >
-                              H1
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
-                                if (textarea) {
-                                  const start = textarea.selectionStart;
-                                  const end = textarea.selectionEnd;
-                                  const selectedText = rawTrackText.substring(start, end);
-                                  const newText = rawTrackText.substring(0, start) + `## ${selectedText}` + rawTrackText.substring(end);
-                                  setRawTrackText(newText);
-                                  // Auto-convert to markdown
-                                  const markdownText = convertToMarkdown(newText);
-                                  setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                                }
-                              }}
-                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
-                              title="Secondary Title (H2)"
-                            >
-                              H2
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
-                                if (textarea) {
-                                  const start = textarea.selectionStart;
-                                  const end = textarea.selectionEnd;
-                                  const selectedText = rawTrackText.substring(start, end);
-                                  const newText = rawTrackText.substring(0, start) + `### ${selectedText}` + rawTrackText.substring(end);
-                                  setRawTrackText(newText);
-                                  // Auto-convert to markdown
-                                  const markdownText = convertToMarkdown(newText);
-                                  setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                                }
-                              }}
-                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
-                              title="Subtitle (H3)"
-                            >
-                              H3
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
-                                if (textarea) {
-                                  const start = textarea.selectionStart;
-                                  const newText = rawTrackText.substring(0, start) + '\n---\n' + rawTrackText.substring(start);
-                                  setRawTrackText(newText);
-                                  // Auto-convert to markdown
-                                  const markdownText = convertToMarkdown(newText);
-                                  setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                                }
-                              }}
-                              className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm"
-                              title="Horizontal Rule"
-                            >
-                              ---
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const textarea = document.querySelector('textarea[name="tracks_text"]') as HTMLTextAreaElement;
-                                if (textarea) {
-                                  const start = textarea.selectionStart;
-                                  const newText = rawTrackText.substring(0, start) + '\n\n' + rawTrackText.substring(start);
-                                  setRawTrackText(newText);
-                                  // Auto-convert to markdown
-                                  const markdownText = convertToMarkdown(newText);
-                                  setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                                }
-                              }}
-                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
-                              title="New Paragraph"
-                            >
-                              ¶
-                            </button>
-                          </div>
-
-                          <textarea
-                            name="tracks_text"
-                            placeholder="Enter your track description here... Use the formatting buttons above or type markdown directly. Changes are converted automatically."
-                            value={rawTrackText}
-                            onChange={(e) => {
-                              setRawTrackText(e.target.value);
-                              // Auto-convert to markdown on every change
-                              const markdownText = convertToMarkdown(e.target.value);
-                              setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                              scrollToSection('tracks');
-                            }}
-                            onKeyDown={(e) => {
-                              // Keyboard shortcuts
-                              if (e.ctrlKey || e.metaKey) {
-                                const textarea = e.target as HTMLTextAreaElement;
-                                const start = textarea.selectionStart;
-                                const end = textarea.selectionEnd;
-                                const selectedText = rawTrackText.substring(start, end);
-
-                                if (e.key === 'b') {
-                                  e.preventDefault();
-                                  const newText = rawTrackText.substring(0, start) + `**${selectedText}**` + rawTrackText.substring(end);
-                                  setRawTrackText(newText);
-                                  const markdownText = convertToMarkdown(newText);
-                                  setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                                } else if (e.key === 'i') {
-                                  e.preventDefault();
-                                  const newText = rawTrackText.substring(0, start) + `*${selectedText}*` + rawTrackText.substring(end);
-                                  setRawTrackText(newText);
-                                  const markdownText = convertToMarkdown(newText);
-                                  setFormDataContent(prev => ({ ...prev, tracks_text: markdownText }));
-                                }
-                              }
-                            }}
-                            className="w-full mb-4 p-3 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 resize-none h-48"
-                            required
-                          />
-                          {getInlineError('content.tracks_text') && (
-                            <p className="text-red-500 text-sm -mt-2 mb-3">{getInlineError('content.tracks_text')}</p>
-                          )}
-                          <div className="flex justify-end mt-4">
-                            <button
-                              type="button"
-                              onClick={() => handleDone('trackText')}
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded flex items-center gap-1 cursor-pointer"
-                            >
-                              {t[language].done} <Check className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </>
-                      )}
-                      {collapsed.trackText && (
-                        <div className="text-zinc-600 dark:text-zinc-400 italic">✓ Track text completed</div>
-                      )}
-                    </div>
-                  )}
-
                   {/* Step 5: Content - Tracks, Schedule, etc. */}
                   <div ref={step6Ref} className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 my-6">
                     <div className="flex items-center justify-between mb-4">
@@ -3887,6 +3873,9 @@ const HackathonsEdit = () => {
                             </TabsTrigger>
                             <TabsTrigger value="speakers" className="flex-1">
                               {t[language].speakers}
+                            </TabsTrigger>
+                            <TabsTrigger value="partners" className="flex-1">
+                              {t[language].partners}
                             </TabsTrigger>
                           </TabsList>
 
@@ -4101,6 +4090,41 @@ const HackathonsEdit = () => {
                               <div className="flex justify-end">
                                 <Button type="button" onClick={addSpeaker} className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
                                   <Plus className="w-4 h-4" /> {t[language].addSpeaker}
+                                </Button>
+                              </div>
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="partners">
+                            <div className="space-y-4">
+                              <label className="font-medium text-xl mb-2 block">{t[language].partners}:</label>
+                              {formDataContent.partners.map((partner, index) => (
+                                <PartnerItem
+                                  key={index}
+                                  partner={partner}
+                                  index={index}
+                                  onChange={handlePartnerFieldChange}
+                                  onRemove={animateRemove.bind(null, 'partner', index, removePartner)}
+                                  t={t}
+                                  language={language}
+                                  partnersLength={formDataContent.partners.length}
+                                  onImageFileTooLarge={() =>
+                                    toast({
+                                      title: 'The file is too large (Max: 2MB).',
+                                      description: 'Try compressing it.',
+                                      variant: 'destructive',
+                                    })
+                                  }
+                                  fieldError={(f) => getInlineError(`content.partners.${index}.${f}`)}
+                                />
+                              ))}
+                              <div className="flex justify-end">
+                                <Button
+                                  type="button"
+                                  onClick={addPartner}
+                                  className="mt-2 bg-red-500 hover:bg-red-600 text-white flex items-center gap-2"
+                                >
+                                  <Plus className="w-4 h-4" /> {t[language].addPartner}
                                 </Button>
                               </div>
                             </div>

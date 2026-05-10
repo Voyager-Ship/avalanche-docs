@@ -101,38 +101,12 @@ export const initialData: {
   content: {
     stages: [],
     language: "en",
-    tracks: [
-      {
-        icon: "",
-        logo: "",
-        name: "",
-        partner: "",
-        description: "",
-        short_description: "",
-      },
-    ],
+    tracks: [],
     address: "",
-    partners: [{ name: "", logo: "" }],
-    schedule: [
-      {
-        url: null,
-        date: "",
-        name: "",
-        category: "",
-        location: "",
-        description: "",
-        duration: 0,
-      },
-    ],
+    partners: [],
+    schedule: [],
     speakers: [],
-    resources: [
-      {
-        icon: "",
-        link: "",
-        title: "",
-        description: "",
-      },
-    ],
+    resources: [],
     tracks_text: "",
     speakers_text: "",
     speakers_banner: "",
@@ -154,7 +128,7 @@ export const initialData: {
     custom_link: null,
     top_most: false,
     event: "hackathon",
-    new_layout: false,
+    new_layout: true,
     google_calendar_id: null,
   },
 };

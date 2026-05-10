@@ -82,14 +82,14 @@ const stageSchema = z.object({
 });
 
 const partnersSchema = z.object({
-  name: z.string().max(120),
-  logo: z.string().max(2048),
+  name: z.string().min(1).max(120),
+  logo: imageUrlSchema,
 });
 
 const trackSchema = z.object({
   icon: z.string().max(128),
   logo: z.string().max(2048),
-  name: z.string().max(120),
+  name: z.string().min(1).max(120),
   partner: z.string().max(120),
   description: z.string().max(5000),
   short_description: z.string().max(1000),
@@ -98,7 +98,7 @@ const trackSchema = z.object({
 const scheduleSchema = z.object({
   url: nullableUrlOrEmptySchema,
   date: z.string().min(1, 'Date is required').max(64),
-  name: z.string().max(100),
+  name: z.string().min(1).max(100),
   category: z.string().max(30),
   location: z.string().max(100),
   description: z.string().max(500),
@@ -115,7 +115,7 @@ const speakerSchema = z.object({
 const resourceSchema = z.object({
   icon: z.string().max(128),
   link: urlOrEmptySchema,
-  title: z.string().max(120),
+  title: z.string().min(1).max(120),
   description: z.string().max(500),
 });
 

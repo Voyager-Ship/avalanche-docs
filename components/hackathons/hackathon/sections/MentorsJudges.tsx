@@ -1,7 +1,7 @@
 import { HackathonHeader } from "@/types/hackathons";
 import React from "react";
 import { normalizeEventsLang, t } from "@/lib/events/i18n";
-import { SafeSpeakerPicture } from "@/components/hackathons/SafeSpeakerPicture";
+import { SafeImage } from "@/components/common/SafeImage";
 
 function MentorsJudges({ hackathon }: { hackathon: HackathonHeader }) {
   const lang = normalizeEventsLang(hackathon.content?.language);
@@ -27,7 +27,7 @@ function MentorsJudges({ hackathon }: { hackathon: HackathonHeader }) {
             <div className="flex gap-10 justify-center sm:justify-start flex-wrap">
           {hackathon.content.speakers.map((speaker, index) => (
             <div key={index} className="flex flex-col gap-4 mt-4">
-              <SafeSpeakerPicture
+              <SafeImage
                 src={speaker.picture}
                 alt={t(lang, "section.mentorsJudges.speakerPictureAlt")}
               />

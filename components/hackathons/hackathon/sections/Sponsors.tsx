@@ -6,9 +6,9 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { Separator } from "@/components/ui/separator";
+import { SafeImage } from "@/components/common/SafeImage";
 import { HackathonHeader } from "@/types/hackathons";
 import AutoScroll from "embla-carousel-auto-scroll";
-import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { normalizeEventsLang, t } from "@/lib/events/i18n";
@@ -46,12 +46,12 @@ function Sponsors({ hackathon }: { hackathon: HackathonHeader }) {
                 key={index}
                 className="basis-1/2 sm:basis-1/3 md:basis-1/5 h-44 items-center justify-center flex"
               >
-                <Image
+                <SafeImage
                   src={partner.logo}
                   alt={partner.name}
-                  className="object-contain filter grayscale invert dark:invert-0"
-                  height={120}
-                  width={200}
+                  frameClassName="h-[120px] w-[200px]"
+                  imageClassName="object-contain filter grayscale invert dark:invert-0"
+                  fallbackIcon="image"
                 />
               </CarouselItem>
             ))}
