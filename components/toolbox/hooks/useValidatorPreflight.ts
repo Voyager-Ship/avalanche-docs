@@ -159,14 +159,14 @@ function deriveRegisterCheck(status: number, existingValidationID: string | null
   if (status === ValidatorStatus.Active) {
     return notMetCheck('Node is already an active validator. Remove it first before re-registering.', {
       label: 'Go to Remove Validator',
-      path: '/console/permissionless-l1s/remove-validator',
+      path: '/console/remove-validator',
     });
   }
 
   if (status === ValidatorStatus.PendingRemoved) {
     return notMetCheck('Removal is in progress. Complete removal before re-registering.', {
       label: 'Complete Removal',
-      path: '/console/permissionless-l1s/remove-validator',
+      path: '/console/remove-validator',
     });
   }
 
@@ -203,7 +203,7 @@ function deriveInitiateRemovalCheck(
     if (status === ValidatorStatus.PendingRemoved) {
       return notMetCheck('Removal already initiated. Complete the removal.', {
         label: 'Complete Removal',
-        path: '/console/permissionless-l1s/remove-validator',
+        path: '/console/remove-validator',
       });
     }
     if (status === ValidatorStatus.Completed) {
@@ -243,7 +243,7 @@ function deriveCompleteRemovalCheck(status: number): PreflightCheck {
   if (status === ValidatorStatus.Active) {
     return notMetCheck('Removal has not been initiated yet. Initiate removal first.', {
       label: 'Initiate Removal',
-      path: '/console/permissionless-l1s/remove-validator',
+      path: '/console/remove-validator',
     });
   }
 
@@ -277,7 +277,7 @@ function deriveCompleteRegistrationCheck(status: number): PreflightCheck {
   if (status === ValidatorStatus.PendingRemoved) {
     return notMetCheck('Validator is pending removal, not pending registration.', {
       label: 'Complete Removal',
-      path: '/console/permissionless-l1s/remove-validator',
+      path: '/console/remove-validator',
     });
   }
 

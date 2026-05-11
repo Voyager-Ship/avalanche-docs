@@ -147,7 +147,7 @@ const data = {
         },
         {
           title: 'Remove Validator',
-          url: '/console/permissioned-l1s/remove-validator',
+          url: '/console/remove-validator',
           icon: SquareMinus,
         },
         {

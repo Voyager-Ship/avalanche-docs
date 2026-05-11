@@ -177,7 +177,7 @@ export const consoleTools: ConsoleTool[] = [
   },
   {
     title: 'Remove Validator',
-    url: '/console/permissioned-l1s/remove-validator',
+    url: '/console/remove-validator',
     category: 'Permissioned L1s',
     description: 'Remove a validator from your permissioned L1',
     keywords: ['remove', 'validator', 'delete', 'permissioned', 'kick'],

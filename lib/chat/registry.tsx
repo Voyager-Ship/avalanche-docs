@@ -47,7 +47,7 @@ export const componentRegistry: Record<ComponentName, React.LazyExoticComponent<
   DelegateNative: lazyFlow("Delegate (Native)", () => import("@/app/console/permissionless-l1s/delegate/native/steps")),
   DelegateERC20: lazyFlow("Delegate (ERC20)", () => import("@/app/console/permissionless-l1s/delegate/erc20/steps")),
   RemoveDelegation: lazyFlow("Remove Delegation", () => import("@/app/console/permissionless-l1s/remove-delegation/steps")),
-  RemoveValidator: lazyFlow("Remove Validator", () => import("@/app/console/permissionless-l1s/remove-validator/steps")),
+  RemoveValidator: lazyFlow("Remove Validator", () => import("@/app/console/remove-validator/steps")),
   MultisigSetup: lazyFlow("Multisig Setup", () => import("@/app/console/permissioned-l1s/multisig-setup/steps")),
   ICMSetup: lazyFlow("ICM Setup", () => import("@/app/console/icm/setup/steps")),
   ICMTestConnection: lazyFlow("ICM Test Connection", () => import("@/app/console/icm/test-connection/steps")),

@@ -345,7 +345,7 @@ export const consoleFlows: Record<string, FlowMetadata> = {
         priority: "optional",
       },
       {
-        path: "/console/permissioned-l1s/remove-validator",
+        path: "/console/remove-validator",
         title: "Remove Validator",
         description: "Remove a validator from your L1",
         priority: "optional",
@@ -359,7 +359,7 @@ export const consoleFlows: Record<string, FlowMetadata> = {
     ],
   },
 
-  "permissioned-l1s/remove-validator": {
+  "remove-validator": {
     title: "Remove Validator",
     completionSummary:
       "You've successfully removed a validator from your L1!",
@@ -391,7 +391,7 @@ export const consoleFlows: Record<string, FlowMetadata> = {
         priority: "optional",
       },
       {
-        path: "/console/permissioned-l1s/remove-validator",
+        path: "/console/remove-validator",
         title: "Remove Validator",
         description: "Remove a validator from your L1",
         priority: "optional",

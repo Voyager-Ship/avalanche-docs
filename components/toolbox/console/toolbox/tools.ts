@@ -194,8 +194,8 @@ const TOOLS_RAW: ToolCard[] = [
   },
   {
     name: 'Remove Validator',
-    description: 'Remove a validator from your permissioned L1.',
-    path: '/console/permissioned-l1s/remove-validator',
+    description: 'Remove a validator from your L1. Auto-detects PoA / PoS-Native / PoS-ERC20 and the right initiate path.',
+    path: '/console/remove-validator',
     category: 'Permissioned L1s',
     icon: SquareMinus,
   },
@@ -265,16 +265,9 @@ const TOOLS_RAW: ToolCard[] = [
     icon: ArrowUpDown,
   },
   {
-    name: 'Remove Validator',
-    description: 'End validation and withdraw staked tokens.',
-    path: '/console/permissionless-l1s/remove-validator-uptime',
-    category: 'Permissionless L1s',
-    icon: SquareMinus,
-  },
-  {
-    name: 'Force Remove Validator',
-    description: 'Remove a validator without uptime proof (forfeits rewards).',
-    path: '/console/permissionless-l1s/remove-validator',
+    name: 'Remove Validator (PoS)',
+    description: 'End validation and withdraw staked tokens. Same flow as Remove Validator — uptime-proof first, force-remove fallback.',
+    path: '/console/remove-validator',
     category: 'Permissionless L1s',
     icon: SquareMinus,
   },
@@ -572,12 +565,13 @@ const FLOW_SUBSTEPS: Record<string, Array<{ name: string; path: string }>> = {
     { name: 'Transfer Ownership', path: '/console/permissioned-l1s/multisig-setup/transfer-ownership' },
     { name: 'Read Validator Manager', path: '/console/permissioned-l1s/multisig-setup/read-validator-manager' },
   ],
-  '/console/permissioned-l1s/remove-validator': [
-    { name: 'Select L1 Subnet', path: '/console/permissioned-l1s/remove-validator/select-subnet' },
-    { name: 'Initiate Removal', path: '/console/permissioned-l1s/remove-validator/initiate-removal' },
-    { name: 'P-Chain Weight Update', path: '/console/permissioned-l1s/remove-validator/pchain-removal' },
-    { name: 'Complete Removal', path: '/console/permissioned-l1s/remove-validator/complete-removal' },
-    { name: 'Verify Validator Set', path: '/console/permissioned-l1s/remove-validator/verify-validator-set' },
+  '/console/remove-validator': [
+    { name: 'Select L1 Subnet', path: '/console/remove-validator/select-subnet' },
+    { name: 'Initiate Removal', path: '/console/remove-validator/initiate-removal' },
+    { name: 'P-Chain Weight Update', path: '/console/remove-validator/pchain-removal' },
+    { name: 'Complete Removal', path: '/console/remove-validator/complete-removal' },
+    { name: 'Claim Delegation Fees', path: '/console/remove-validator/claim-fees' },
+    { name: 'Verify Validator Set', path: '/console/remove-validator/verify-validator-set' },
   ],
   '/console/permissionless-l1s/native-staking-manager-setup': [
     { name: 'Deploy Native Staking Manager', path: '/console/permissionless-l1s/native-staking-manager-setup/deploy' },
@@ -628,22 +622,6 @@ const FLOW_SUBSTEPS: Record<string, Array<{ name: string; path: string }>> = {
   // The "Remove Validator" tile in the Permissionless category routes to the
   // -uptime variant (with uptime proof); the "Force Remove" tile routes to
   // the no-uptime variant. Sub-steps follow the path, not the display name.
-  '/console/permissionless-l1s/remove-validator-uptime': [
-    { name: 'Select L1 Subnet', path: '/console/permissionless-l1s/remove-validator-uptime/select-l1' },
-    { name: 'Initiate Removal (Uptime)', path: '/console/permissionless-l1s/remove-validator-uptime/initiate-removal' },
-    { name: 'P-Chain Weight Update', path: '/console/permissionless-l1s/remove-validator-uptime/pchain-weight-update' },
-    { name: 'Complete Removal', path: '/console/permissionless-l1s/remove-validator-uptime/complete-removal' },
-    { name: 'Claim Delegation Fees', path: '/console/permissionless-l1s/remove-validator-uptime/claim-fees' },
-    { name: 'Verify Validator Set', path: '/console/permissionless-l1s/remove-validator-uptime/verify-validator-set' },
-  ],
-  '/console/permissionless-l1s/remove-validator': [
-    { name: 'Select L1 Subnet', path: '/console/permissionless-l1s/remove-validator/select-l1' },
-    { name: 'Initiate Removal', path: '/console/permissionless-l1s/remove-validator/initiate-removal' },
-    { name: 'P-Chain Weight Update', path: '/console/permissionless-l1s/remove-validator/pchain-weight-update' },
-    { name: 'Complete Removal', path: '/console/permissionless-l1s/remove-validator/complete-removal' },
-    { name: 'Claim Delegation Fees', path: '/console/permissionless-l1s/remove-validator/claim-fees' },
-    { name: 'Verify Validator Set', path: '/console/permissionless-l1s/remove-validator/verify-validator-set' },
-  ],
   '/console/permissionless-l1s/remove-delegation': [
     { name: 'Select L1 Subnet', path: '/console/permissionless-l1s/remove-delegation/select-l1' },
     { name: 'Initiate Delegator Removal', path: '/console/permissionless-l1s/remove-delegation/initiate-removal' },
