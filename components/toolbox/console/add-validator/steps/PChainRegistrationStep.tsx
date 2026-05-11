@@ -1,19 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import Link from 'next/link';
 import SubmitPChainTxRegisterL1Validator from '@/components/toolbox/console/permissioned-l1s/add-validator/SubmitPChainTxRegisterL1Validator';
-import { useStakeValidatorStore, deserializeStakeValidators } from '@/components/toolbox/stores/stakeValidatorStore';
+import { useAddValidatorStore, deserializeValidators } from '@/components/toolbox/stores/addValidatorStore';
 import { useValidatorManagerContext } from '@/components/toolbox/contexts/ValidatorManagerContext';
 import { useWalletStore } from '@/components/toolbox/stores/walletStore';
 import { Alert } from '@/components/toolbox/components/Alert';
 import { StepCodeViewer } from '@/components/console/step-code-viewer';
-import { STEP_CONFIG } from '../codeConfig';
-import Link from 'next/link';
+import { ManagerTypeBadge } from '../ManagerTypeBadge';
+import { buildStepConfig } from '../codeConfig';
 
 const PCHAIN_MIN_BALANCE = 0.1; // AVAX needed for P-Chain transaction gas
 
 export default function PChainRegistrationStep() {
-  const store = useStakeValidatorStore();
+  const store = useAddValidatorStore();
   const vmcCtx = useValidatorManagerContext();
   const pChainBalance = useWalletStore((s) => s.pChainBalance);
   const isTestnet = useWalletStore((s) => s.isTestnet);
@@ -21,14 +22,40 @@ export default function PChainRegistrationStep() {
   const userPChainBalanceNavax = pChainBalance ? BigInt(Math.floor(pChainBalance * 1e9)) : null;
   const hasSufficientPChainBalance = pChainBalance >= PCHAIN_MIN_BALANCE;
 
-  const validators = deserializeStakeValidators(store.validators);
+  const validators = deserializeValidators(store.validators);
   const validator = validators[0];
-  const validatorBalance = validator ? (Number(validator.validatorBalance) / 1e9).toString() : '0.1';
-  const blsProofOfPossession = validator?.nodePOP?.proofOfPossession || store.blsProofOfPossession;
+
+  const isStaking = vmcCtx.ownerType === 'StakingManager';
+  // PoS persists validator balance on the validator object (set as stake amount);
+  // PoA persists it on the store at initiate-time.
+  const validatorBalance = isStaking
+    ? validator
+      ? (Number(validator.validatorBalance) / 1e9).toString()
+      : '0.1'
+    : store.validatorBalance;
+  const blsProofOfPossession = isStaking
+    ? validator?.nodePOP?.proofOfPossession || store.blsProofOfPossession
+    : store.blsProofOfPossession;
+
+  const flavor =
+    vmcCtx.ownerType === 'StakingManager' && vmcCtx.staking.stakingType === 'native'
+      ? 'PoS-Native'
+      : vmcCtx.ownerType === 'StakingManager' && vmcCtx.staking.stakingType === 'erc20'
+        ? 'PoS-ERC20'
+        : 'PoA';
+  const stepConfig = useMemo(() => buildStepConfig(flavor), [flavor]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">P-Chain Registration</h2>
+          <ManagerTypeBadge
+            ownerType={vmcCtx.ownerType}
+            stakingType={vmcCtx.staking.stakingType}
+            isDetecting={false}
+          />
+        </div>
         {!store.evmTxHash && (
           <Alert variant="warning">
             No transaction hash from the initiation step. You can enter it manually below, or go back to{' '}
@@ -71,7 +98,7 @@ export default function PChainRegistrationStep() {
           </div>
         </div>
       </div>
-      <StepCodeViewer activeStep={1} steps={STEP_CONFIG} className="lg:sticky lg:top-4 lg:self-start" />
+      <StepCodeViewer activeStep={2} steps={stepConfig} className="lg:sticky lg:top-4 lg:self-start" />
     </div>
   );
 }

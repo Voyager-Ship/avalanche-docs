@@ -173,7 +173,7 @@ function deriveRegisterCheck(status: number, existingValidationID: string | null
   if (status === ValidatorStatus.PendingAdded) {
     return notMetCheck('Registration is pending. Complete the P-Chain registration step.', {
       label: 'Complete Registration',
-      path: '/console/permissionless-l1s/stake',
+      path: '/console/add-validator',
     });
   }
 
@@ -197,7 +197,7 @@ function deriveInitiateRemovalCheck(
     if (status === ValidatorStatus.PendingAdded) {
       return notMetCheck('Validator is still pending registration. Cannot remove yet.', {
         label: 'Complete Registration',
-        path: '/console/permissionless-l1s/stake',
+        path: '/console/add-validator',
       });
     }
     if (status === ValidatorStatus.PendingRemoved) {
@@ -250,7 +250,7 @@ function deriveCompleteRemovalCheck(status: number): PreflightCheck {
   if (status === ValidatorStatus.PendingAdded) {
     return notMetCheck('Validator is still pending registration, not pending removal.', {
       label: 'Complete Registration',
-      path: '/console/permissionless-l1s/stake',
+      path: '/console/add-validator',
     });
   }
 

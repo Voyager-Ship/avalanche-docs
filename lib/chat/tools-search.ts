@@ -170,10 +170,10 @@ export const consoleTools: ConsoleTool[] = [
   },
   {
     title: 'Add Validator',
-    url: '/console/permissioned-l1s/add-validator',
-    category: 'Permissioned L1s',
-    description: 'Add a new validator to your permissioned L1',
-    keywords: ['add', 'validator', 'new', 'register', 'permissioned'],
+    url: '/console/add-validator',
+    category: 'Validators',
+    description: 'Register a validator on any L1. Auto-detects PoA, native PoS, or ERC20 PoS.',
+    keywords: ['add', 'validator', 'new', 'register', 'stake', 'staking', 'permissioned', 'permissionless', 'native', 'erc20', 'poa', 'pos'],
   },
   {
     title: 'Remove Validator',

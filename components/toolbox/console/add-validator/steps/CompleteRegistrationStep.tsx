@@ -1,46 +1,70 @@
 'use client';
 
-import React from 'react';
-import CompletePChainRegistration from '@/components/toolbox/console/shared/CompletePChainRegistration';
-import { useStakeValidatorStore } from '@/components/toolbox/stores/stakeValidatorStore';
+import React, { useMemo } from 'react';
+import CompletePChainRegistration, {
+  type ManagerType,
+} from '@/components/toolbox/console/shared/CompletePChainRegistration';
+import { useAddValidatorStore } from '@/components/toolbox/stores/addValidatorStore';
 import { useValidatorManagerContext } from '@/components/toolbox/contexts/ValidatorManagerContext';
 import { Alert } from '@/components/toolbox/components/Alert';
 import { useValidatorPreflight } from '@/components/toolbox/hooks/useValidatorPreflight';
 import { StepCodeViewer } from '@/components/console/step-code-viewer';
-import { STEP_CONFIG } from '../codeConfig';
+import { ManagerTypeBadge } from '../ManagerTypeBadge';
+import { buildStepConfig } from '../codeConfig';
 import versions from '@/scripts/versions.json';
 
 const ICM_COMMIT = versions['ava-labs/icm-services'];
 
 export default function CompleteRegistrationStep() {
-  const store = useStakeValidatorStore();
+  const store = useAddValidatorStore();
   const vmcCtx = useValidatorManagerContext();
 
-  // Resolve the staking manager from the VMC context — for
-  // inheritance-model L1s (NativeStakingManager IS the ValidatorManager),
-  // `vmcCtx.contractOwner` is an EOA (the deployer), so falling back to
-  // `validatorManagerAddress` is the only correct address for the
-  // completeValidatorRegistration call.
-  const stakingManagerAddress = vmcCtx.staking?.stakingManagerAddress || vmcCtx.validatorManagerAddress || null;
+  const isStaking = vmcCtx.ownerType === 'StakingManager';
+  // For inheritance-model L1s (NativeStakingManager IS the ValidatorManager),
+  // contractOwner is the deployer EOA, so validatorManagerAddress is the right
+  // target for completeValidatorRegistration.
+  const stakingManagerAddress = vmcCtx.staking.stakingManagerAddress || vmcCtx.validatorManagerAddress || null;
 
+  const managerType: ManagerType =
+    isStaking && vmcCtx.staking.stakingType === 'native'
+      ? 'PoS-Native'
+      : isStaking && vmcCtx.staking.stakingType === 'erc20'
+        ? 'PoS-ERC20'
+        : 'PoA';
+
+  const managerAddress = isStaking
+    ? stakingManagerAddress || ''
+    : vmcCtx.validatorManagerAddress || '';
+
+  // Only PoS persists a validationID (set on initiate). PoA derives it locally
+  // from the warp message inside CompletePChainRegistration, so we leave it
+  // undefined and let preflight skip the on-chain status read.
   const preflight = useValidatorPreflight({
-    validationID: store.validationID || undefined,
-    stakingManagerAddress,
+    validationID: isStaking && store.validationID ? store.validationID : undefined,
+    stakingManagerAddress: isStaking ? stakingManagerAddress : null,
     validatorManagerAddress: vmcCtx.validatorManagerAddress || null,
   });
 
-  const managerType = store.tokenType === 'native' ? 'PoS-Native' : 'PoS-ERC20';
+  const stepConfig = useMemo(() => buildStepConfig(managerType), [managerType]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">Complete Registration</h2>
+          <ManagerTypeBadge
+            ownerType={vmcCtx.ownerType}
+            stakingType={vmcCtx.staking.stakingType}
+            isDetecting={false}
+          />
+        </div>
         {!store.pChainTxId && (
           <Alert variant="warning">
             No P-Chain transaction ID from the previous step. You can enter it manually below, or go back to{' '}
             <strong>P-Chain Registration</strong>.
           </Alert>
         )}
-        {store.validationID && !preflight.isLoading && preflight.status !== 1 && preflight.status !== 0 && (
+        {isStaking && store.validationID && !preflight.isLoading && preflight.status !== 1 && preflight.status !== 0 && (
           <Alert variant="info">
             {preflight.status === 2
               ? 'This validator is already active -- registration was completed.'
@@ -52,10 +76,14 @@ export default function CompleteRegistrationStep() {
             <CompletePChainRegistration
               subnetIdL1={store.subnetIdL1}
               pChainTxId={store.pChainTxId}
-              validationID={store.validationID}
+              validationID={isStaking ? store.validationID : undefined}
               signingSubnetId={vmcCtx.signingSubnetId || store.subnetIdL1}
               managerType={managerType}
-              managerAddress={stakingManagerAddress || ''}
+              managerAddress={managerAddress}
+              ownershipState={!isStaking ? vmcCtx.ownershipStatus : undefined}
+              contractOwner={!isStaking ? vmcCtx.contractOwner : undefined}
+              isLoadingOwnership={!isStaking ? vmcCtx.isLoadingOwnership : undefined}
+              ownerType={!isStaking ? vmcCtx.ownerType : undefined}
               onSuccess={(data) => {
                 store.setGlobalSuccess(data.message);
                 store.setGlobalError(null);
@@ -76,7 +104,7 @@ export default function CompleteRegistrationStep() {
           </div>
         </div>
       </div>
-      <StepCodeViewer activeStep={2} steps={STEP_CONFIG} className="lg:sticky lg:top-4 lg:self-start" />
+      <StepCodeViewer activeStep={3} steps={stepConfig} className="lg:sticky lg:top-4 lg:self-start" />
     </div>
   );
 }

@@ -1,37 +1,41 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import SelectSubnetId from '@/components/toolbox/components/SelectSubnetId';
 import { ValidatorManagerDetails } from '@/components/toolbox/components/ValidatorManagerDetails';
-import { useStakeValidatorStore, useStakeValidatorStoreApi } from '@/components/toolbox/stores/stakeValidatorStore';
+import { useAddValidatorStore } from '@/components/toolbox/stores/addValidatorStore';
 import { useValidatorManagerContext } from '@/components/toolbox/contexts/ValidatorManagerContext';
-import { Alert } from '@/components/toolbox/components/Alert';
+import { ManagerTypeBadge } from '../ManagerTypeBadge';
 
-interface SelectSubnetStepProps {
-  tokenType: 'native' | 'erc20';
-}
-
-export default function SelectSubnetStep({ tokenType }: SelectSubnetStepProps) {
-  const store = useStakeValidatorStore();
+export default function SelectSubnetStep() {
+  const store = useAddValidatorStore();
   const vmcCtx = useValidatorManagerContext();
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  const storeApi = useStakeValidatorStoreApi();
-  const setTokenType = storeApi((s) => s.setTokenType);
-
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
-
-  const isNative = tokenType === 'native';
-
-  useEffect(() => {
-    setTokenType(tokenType);
-  }, [setTokenType, tokenType]);
+  // Treat staking-type resolution as part of "detection" so the badge doesn't
+  // briefly read "PoA" before the staking probe finishes for an inheritance-model
+  // L1 (NativeStakingManager IS the VMC).
+  const isDetecting =
+    vmcCtx.isDetectingOwnerType ||
+    vmcCtx.isLoadingOwnership ||
+    (vmcCtx.ownerType === 'StakingManager' && vmcCtx.staking.isLoading);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Select L1 Subnet</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">Select L1 Subnet</h2>
+          {store.subnetIdL1 && (
+            <ManagerTypeBadge
+              ownerType={vmcCtx.ownerType}
+              stakingType={vmcCtx.staking.stakingType}
+              isDetecting={isDetecting}
+            />
+          )}
+        </div>
         <p className="text-sm text-zinc-500 mb-4">
-          Choose the L1 subnet where you want to stake a validator with {isNative ? 'native tokens' : 'ERC20 tokens'}.
+          Choose the L1 where you want to add a validator. We'll detect the validator manager type and adapt the next
+          steps automatically.
         </p>
         <SelectSubnetId
           value={store.subnetIdL1}
@@ -39,13 +43,6 @@ export default function SelectSubnetStep({ tokenType }: SelectSubnetStepProps) {
           error={vmcCtx.error}
           hidePrimaryNetwork={true}
         />
-
-        {vmcCtx.ownerType && vmcCtx.ownerType !== 'StakingManager' && (
-          <Alert variant="error">
-            This L1 is not using a Staking Manager. This tool is only for {isNative ? 'Native Token' : 'ERC20 Token'}{' '}
-            Staking.
-          </Alert>
-        )}
       </div>
       {store.subnetIdL1 && (
         <div className="lg:sticky lg:top-4 lg:self-start">

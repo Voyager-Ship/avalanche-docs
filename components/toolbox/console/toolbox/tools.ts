@@ -187,8 +187,8 @@ const TOOLS_RAW: ToolCard[] = [
   },
   {
     name: 'Add Validator',
-    description: 'Register a new validator on your permissioned L1.',
-    path: '/console/permissioned-l1s/add-validator',
+    description: 'Register a validator on your L1. Auto-detects PoA, native PoS, or ERC20 PoS.',
+    path: '/console/add-validator',
     category: 'Permissioned L1s',
     icon: SquarePlus,
   },
@@ -238,15 +238,15 @@ const TOOLS_RAW: ToolCard[] = [
   },
   {
     name: 'Stake (Native Token)',
-    description: 'Register and stake a validator with native tokens.',
-    path: '/console/permissionless-l1s/stake/native',
+    description: 'Register a validator with native-token staking. Same flow as Add Validator — pick a Native PoS L1.',
+    path: '/console/add-validator',
     category: 'Permissionless L1s',
     icon: HandCoins,
   },
   {
     name: 'Stake (ERC20 Token)',
-    description: 'Register and stake a validator with ERC20 tokens.',
-    path: '/console/permissionless-l1s/stake/erc20',
+    description: 'Register a validator with ERC20-token staking. Same flow as Add Validator — pick an ERC20 PoS L1.',
+    path: '/console/add-validator',
     category: 'Permissionless L1s',
     icon: HandCoins,
   },
@@ -546,12 +546,12 @@ const TOOLS_RAW: ToolCard[] = [
 // from the repo root — it walks every `steps.ts` and prints the JSON we paste
 // here.
 const FLOW_SUBSTEPS: Record<string, Array<{ name: string; path: string }>> = {
-  '/console/permissioned-l1s/add-validator': [
-    { name: 'Select L1 Subnet', path: '/console/permissioned-l1s/add-validator/select-subnet' },
-    { name: 'Initiate Validator Registration', path: '/console/permissioned-l1s/add-validator/validator-details' },
-    { name: 'P-Chain Registration', path: '/console/permissioned-l1s/add-validator/pchain-registration' },
-    { name: 'Complete Registration', path: '/console/permissioned-l1s/add-validator/complete-registration' },
-    { name: 'Verify Validator Set', path: '/console/permissioned-l1s/add-validator/verify-validator-set' },
+  '/console/add-validator': [
+    { name: 'Select L1 Subnet', path: '/console/add-validator/select-subnet' },
+    { name: 'Initiate Validator Registration', path: '/console/add-validator/initiate-registration' },
+    { name: 'P-Chain Registration', path: '/console/add-validator/pchain-registration' },
+    { name: 'Complete Registration', path: '/console/add-validator/complete-registration' },
+    { name: 'Verify Validator Set', path: '/console/add-validator/verify-validator-set' },
   ],
   '/console/permissioned-l1s/change-validator-weight': [
     { name: 'Select L1 Subnet', path: '/console/permissioned-l1s/change-validator-weight/select-subnet' },
@@ -610,20 +610,6 @@ const FLOW_SUBSTEPS: Record<string, Array<{ name: string; path: string }>> = {
     },
     { name: 'Transfer Ownership', path: '/console/permissionless-l1s/erc20-staking-manager-setup/transfer-ownership' },
     { name: 'Read Contract', path: '/console/permissionless-l1s/erc20-staking-manager-setup/read-contract' },
-  ],
-  '/console/permissionless-l1s/stake/native': [
-    { name: 'Select L1 Subnet', path: '/console/permissionless-l1s/stake/native/select-subnet' },
-    { name: 'Initiate Registration', path: '/console/permissionless-l1s/stake/native/initiate-registration' },
-    { name: 'P-Chain Registration', path: '/console/permissionless-l1s/stake/native/pchain-registration' },
-    { name: 'Complete Registration', path: '/console/permissionless-l1s/stake/native/complete-registration' },
-    { name: 'Verify Validator Set', path: '/console/permissionless-l1s/stake/native/verify-validator-set' },
-  ],
-  '/console/permissionless-l1s/stake/erc20': [
-    { name: 'Select L1 Subnet', path: '/console/permissionless-l1s/stake/erc20/select-subnet' },
-    { name: 'Initiate Registration', path: '/console/permissionless-l1s/stake/erc20/initiate-registration' },
-    { name: 'P-Chain Registration', path: '/console/permissionless-l1s/stake/erc20/pchain-registration' },
-    { name: 'Complete Registration', path: '/console/permissionless-l1s/stake/erc20/complete-registration' },
-    { name: 'Verify Validator Set', path: '/console/permissionless-l1s/stake/erc20/verify-validator-set' },
   ],
   '/console/permissionless-l1s/delegate/native': [
     { name: 'Select L1 Subnet', path: '/console/permissionless-l1s/delegate/native/select-l1' },

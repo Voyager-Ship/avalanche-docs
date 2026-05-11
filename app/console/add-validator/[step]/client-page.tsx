@@ -4,22 +4,21 @@ import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import StepFlow from "@/components/console/step-flow";
 import { steps } from "../steps";
-import { useStakeValidatorStore } from "@/components/toolbox/stores/stakeValidatorStore";
+import { useAddValidatorStore } from "@/components/toolbox/stores/addValidatorStore";
 import ValidatorManagerLayout from "@/components/toolbox/contexts/ValidatorManagerLayout";
 
-export default function StakeERC20ClientPage({ currentStepKey }: { currentStepKey: string }) {
-  const basePath = "/console/permissionless-l1s/stake/erc20";
+export default function AddValidatorClientPage({ currentStepKey }: { currentStepKey: string }) {
+  const basePath = "/console/add-validator";
   const searchParams = useSearchParams();
-  const { subnetIdL1, globalError, pChainTxId, setSubnetIdL1, setTokenType } = useStakeValidatorStore();
+  const { subnetIdL1, globalError, pChainTxId, setSubnetIdL1 } = useAddValidatorStore();
 
   useEffect(() => {
-    setTokenType("erc20");
     const subnetId = searchParams.get("subnetId");
     if (subnetId && subnetId !== subnetIdL1) setSubnetIdL1(subnetId);
-  }, [searchParams, setSubnetIdL1, setTokenType, subnetIdL1]);
+  }, [searchParams, setSubnetIdL1, subnetIdL1]);
 
   return (
-    <ValidatorManagerLayout subnetIdL1={subnetIdL1} globalError={globalError} showPoSWarning>
+    <ValidatorManagerLayout subnetIdL1={subnetIdL1} globalError={globalError}>
       <StepFlow
         steps={steps}
         basePath={basePath}

@@ -234,13 +234,8 @@ const data = {
       items: [
         {
           title: "Add Validator",
-          url: "/console/permissioned-l1s/add-validator",
+          url: "/console/add-validator",
           icon: SquarePlus,
-        },
-        {
-          title: "Stake",
-          url: "/console/permissionless-l1s/stake/native",
-          icon: HandCoins,
         },
         {
           title: "Disable Validator",
