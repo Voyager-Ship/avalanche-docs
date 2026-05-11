@@ -6,8 +6,11 @@ import SelectValidationID from '@/components/toolbox/components/SelectValidation
 import { useRemoveValidatorStore } from '@/components/toolbox/stores/removeValidatorStore';
 import { useValidatorManagerContext } from '@/components/toolbox/contexts/ValidatorManagerContext';
 import { useViemChainStore } from '@/components/toolbox/stores/toolboxStore';
+import { useValidatorPreflight, ValidatorStatus } from '@/components/toolbox/hooks/useValidatorPreflight';
+import { useWalletStore } from '@/components/toolbox/stores/walletStore';
 import PoAInitiateValidatorRemoval from '@/components/toolbox/console/permissioned-l1s/remove-validator/InitiateValidatorRemoval';
 import { PosInitiateRemoval } from '../PosInitiateRemoval';
+import { ResendRemovalMessage } from '../ResendRemovalMessage';
 import { StepCodeViewer } from '@/components/console/step-code-viewer';
 import { ManagerTypeBadge } from '@/components/toolbox/console/add-validator/ManagerTypeBadge';
 import { VmcChainSwitchBanner } from '@/components/toolbox/console/add-validator/VmcChainSwitchBanner';
@@ -48,6 +51,29 @@ export default function InitiateRemovalStep() {
   const tokenType: 'native' | 'erc20' = vmcCtx.staking.stakingType === 'erc20' ? 'erc20' : 'native';
   const rpcUrl = viemChain?.rpcUrls?.default?.http[0] || '';
 
+  // Detect the "stuck in PendingRemoved" state at the dispatcher level so we
+  // can surface the contract's resendValidatorRemovalMessage path regardless
+  // of PoA vs PoS branch. Both branches share the same on-chain symptom:
+  // validator.status = PendingRemoved + sentNonce > receivedNonce. That
+  // happens when the SetL1ValidatorWeight warp failed P-Chain verification
+  // (typical cause: validator-set drift between aggregator snapshot and
+  // P-Chain's verifying snapshot during Fuji churn). The contract's
+  // resendValidatorRemovalMessage re-emits the same warp from a fresh tx,
+  // giving the user another extraction point without changing on-chain state.
+  const walletEVMAddress = useWalletStore((s) => s.walletEVMAddress);
+  const preflight = useValidatorPreflight({
+    validationID: store.validationId || undefined,
+    stakingManagerAddress: stakingManagerAddress || null,
+    validatorManagerAddress: validatorManagerAddress || null,
+    walletAddress: walletEVMAddress || undefined,
+    stakingManagerType: tokenType,
+  });
+  const isPendingPChainOp =
+    !!store.validationId &&
+    !!preflight.validatorData &&
+    preflight.status === ValidatorStatus.PendingRemoved &&
+    preflight.validatorData.sentNonce > preflight.validatorData.receivedNonce;
+
   const body = (
     <div className="flex flex-col rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
       <div className="p-4 space-y-4">
@@ -67,6 +93,25 @@ export default function InitiateRemovalStep() {
         )}
 
         {vmcCtx.chainMismatch && <VmcChainSwitchBanner mismatch={vmcCtx.chainMismatch} />}
+
+        {/* Stuck-in-PendingRemoved recovery path. Surfaced above the per-branch
+            UI so the user sees it whether they're on PoA or PoS. The branch
+            components below will still render and self-block via preflight,
+            but the user has a clear "resend the warp" affordance here. */}
+        {isPendingPChainOp && validatorManagerAddress && (
+          <ResendRemovalMessage
+            validatorManagerAddress={validatorManagerAddress}
+            validationID={store.validationId}
+            onSuccess={(hash) => {
+              store.setEvmTxHash(hash);
+              store.setGlobalError(null);
+              store.setGlobalSuccess(
+                'Resent removal message. Continue to the P-Chain Weight Update step with this fresh transaction.',
+              );
+            }}
+            onError={(message) => store.setGlobalError(message)}
+          />
+        )}
 
         {!isDetecting && !vmcCtx.chainMismatch && (
           <>
