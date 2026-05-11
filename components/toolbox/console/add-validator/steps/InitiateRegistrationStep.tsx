@@ -185,9 +185,18 @@ export default function InitiateRegistrationStep() {
     </div>
   );
 
+  // ContractDeployViewer is itself a 2-col grid (children left, source right),
+  // so for PoS we use it as the *only* wrapper. Stacking it inside another grid
+  // with a StepCodeViewer (as the PoA path does) collapses everything into three
+  // cramped columns. PoA has no live contract source to deploy/inspect, so it
+  // falls back to the StepCodeViewer side panel.
+  if (contractSources) {
+    return <ContractDeployViewer contracts={contractSources}>{body}</ContractDeployViewer>;
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      <div className="space-y-4">{contractSources ? <ContractDeployViewer contracts={contractSources}>{body}</ContractDeployViewer> : body}</div>
+      <div className="space-y-4">{body}</div>
       <StepCodeViewer activeStep={1} steps={stepConfig} className="lg:sticky lg:top-4 lg:self-start" />
     </div>
   );
