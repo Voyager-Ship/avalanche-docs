@@ -71,17 +71,13 @@ export default function PChainRemovalStep() {
             <SubmitPChainTxWeightUpdate
               subnetIdL1={store.subnetIdL1}
               initialEvmTxHash={store.evmTxHash}
-              // P-Chain verifies the SetL1ValidatorWeight warp's signatures against
-              // the L1's own validator set — not the warp source chain's subnet.
-              // The previous `vmcCtx.signingSubnetId` here was the subnet owning
-              // the VMC's home chain (Primary Network for cross-chain VMCs like
-              // Frozen Drift). That worked accidentally for inheritance-model L1s
-              // where the VMC lives on the L1 itself, but Glacier's aggregator
-              // honors this hint as-is for SetL1ValidatorWeight (the message
-              // body has no subnetID field for it to override with), so cross-
-              // chain composition L1s ended up signed by the wrong subnet → the
-              // exact 1/3 overlap producing P-Chain's "67*total > 100*signed".
-              signingSubnetId={store.subnetIdL1}
+              // The signing subnet for *any* warp from the StakingManager is the
+              // subnet that owns the chain where the StakingManager lives — i.e.
+              // the VMC's home chain's subnet. For inheritance-model L1s that's
+              // the L1's own subnet; for composition-model L1s (VMC on C-Chain)
+              // that's the Primary Network. `vmcCtx.signingSubnetId` is set to
+              // exactly that from useVMCAddress.
+              signingSubnetId={vmcCtx.signingSubnetId || store.subnetIdL1}
               txHashLabel="Initiate Removal Transaction Hash"
               onSuccess={(pChainTxId) => {
                 store.setPChainTxId(pChainTxId);

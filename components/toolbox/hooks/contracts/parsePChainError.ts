@@ -10,9 +10,10 @@ export function parsePChainError(err: unknown): string {
   if (raw.includes('insufficient funds')) return 'Insufficient P-Chain balance for transaction';
 
   // P-Chain rejects with: "signature weight is insufficient: 67*<total> > 100*<signed>".
-  // The most common cause is a signing-subnet mismatch — the aggregator was
-  // pointed at the wrong subnet so the collected sigs don't count toward the
-  // L1's required quorum. A genuinely transient aggregator hiccup is rarer.
+  // The aggregator returned a partial signature that doesn't meet 67% quorum
+  // of the signing subnet. Almost always a transient aggregator/validator
+  // availability gap on smaller networks (especially Fuji's Primary Network
+  // with its ~9 validators) — a fresh aggregation attempt usually clears it.
   if (raw.includes('signature weight is insufficient')) {
     const match = raw.match(/67\*(\d+) > 100\*(\d+)/);
     if (match) {
@@ -20,15 +21,15 @@ export function parsePChainError(err: unknown): string {
       const signed = BigInt(match[2]);
       const percent = total > 0n ? Number((signed * 10000n) / total) / 100 : 0;
       return (
-        `Aggregated signature only covers ${percent.toFixed(1)}% of the L1's validator weight ` +
-        `(need 67%). Most often this means the warp was signed by the wrong subnet — verify ` +
-        `the signing-subnet hint matches the validator's L1. If the configuration looks right, ` +
-        `it can also be a transient aggregator response gap; retry once before investigating further.`
+        `Signature aggregator only collected ${percent.toFixed(1)}% of the signing subnet's ` +
+        `stake (need 67%). This is a transient aggregator/validator availability gap — retry the ` +
+        `P-Chain submission, the next aggregation usually pulls a different set of responders. ` +
+        `Common on Fuji, where the Primary Network signing set is small.`
       );
     }
     return (
-      "Aggregated signature is below the 67% quorum the L1's validator set requires. " +
-      'Usually a signing-subnet mismatch; retry once, then check config if it persists.'
+      'Aggregator returned a partial signature below the 67% quorum P-Chain requires. ' +
+      'Retry the P-Chain submission — usually a transient availability gap.'
     );
   }
 
