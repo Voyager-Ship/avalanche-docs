@@ -64,7 +64,6 @@ const InitiateValidatorRemovalUptime: React.FC<InitiateValidatorRemovalUptimePro
   const [customValidatorsUrl, setCustomValidatorsUrl] = useState<string>('');
   const [showCustomUrl, setShowCustomUrl] = useState(false);
 
-  const tokenLabel = tokenType === 'native' ? 'Native Token' : 'ERC20 Token';
 
   const handleInitiateRemoval = async () => {
     if (isProcessing) return;
@@ -170,16 +169,6 @@ const InitiateValidatorRemovalUptime: React.FC<InitiateValidatorRemovalUptimePro
       {error && <Alert variant="error">{error}</Alert>}
 
       {validationID && <ValidatorPreflightChecklist preflight={preflight} currentFlow="initiate-removal" />}
-
-      <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
-        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
-          Removal with Uptime Proof ({tokenLabel} Staking)
-        </h3>
-
-        <div className="space-y-3">
-          <Input label="Validation ID" value={validationID} onChange={() => {}} disabled={true} />
-        </div>
-      </div>
 
       {/* Custom validators URL — collapsed by default, auto-shown on endpoint failure */}
       <div className="space-y-2">
