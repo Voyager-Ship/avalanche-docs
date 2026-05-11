@@ -125,6 +125,10 @@ export function ChatBubble() {
     return null;
   }
 
+  // On /stats, hide the bubble on mobile via CSS (charts there are dense and
+  // the floating button steals tap targets). Desktop stats still shows it.
+  const hideOnMobile = pathname.startsWith('/stats');
+
   const handleBubbleClick = () => {
     if (state === 'collapsed') {
       setShowPrompt(false);
@@ -167,7 +171,13 @@ export function ChatBubble() {
   };
 
   return (
-    <div className="chatbot-container fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3" data-chatbot>
+    <div
+      className={cn(
+        'chatbot-container fixed bottom-6 right-6 z-50 flex-col items-end gap-3',
+        hideOnMobile ? 'hidden md:flex' : 'flex',
+      )}
+      data-chatbot
+    >
       {/* Prompt tooltip */}
       {mounted && (
         <div
