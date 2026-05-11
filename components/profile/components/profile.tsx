@@ -585,7 +585,7 @@ export default function Profile({
                 {/* Other accounts */}
                 <FormField
                   control={form.control}
-                  name="additional_social_media"
+                  name="additional_social_accounts"
                   render={({ field }) => {
                     const handleAddNewSocial = () => {
                       const socialLink = newSocial.trim();
@@ -593,7 +593,7 @@ export default function Profile({
 
                       const isValidUrl = z.url("Must be a valid URL").safeParse(socialLink);
                       if (!isValidUrl.success) {
-                        form.setError("additional_social_media", {
+                        form.setError("additional_social_accounts", {
                           type: "manual",
                           message: "Must be a valid URL",
                         });
@@ -604,7 +604,7 @@ export default function Profile({
                       if (!currentSocials.includes(socialLink)) {
                         field.onChange([...currentSocials, socialLink]);
                       }
-                      form.clearErrors("additional_social_media");
+                      form.clearErrors("additional_social_accounts");
                       setNewSocial("");
                     };
 
@@ -640,8 +640,8 @@ export default function Profile({
                                 value={newSocial}
                                 onChange={(e) => {
                                   setNewSocial(e.target.value);
-                                  if (form.formState.errors.additional_social_media) {
-                                    form.clearErrors("additional_social_media");
+                                  if (form.formState.errors.additional_social_accounts) {
+                                    form.clearErrors("additional_social_accounts");
                                   }
                                 }}
                                 onKeyDown={(e) => {

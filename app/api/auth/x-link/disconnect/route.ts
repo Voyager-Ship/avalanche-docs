@@ -12,7 +12,8 @@ export async function DELETE() {
     where: { id: session.user.id },
     data: {
       x_account: null,
-      x_verified_at: null,
+      x_access_token: null,
+      x_refresh_token: null,
     },
   });
 

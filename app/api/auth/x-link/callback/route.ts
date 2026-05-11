@@ -1,9 +1,11 @@
 import { getAuthSession } from '@/lib/auth/authSession';
+import { encryptToken } from '@/lib/x-token';
 import { prisma } from '@/prisma/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface XTokenResponse {
   access_token?: string;
+  refresh_token?: string;
   error?: string;
 }
 
@@ -118,7 +120,10 @@ export async function GET(req: NextRequest) {
     where: { id: session.user.id },
     data: {
       x_account: xUrl,
-      x_verified_at: new Date(),
+      x_access_token: encryptToken(tokenData.access_token),
+      x_refresh_token: tokenData.refresh_token
+        ? encryptToken(tokenData.refresh_token)
+        : null,
     },
   });
 

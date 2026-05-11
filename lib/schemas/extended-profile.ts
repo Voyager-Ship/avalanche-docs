@@ -72,7 +72,7 @@ export const UpdateExtendedProfileSchema = z
       "Invalid LinkedIn URL.",
     ),
     wallet: z.array(z.string()).nullable().optional(),
-    additional_social_media: z.array(z.string()).optional(),
+    additional_social_accounts: z.array(z.string()).optional(),
     skills: z.array(z.string()).optional(),
     notifications: z.boolean().nullable().optional(),
     profile_privacy: z.string().nullable().optional(),

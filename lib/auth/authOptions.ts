@@ -137,7 +137,7 @@ export const AuthOptions: NextAuthOptions = {
           user = {
             email, notification_email: email, name: '', image: '', last_login: new Date(), authentication_mode: '', bio: '',
             custom_attributes: [], id: '', integration: '', notifications: null, profile_privacy: null,
-            additional_social_media: [], telegram_account: '', github_account: null, x_account: null, linkedin_account: null,
+            additional_social_accounts: [], telegram_account: '', github_account: null, x_account: null, linkedin_account: null,
             user_name: '', created_at: new Date(),
             country: null, user_type: null, wallet: [], skills: [], team_id: null, noun_avatar_seed: null, noun_avatar_enabled: false,
             notification_means: null,

@@ -271,6 +271,7 @@ export function RegisterForm({
           is_enthusiast: loadedData.is_enthusiast || false,
           city: loadedData.city || "",
           dietary: loadedData.dietary || "",
+          telegram_account: loadedData.telegram_account || "",
           interests: loadedData.interests
             ? parseArrayField(loadedData.interests)
             : [],

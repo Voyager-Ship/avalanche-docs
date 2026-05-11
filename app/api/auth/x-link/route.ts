@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     'redirect_uri',
     `${base}/api/auth/x-link/callback`
   );
-  url.searchParams.set('scope', 'users.read tweet.read');
+  url.searchParams.set('scope', 'users.read tweet.read offline.access');
   url.searchParams.set('state', state);
   url.searchParams.set('code_challenge', codeChallenge);
   url.searchParams.set('code_challenge_method', 'S256');

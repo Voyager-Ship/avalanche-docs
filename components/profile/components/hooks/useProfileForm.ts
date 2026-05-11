@@ -49,7 +49,7 @@ export const profileSchema = z.object({
     .min(1, "LinkedIn URL is required")
     .regex(LINKEDIN_ACCOUNT_PATTERN, "Enter a LinkedIn URL like https://www.linkedin.com/in/username"),
   wallet: z.array(z.string()).optional().default([]),
-  additional_social_media: z.array(z.url("Must be a valid URL")).optional().default([]),
+  additional_social_accounts: z.array(z.url("Must be a valid URL")).optional().default([]),
   skills: z.array(z.string()).default([]),
   notifications: z.boolean().default(false),
   profile_privacy: z.string().default("public"),
@@ -86,7 +86,7 @@ export function getProfileCompletionPercentage(values: Partial<ProfileFormValues
   if (has(v.github_account)) completed++;
   if (Array.isArray(v.wallet) && v.wallet.filter((w) => has(w)).length > 0) completed++;
   if (has(v.telegram_account)) completed++;
-  if (Array.isArray(v.additional_social_media) && v.additional_social_media.length > 0) completed++;
+  if (Array.isArray(v.additional_social_accounts) && v.additional_social_accounts.length > 0) completed++;
   if (Array.isArray(v.skills) && v.skills.length > 0) completed++;
   return Math.round((completed / PROFILE_COMPLETION_CRITERIA) * 100);
 }
@@ -133,7 +133,7 @@ export function useProfileForm() {
       x_account: "",
       linkedin_account: "",
       wallet: [],
-      additional_social_media: [],
+      additional_social_accounts: [],
       skills: [],
       notifications: false,
       profile_privacy: "public",
@@ -192,7 +192,7 @@ export function useProfileForm() {
           x_account: profile.x_account || "",
           linkedin_account: profile.linkedin_account || "",
           wallet: Array.isArray(profile.wallet) ? profile.wallet : (profile.wallet ? [profile.wallet] : []),
-          additional_social_media: profile.additional_social_media || [],
+          additional_social_accounts: profile.additional_social_accounts || [],
           skills: profile.skills || [],
           notifications: profile.notifications || false,
           profile_privacy: profile.profile_privacy || "public",
@@ -555,7 +555,7 @@ export function useProfileForm() {
         x_account: updatedProfile.x_account || "",
         linkedin_account: updatedProfile.linkedin_account || "",
         wallet: Array.isArray(updatedProfile.wallet) ? updatedProfile.wallet : (updatedProfile.wallet ? [updatedProfile.wallet] : []),
-        additional_social_media: updatedProfile.additional_social_media || [],
+        additional_social_accounts: updatedProfile.additional_social_accounts || [],
         skills: updatedProfile.skills || [],
         notifications: updatedProfile.notifications || false,
         profile_privacy: updatedProfile.profile_privacy || "public",
@@ -594,13 +594,13 @@ export function useProfileForm() {
 
   // Social handlers
   const handleAddSocial = () => {
-    const currentSocials = watchedValues.additional_social_media || [];
-    setValue("additional_social_media", [...currentSocials, ""], { shouldDirty: true });
+    const currentSocials = watchedValues.additional_social_accounts || [];
+    setValue("additional_social_accounts", [...currentSocials, ""], { shouldDirty: true });
   };
 
   const handleRemoveSocial = (index: number) => {
-    const currentSocials = watchedValues.additional_social_media || [];
-    setValue("additional_social_media", currentSocials.filter((_, i) => i !== index), { shouldDirty: true });
+    const currentSocials = watchedValues.additional_social_accounts || [];
+    setValue("additional_social_accounts", currentSocials.filter((_, i) => i !== index), { shouldDirty: true });
   };
 
   // Wallet handlers
