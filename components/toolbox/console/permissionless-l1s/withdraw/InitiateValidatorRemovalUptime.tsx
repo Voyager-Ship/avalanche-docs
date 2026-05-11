@@ -24,6 +24,16 @@ type TokenType = 'native' | 'erc20';
 interface InitiateValidatorRemovalUptimeProps {
   validationID: string;
   stakingManagerAddress: string;
+  /**
+   * Underlying ValidatorManager contract address. Required for preflight reads
+   * (`getValidator`, `l1TotalWeight`, `getChurnTracker`). For inheritance-model
+   * L1s where the StakingManager IS the VMC these will be the same; for the
+   * composition model they're different contracts and reads against the wrong
+   * one return zero-data → the validator looks "Unknown" and the button stays
+   * locked. Defaults to stakingManagerAddress for backwards compatibility but
+   * the unified flow passes the real VMC explicitly.
+   */
+  validatorManagerAddress?: string;
   rpcUrl: string;
   uptimeBlockchainID: string;
   tokenType: TokenType;
@@ -34,6 +44,7 @@ interface InitiateValidatorRemovalUptimeProps {
 const InitiateValidatorRemovalUptime: React.FC<InitiateValidatorRemovalUptimeProps> = ({
   validationID,
   stakingManagerAddress,
+  validatorManagerAddress,
   rpcUrl,
   uptimeBlockchainID,
   tokenType,
@@ -53,8 +64,9 @@ const InitiateValidatorRemovalUptime: React.FC<InitiateValidatorRemovalUptimePro
   const preflight = useValidatorPreflight({
     validationID: validationID || undefined,
     stakingManagerAddress,
-    validatorManagerAddress: stakingManagerAddress,
+    validatorManagerAddress: validatorManagerAddress ?? stakingManagerAddress,
     walletAddress: walletEVMAddress || undefined,
+    stakingManagerType: tokenType,
   });
 
   const [isProcessing, setIsProcessing] = useState(false);

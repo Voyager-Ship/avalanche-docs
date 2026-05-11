@@ -98,7 +98,10 @@ export default function InitiateRemovalStep() {
                   }}
                   format="hex"
                   subnetId={store.subnetIdL1}
-                  validatorManagerAddress={stakingManagerAddress}
+                  // getValidator() lives on the underlying VMC, not the StakingManager.
+                  // For composition-model L1s they're different addresses; passing
+                  // the StakingManager would make the picker show "Unknown" status.
+                  validatorManagerAddress={vmcCtx.validatorManagerAddress || stakingManagerAddress}
                 />
 
                 {store.nodeId && (
@@ -113,6 +116,7 @@ export default function InitiateRemovalStep() {
                       <StakingInitiateValidatorRemovalUptime
                         validationID={store.validationId}
                         stakingManagerAddress={stakingManagerAddress}
+                        validatorManagerAddress={vmcCtx.validatorManagerAddress || stakingManagerAddress}
                         rpcUrl={rpcUrl}
                         uptimeBlockchainID={uptimeBlockchainID}
                         tokenType={tokenType}
@@ -134,6 +138,7 @@ export default function InitiateRemovalStep() {
                       <StakingInitiateValidatorRemoval
                         validationID={store.validationId}
                         stakingManagerAddress={stakingManagerAddress}
+                        validatorManagerAddress={vmcCtx.validatorManagerAddress || stakingManagerAddress}
                         rpcUrl={rpcUrl}
                         signingSubnetId={vmcCtx.signingSubnetId || store.subnetIdL1}
                         tokenType={tokenType}

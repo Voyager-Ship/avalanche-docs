@@ -16,6 +16,12 @@ type TokenType = 'native' | 'erc20';
 interface InitiateValidatorRemovalProps {
   validationID: string;
   stakingManagerAddress: string;
+  /**
+   * Underlying ValidatorManager contract address. Required for preflight reads
+   * — see the same prop's doc on InitiateValidatorRemovalUptime. Defaults to
+   * stakingManagerAddress for inheritance-model L1s.
+   */
+  validatorManagerAddress?: string;
   rpcUrl: string;
   signingSubnetId: string;
   tokenType: TokenType;
@@ -26,6 +32,7 @@ interface InitiateValidatorRemovalProps {
 const InitiateValidatorRemoval: React.FC<InitiateValidatorRemovalProps> = ({
   validationID,
   stakingManagerAddress,
+  validatorManagerAddress,
   tokenType,
   onSuccess,
   onError,
@@ -41,8 +48,9 @@ const InitiateValidatorRemoval: React.FC<InitiateValidatorRemovalProps> = ({
   const preflight = useValidatorPreflight({
     validationID: validationID || undefined,
     stakingManagerAddress,
-    validatorManagerAddress: stakingManagerAddress,
+    validatorManagerAddress: validatorManagerAddress ?? stakingManagerAddress,
     walletAddress: walletEVMAddress || undefined,
+    stakingManagerType: tokenType,
   });
 
   const [messageIndex, setMessageIndex] = useState<string>('0');
