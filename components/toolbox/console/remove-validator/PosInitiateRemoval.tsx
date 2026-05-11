@@ -389,12 +389,15 @@ function RemoveButton({
           ? 'Remove Validator (preserves rewards)'
           : 'Force Remove Validator (forfeits rewards)';
 
+  // Button stays primary blue across both probe states — the risk narrative is
+  // carried by the banner + the inline "forfeits rewards" label text, not by
+  // the button color. Variant flipping read as visual noise.
   return (
     <Button
       onClick={onClick}
       disabled={disabled || isProcessing}
       loading={isProcessing || isSigningUptime}
-      variant={useUptime ? 'primary' : 'outline-danger'}
+      variant="primary"
     >
       {label}
     </Button>
