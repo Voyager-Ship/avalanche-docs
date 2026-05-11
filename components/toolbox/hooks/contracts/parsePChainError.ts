@@ -9,10 +9,10 @@ export function parsePChainError(err: unknown): string {
   if (raw.includes('User rejected')) return 'Transaction was rejected by user';
   if (raw.includes('insufficient funds')) return 'Insufficient P-Chain balance for transaction';
 
-  // Signature aggregation returned a partial result that doesn't meet 67% quorum.
   // P-Chain rejects with: "signature weight is insufficient: 67*<total> > 100*<signed>".
-  // Surface the actual percentage signed so the user knows it's a transient
-  // aggregator hiccup, not a configuration issue — retry usually succeeds.
+  // The most common cause is a signing-subnet mismatch — the aggregator was
+  // pointed at the wrong subnet so the collected sigs don't count toward the
+  // L1's required quorum. A genuinely transient aggregator hiccup is rarer.
   if (raw.includes('signature weight is insufficient')) {
     const match = raw.match(/67\*(\d+) > 100\*(\d+)/);
     if (match) {
@@ -20,15 +20,15 @@ export function parsePChainError(err: unknown): string {
       const signed = BigInt(match[2]);
       const percent = total > 0n ? Number((signed * 10000n) / total) / 100 : 0;
       return (
-        `Signature aggregator only collected ${percent.toFixed(1)}% of the subnet's stake ` +
-        `(need 67%). This is usually a transient issue with the aggregator service — retry ` +
-        `the P-Chain submission in a moment. If it keeps failing, some signing validators ` +
-        `may be offline.`
+        `Aggregated signature only covers ${percent.toFixed(1)}% of the L1's validator weight ` +
+        `(need 67%). Most often this means the warp was signed by the wrong subnet — verify ` +
+        `the signing-subnet hint matches the validator's L1. If the configuration looks right, ` +
+        `it can also be a transient aggregator response gap; retry once before investigating further.`
       );
     }
     return (
-      'Signature aggregator returned a partial signature below the 67% quorum required ' +
-      'by P-Chain. Usually transient — retry the P-Chain submission.'
+      "Aggregated signature is below the 67% quorum the L1's validator set requires. " +
+      'Usually a signing-subnet mismatch; retry once, then check config if it persists.'
     );
   }
 
