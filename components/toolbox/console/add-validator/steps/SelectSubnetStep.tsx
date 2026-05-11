@@ -6,6 +6,7 @@ import { ValidatorManagerDetails } from '@/components/toolbox/components/Validat
 import { useAddValidatorStore } from '@/components/toolbox/stores/addValidatorStore';
 import { useValidatorManagerContext } from '@/components/toolbox/contexts/ValidatorManagerContext';
 import { ManagerTypeBadge } from '../ManagerTypeBadge';
+import { VmcChainSwitchBanner } from '../VmcChainSwitchBanner';
 
 export default function SelectSubnetStep() {
   const store = useAddValidatorStore();
@@ -14,8 +15,11 @@ export default function SelectSubnetStep() {
 
   // Treat staking-type resolution as part of "detection" so the badge doesn't
   // briefly read "PoA" before the staking probe finishes for an inheritance-model
-  // L1 (NativeStakingManager IS the VMC).
+  // L1 (NativeStakingManager IS the VMC). When the wallet is on the wrong chain
+  // the reads are skipped entirely — the badge stays in "Detecting…" so it
+  // doesn't claim a type we haven't actually confirmed on-chain.
   const isDetecting =
+    !!vmcCtx.chainMismatch ||
     vmcCtx.isDetectingOwnerType ||
     vmcCtx.isLoadingOwnership ||
     (vmcCtx.ownerType === 'StakingManager' && vmcCtx.staking.isLoading);
@@ -43,6 +47,8 @@ export default function SelectSubnetStep() {
           error={vmcCtx.error}
           hidePrimaryNetwork={true}
         />
+
+        {store.subnetIdL1 && vmcCtx.chainMismatch && <VmcChainSwitchBanner mismatch={vmcCtx.chainMismatch} />}
       </div>
       {store.subnetIdL1 && (
         <div className="lg:sticky lg:top-4 lg:self-start">

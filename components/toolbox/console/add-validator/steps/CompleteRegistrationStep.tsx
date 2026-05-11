@@ -10,6 +10,7 @@ import { Alert } from '@/components/toolbox/components/Alert';
 import { useValidatorPreflight } from '@/components/toolbox/hooks/useValidatorPreflight';
 import { StepCodeViewer } from '@/components/console/step-code-viewer';
 import { ManagerTypeBadge } from '../ManagerTypeBadge';
+import { VmcChainSwitchBanner } from '../VmcChainSwitchBanner';
 import { buildStepConfig } from '../codeConfig';
 import versions from '@/scripts/versions.json';
 
@@ -58,6 +59,7 @@ export default function CompleteRegistrationStep() {
             isDetecting={false}
           />
         </div>
+        {vmcCtx.chainMismatch && <VmcChainSwitchBanner mismatch={vmcCtx.chainMismatch} />}
         {!store.pChainTxId && (
           <Alert variant="warning">
             No P-Chain transaction ID from the previous step. You can enter it manually below, or go back to{' '}

@@ -15,6 +15,7 @@ import { ContractDeployViewer, type ContractSource } from '@/components/console/
 import PoAInitiate from '@/components/toolbox/console/permissioned-l1s/add-validator/InitiateValidatorRegistration';
 import StakingInitiate from '@/components/toolbox/console/permissionless-l1s/stake/InitiateValidatorRegistration';
 import { ManagerTypeBadge } from '../ManagerTypeBadge';
+import { VmcChainSwitchBanner } from '../VmcChainSwitchBanner';
 import { buildStepConfig, type ManagerCodeFlavor } from '../codeConfig';
 import versions from '@/scripts/versions.json';
 
@@ -63,6 +64,7 @@ export default function InitiateRegistrationStep() {
   const validator = validators[0];
 
   const isDetecting =
+    !!vmcCtx.chainMismatch ||
     vmcCtx.isDetectingOwnerType ||
     vmcCtx.isLoadingOwnership ||
     (vmcCtx.ownerType === 'StakingManager' && vmcCtx.staking.isLoading);
@@ -98,6 +100,8 @@ export default function InitiateRegistrationStep() {
             No L1 subnet selected. Go back to <strong>Select L1 Subnet</strong> to choose one.
           </Alert>
         )}
+
+        {vmcCtx.chainMismatch && <VmcChainSwitchBanner mismatch={vmcCtx.chainMismatch} />}
 
         <ValidatorListInput
           validators={validators}
