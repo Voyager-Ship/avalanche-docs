@@ -125,9 +125,11 @@ export function ChatBubble() {
     return null;
   }
 
-  // On /stats, hide the bubble on mobile via CSS (charts there are dense and
-  // the floating button steals tap targets). Desktop stats still shows it.
-  const hideOnMobile = pathname.startsWith('/stats');
+  // On /stats and /explorer, hide the bubble on mobile via CSS — those pages
+  // are dense (charts, tables, search results) and the floating button steals
+  // tap targets. Desktop still shows it.
+  const hideOnMobile =
+    pathname.startsWith('/stats') || pathname.startsWith('/explorer');
 
   const handleBubbleClick = () => {
     if (state === 'collapsed') {
