@@ -228,7 +228,10 @@ export function useUptimeProof() {
   }
 
   return {
+    /** Throws if the /validators endpoint is unavailable. */
     getValidatorUptime,
+    /** Non-throwing probe — returns null on endpoint unavailable / validator not found. */
+    probeValidatorUptime: getValidatorUptimeFromNode,
     createUptimeProofWarpMessage,
     createAndSignUptimeProof,
     isLoading,

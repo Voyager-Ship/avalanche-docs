@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Alert } from '@/components/toolbox/components/Alert';
-import { Button } from '@/components/toolbox/components/Button';
 import SelectValidationID from '@/components/toolbox/components/SelectValidationID';
 import { useRemoveValidatorStore } from '@/components/toolbox/stores/removeValidatorStore';
 import { useValidatorManagerContext } from '@/components/toolbox/contexts/ValidatorManagerContext';
 import { useViemChainStore } from '@/components/toolbox/stores/toolboxStore';
 import PoAInitiateValidatorRemoval from '@/components/toolbox/console/permissioned-l1s/remove-validator/InitiateValidatorRemoval';
-import StakingInitiateValidatorRemoval from '@/components/toolbox/console/permissionless-l1s/withdraw/InitiateValidatorRemoval';
-import StakingInitiateValidatorRemovalUptime from '@/components/toolbox/console/permissionless-l1s/withdraw/InitiateValidatorRemovalUptime';
+import { PosInitiateRemoval } from '../PosInitiateRemoval';
 import { StepCodeViewer } from '@/components/console/step-code-viewer';
 import { ManagerTypeBadge } from '@/components/toolbox/console/add-validator/ManagerTypeBadge';
 import { VmcChainSwitchBanner } from '@/components/toolbox/console/add-validator/VmcChainSwitchBanner';
@@ -44,17 +42,10 @@ export default function InitiateRemovalStep() {
   const stepConfig = useMemo(() => buildStepConfig(flavor), [flavor]);
   const isStaking = flavor !== 'PoA';
 
-  // For PoS: start in 'uptime' mode (preserves rewards). If the contract reverts
-  // with ValidatorIneligibleForRewards, we surface a "Force remove (forfeit
-  // rewards)" button that flips this to 'force', which renders the
-  // forceInitiateValidatorRemoval variant instead. PoA always uses one path.
-  const [posMode, setPosMode] = useState<'uptime' | 'force'>('uptime');
-  const [ineligibleForRewards, setIneligibleForRewards] = useState(false);
-
   const stakingManagerAddress = vmcCtx.staking.stakingManagerAddress || vmcCtx.validatorManagerAddress || '';
+  const validatorManagerAddress = vmcCtx.validatorManagerAddress || stakingManagerAddress;
   const uptimeBlockchainID = vmcCtx.staking.settings?.uptimeBlockchainID || '';
-  const tokenType: 'native' | 'erc20' =
-    vmcCtx.staking.stakingType === 'erc20' ? 'erc20' : 'native';
+  const tokenType: 'native' | 'erc20' = vmcCtx.staking.stakingType === 'erc20' ? 'erc20' : 'native';
   const rpcUrl = viemChain?.rpcUrls?.default?.http[0] || '';
 
   const body = (
@@ -67,11 +58,6 @@ export default function InitiateRemovalStep() {
             stakingType={vmcCtx.staking.stakingType}
             isDetecting={isDetecting}
           />
-          {isStaking && posMode === 'force' && (
-            <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              Force mode
-            </span>
-          )}
         </div>
 
         {!store.subnetIdL1 && (
@@ -91,95 +77,29 @@ export default function InitiateRemovalStep() {
                   onChange={(selection) => {
                     store.setValidationId(selection.validationId);
                     store.setNodeId(selection.nodeId);
-                    // Reset the force-mode escape hatch when the user changes
-                    // validators — the ineligibility was per-validator.
-                    setIneligibleForRewards(false);
-                    setPosMode('uptime');
                   }}
                   format="hex"
                   subnetId={store.subnetIdL1}
-                  // getValidator() lives on the underlying VMC, not the StakingManager.
-                  // For composition-model L1s they're different addresses; passing
-                  // the StakingManager would make the picker show "Unknown" status.
-                  validatorManagerAddress={vmcCtx.validatorManagerAddress || stakingManagerAddress}
+                  // getValidator() lives on the VMC, not the StakingManager — for
+                  // composition-model L1s they're different contracts.
+                  validatorManagerAddress={validatorManagerAddress}
                 />
 
-                {store.nodeId && (
-                  <p className="text-xs text-zinc-500">
-                    Validator: <code className="font-mono text-zinc-700 dark:text-zinc-300">{store.nodeId}</code>
-                  </p>
-                )}
-
                 {store.validationId && stakingManagerAddress && (
-                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 space-y-3">
-                    {posMode === 'uptime' ? (
-                      <StakingInitiateValidatorRemovalUptime
-                        validationID={store.validationId}
-                        stakingManagerAddress={stakingManagerAddress}
-                        validatorManagerAddress={vmcCtx.validatorManagerAddress || stakingManagerAddress}
-                        rpcUrl={rpcUrl}
-                        uptimeBlockchainID={uptimeBlockchainID}
-                        tokenType={tokenType}
-                        onSuccess={(data) => {
-                          setIneligibleForRewards(false);
-                          store.setEvmTxHash(data.txHash);
-                          store.setGlobalError(null);
-                        }}
-                        onError={(message) => {
-                          // Surface the force-remove escape hatch only when the
-                          // contract specifically signaled rewards-ineligibility.
-                          if (message.includes('ineligible for rewards') || message.includes('ValidatorIneligibleForRewards')) {
-                            setIneligibleForRewards(true);
-                          }
-                          store.setGlobalError(message);
-                        }}
-                      />
-                    ) : (
-                      <StakingInitiateValidatorRemoval
-                        validationID={store.validationId}
-                        stakingManagerAddress={stakingManagerAddress}
-                        validatorManagerAddress={vmcCtx.validatorManagerAddress || stakingManagerAddress}
-                        rpcUrl={rpcUrl}
-                        signingSubnetId={vmcCtx.signingSubnetId || store.subnetIdL1}
-                        tokenType={tokenType}
-                        onSuccess={(data) => {
-                          store.setEvmTxHash(data.txHash);
-                          store.setGlobalError(null);
-                        }}
-                        onError={(message) => store.setGlobalError(message)}
-                      />
-                    )}
-
-                    {ineligibleForRewards && posMode === 'uptime' && (
-                      <Alert variant="warning">
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            This validator is below the uptime threshold required to receive staking rewards. You can
-                            force-remove them now — but the rewards will be permanently forfeited.
-                          </p>
-                          <Button
-                            onClick={() => setPosMode('force')}
-                            variant="secondary"
-                            size="sm"
-                          >
-                            Force remove (forfeit rewards)
-                          </Button>
-                        </div>
-                      </Alert>
-                    )}
-
-                    {posMode === 'force' && (
-                      <Button
-                        onClick={() => {
-                          setPosMode('uptime');
-                          setIneligibleForRewards(false);
-                        }}
-                        variant="outline"
-                        size="sm"
-                      >
-                        ← Back to uptime-proof removal
-                      </Button>
-                    )}
+                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                    <PosInitiateRemoval
+                      validationID={store.validationId}
+                      stakingManagerAddress={stakingManagerAddress}
+                      validatorManagerAddress={validatorManagerAddress}
+                      rpcUrl={rpcUrl}
+                      uptimeBlockchainID={uptimeBlockchainID}
+                      tokenType={tokenType}
+                      onSuccess={(data) => {
+                        store.setEvmTxHash(data.txHash);
+                        store.setGlobalError(null);
+                      }}
+                      onError={(message) => store.setGlobalError(message)}
+                    />
                   </div>
                 )}
               </>
@@ -207,8 +127,8 @@ export default function InitiateRemovalStep() {
       </div>
       <div className="shrink-0 px-4 py-2.5 border-t border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between mt-auto">
         <span className="text-xs text-zinc-500">
-          {isStaking && posMode === 'force'
-            ? 'Calls forceInitiateValidatorRemoval()'
+          {isStaking
+            ? 'Calls initiateValidatorRemoval() — uptime path or force, auto-selected'
             : 'Calls initiateValidatorRemoval()'}
         </span>
         <a
