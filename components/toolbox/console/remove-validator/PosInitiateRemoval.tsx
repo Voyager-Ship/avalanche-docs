@@ -12,7 +12,7 @@ import { LockedContent } from '@/components/toolbox/components/LockedContent';
 import { ValidatorPreflightChecklist } from '@/components/toolbox/components/ValidatorPreflightChecklist';
 import { useValidatorPreflight } from '@/components/toolbox/hooks/useValidatorPreflight';
 import { useNativeTokenStakingManager, useERC20TokenStakingManager } from '@/components/toolbox/hooks/contracts';
-import { useUptimeProof } from '@/components/toolbox/hooks/useUptimeProof';
+import { useUptimeProof, probeValidatorUptime } from '@/components/toolbox/hooks/useUptimeProof';
 import { packWarpIntoAccessList } from '@/components/toolbox/console/permissioned-l1s/validator-manager/packWarp';
 import useConsoleNotifications from '@/hooks/useConsoleNotifications';
 
@@ -67,7 +67,7 @@ export function PosInitiateRemoval({
 
   const nativeStakingManager = useNativeTokenStakingManager(tokenType === 'native' ? stakingManagerAddress : null);
   const erc20StakingManager = useERC20TokenStakingManager(tokenType === 'erc20' ? stakingManagerAddress : null);
-  const { probeValidatorUptime, createAndSignUptimeProof, isLoading: isSigningUptime } = useUptimeProof();
+  const { createAndSignUptimeProof, isLoading: isSigningUptime } = useUptimeProof();
 
   const preflight = useValidatorPreflight({
     validationID: validationID || undefined,
@@ -84,26 +84,50 @@ export function PosInitiateRemoval({
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setErrorState] = useState<string | null>(null);
 
-  // Re-probe whenever the validator or custom URL changes. The probe is
-  // non-throwing — null means we can't reach the endpoint, a bigint means the
-  // node returned uptime data we can sign over.
-  const runProbe = useCallback(async () => {
+  // Re-probe whenever the actual inputs change. Drive directly from the primitive
+  // string deps rather than from a useCallback identity — that avoids a render
+  // loop if the probe function reference is ever unstable (it isn't anymore,
+  // but the effect is the safer place to encode the invariant).
+  //
+  // The cancelled flag handles the case where the user switches validators
+  // mid-probe — the stale fetch resolves last and would otherwise overwrite the
+  // new validator's state.
+  useEffect(() => {
+    if (!validationID || !rpcUrl) {
+      setProbe({ kind: 'idle' });
+      return;
+    }
+    let cancelled = false;
+    setProbe({ kind: 'probing' });
+    probeValidatorUptime(validationID, rpcUrl, customValidatorsUrl || undefined).then((uptime) => {
+      if (cancelled) return;
+      if (uptime === null) {
+        setProbe({ kind: 'uptime-unavailable', reason: 'endpoint' });
+      } else {
+        setProbe({ kind: 'uptime-available', uptimeSeconds: uptime });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [validationID, rpcUrl, customValidatorsUrl]);
+
+  // Retry button — read latest customValidatorsUrl from state but doesn't need
+  // to participate in the effect's dep chain.
+  const runProbe = useCallback(() => {
     if (!validationID || !rpcUrl) {
       setProbe({ kind: 'idle' });
       return;
     }
     setProbe({ kind: 'probing' });
-    const uptime = await probeValidatorUptime(validationID, rpcUrl, customValidatorsUrl || undefined);
-    if (uptime === null) {
-      setProbe({ kind: 'uptime-unavailable', reason: 'endpoint' });
-    } else {
-      setProbe({ kind: 'uptime-available', uptimeSeconds: uptime });
-    }
-  }, [validationID, rpcUrl, customValidatorsUrl, probeValidatorUptime]);
-
-  useEffect(() => {
-    void runProbe();
-  }, [runProbe]);
+    void probeValidatorUptime(validationID, rpcUrl, customValidatorsUrl || undefined).then((uptime) => {
+      if (uptime === null) {
+        setProbe({ kind: 'uptime-unavailable', reason: 'endpoint' });
+      } else {
+        setProbe({ kind: 'uptime-available', uptimeSeconds: uptime });
+      }
+    });
+  }, [validationID, rpcUrl, customValidatorsUrl]);
 
   const isLocked =
     preflight.isLoading || preflight.checks.initiateRemoval.status !== 'met' || probe.kind === 'probing';
