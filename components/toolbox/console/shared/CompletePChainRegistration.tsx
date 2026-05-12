@@ -34,12 +34,6 @@ export interface CompletePChainRegistrationProps {
   subnetIdL1: string;
   pChainTxId?: string;
   validationID?: string;
-  /**
-   * @deprecated Unused. For Complete steps the signing subnet is always the
-   * L1's own subnet (subnetIdL1) — see the comment in handleAggregate. Prop
-   * kept on the interface so existing callers don't break, but the value is
-   * intentionally ignored.
-   */
   signingSubnetId?: string;
   onSuccess: (data: { txHash: string; message: string }) => void;
   onError: (message: string) => void;
@@ -65,7 +59,7 @@ const CompletePChainRegistration: React.FC<CompletePChainRegistrationProps> = ({
   subnetIdL1,
   pChainTxId,
   validationID,
-  // signingSubnetId intentionally not destructured — see prop doc.
+  signingSubnetId,
   onSuccess,
   onError,
   managerType,
@@ -244,24 +238,14 @@ const CompletePChainRegistration: React.FC<CompletePChainRegistrationProps> = ({
       }
 
       // Step 6: Aggregate P-Chain signature.
-      //
-      // Critical: this warp goes FROM P-Chain TO the L1 (P-Chain's
-      // acknowledgement of the RegisterL1Validator tx). Per Avalanche9000,
-      // P-Chain warps about an L1 are signed by the L1's own validators —
-      // NOT the subnet that owns the warp's source chain. That's the inverse
-      // of the Initiate direction (L1 -> P-Chain, signed by the VMC's home
-      // chain's subnet).
-      //
-      // Hardcode subnetIdL1 here. Previously this read `signingSubnetId ||
-      // subnetIdL1`, where signingSubnetId came from vmcCtx.signingSubnetId
-      // (= Primary Network for composition-model L1s with VMC on C-Chain).
-      // That caused the aggregator to hang forever for those L1s because
-      // Primary Network validators don't sign P-Chain warps about L1s. For
-      // inheritance-model L1s the two values coincide so the bug stayed hidden.
+      // The warp here is from P-Chain (its registration acknowledgement),
+      // signed by the validators who can attest to the validator's existence
+      // on P-Chain — the canonical aggregator routes by source chain when
+      // signingSubnetId is unset/falls-through.
       const aggregateSignaturePromise = aggregateSignature({
         message: bytesToHex(l1ValidatorRegistrationMessage),
         justification: bytesToHex(justification),
-        signingSubnetId: subnetIdL1,
+        signingSubnetId: signingSubnetId || subnetIdL1,
       });
 
       notify(
