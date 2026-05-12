@@ -209,7 +209,7 @@ export default function Stages({ isParticipant, stages, hackathon, renderInPrevi
               {renderStageComponent(selectedStage)}
             </div>
 
-            {selectedStage.submitForm &&
+            {selectedStage.submitForm && selectedStage.formLocked !== true &&
               (renderInPreview ? (
                 <Dialog>
                   <DialogTrigger asChild>

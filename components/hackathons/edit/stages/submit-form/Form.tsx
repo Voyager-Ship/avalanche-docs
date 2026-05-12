@@ -267,7 +267,7 @@ export default function StageSubmitForm({
                     )
                   }
 
-                  {!field.predefinedField && field.type === SubmitFormFieldType.Text && (
+                  {field.type === SubmitFormFieldType.Text && (
                     <TextStagesSubmitFormField
                       field={field as TextStagesSubmitFormFieldType}
                       onChange={(updatedField: TextStagesSubmitFormFieldType) =>
@@ -276,7 +276,7 @@ export default function StageSubmitForm({
                     />
                   )}
 
-                  {!field.predefinedField && field.type === SubmitFormFieldType.Link && (
+                  {field.type === SubmitFormFieldType.Link && (
                     <LinkStagesSubmitFormField
                       field={field as LinkStagesSubmitFormFieldType}
                       onChange={(updatedField: LinkStagesSubmitFormFieldType) =>
@@ -285,7 +285,7 @@ export default function StageSubmitForm({
                     />
                   )}
 
-                  {!field.predefinedField && field.type === SubmitFormFieldType.Chips && (
+                  {field.type === SubmitFormFieldType.Chips && (
                     <ChipsStagesSubmitFormField
                       field={field as ChipsStagesSubmitFormFieldType}
                       onChange={(updatedField: ChipsStagesSubmitFormFieldType) =>
@@ -294,7 +294,7 @@ export default function StageSubmitForm({
                     />
                   )}
                   {
-                    !field.predefinedField && field.type === SubmitFormFieldType.MultiSelect && (
+                    field.type === SubmitFormFieldType.MultiSelect && (
                       <MultiSelectStagesSubmitFormField
                         field={field as MultiSelectStagesSubmitFormFieldType}
                         onChange={(updatedField: MultiSelectStagesSubmitFormFieldType) =>

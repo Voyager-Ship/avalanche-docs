@@ -26,7 +26,6 @@ import {
   validateTextInput,
   validateUrlInput,
   validateStringArray,
-  detectHtmlInjection,
   detectDangerousUrl,
 } from '@/utils/input-validator'
 

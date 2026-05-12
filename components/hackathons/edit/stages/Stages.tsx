@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { Divider } from '@/components/ui/divider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { t } from '@/app/events/edit/translations'
@@ -87,6 +88,7 @@ type StageFormProps = {
     stageIndex: number,
     fields: SubmitFormField[]
   ) => void
+  onFormLockedChange: (index: number, locked: boolean) => void
   onRemove: (index: number) => void
   setSelectedStageForm: (index: string) => void
   setActivePreviewTab: (tab: string) => void
@@ -353,6 +355,23 @@ export default function HackathonsEditStages({
     syncStagesToParent(updatedStages)
   }
 
+  const updateFormLocked = (index: number, locked: boolean): void => {
+    const updatedStages: HackathonStage[] = stages.map(
+      (stage: HackathonStage, currentIndex: number) => {
+        if (currentIndex !== index) {
+          return stage
+        }
+
+        return {
+          ...stage,
+          formLocked: locked,
+        }
+      }
+    )
+
+    syncStagesToParent(updatedStages)
+  }
+
   const addSubmitFormField = (
     stageIndex: number,
     type: SubmitFormFieldType
@@ -547,6 +566,7 @@ export default function HackathonsEditStages({
                 onUpdateSubmitFormField={updateSubmitFormField}
                 onRemoveSubmitFormField={removeSubmitFormField}
                 onReplaceSubmitFormFields={replaceSubmitFormFields}
+                onFormLockedChange={updateFormLocked}
                 onRemove={removeStage}
                 setSelectedStageForm={setSelectedStageForm}
                 setActivePreviewTab={setActivePreviewTab}
@@ -582,6 +602,7 @@ function StageForm({
   onUpdateSubmitFormField,
   onRemoveSubmitFormField,
   onReplaceSubmitFormFields,
+  onFormLockedChange,
   setSelectedStageForm,
   setActivePreviewTab,
   selectedPredefinedFields,
@@ -737,7 +758,22 @@ function StageForm({
         )}
       </TabsContent>
 
-      <TabsContent value="submit" className="mt-4">
+      <TabsContent value="submit" className="mt-4 space-y-4">
+        <div className="flex items-center justify-between rounded-md border p-4 bg-slate-50 dark:bg-slate-900">
+          <div className="space-y-0.5">
+            <Label htmlFor={`form-locked-${index}`} className="font-medium cursor-pointer">
+              Block Form Editing
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Prevent changes to this stage's form configuration
+            </p>
+          </div>
+          <Switch
+            id={`form-locked-${index}`}
+            checked={stage.formLocked ?? false}
+            onCheckedChange={(checked) => onFormLockedChange(index, checked)}
+          />
+        </div>
         <StageSubmitForm
           stageIndex={index}
           submitForm={stage.submitForm}
