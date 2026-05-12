@@ -2,7 +2,6 @@ import { NextAuthOptions, DefaultSession, Session, User } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import GithubProvider from 'next-auth/providers/github';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import TwitterProvider from 'next-auth/providers/twitter';
 import { prisma } from '../../prisma/prisma';
 import { encode, JWT } from 'next-auth/jwt';
 import { randomInt } from 'crypto';
@@ -97,10 +96,6 @@ export const AuthOptions: NextAuthOptions = {
     GithubProvider({
       clientId: process.env.GITHUB_ID as string,
       clientSecret: process.env.GITHUB_SECRET as string,
-    }),
-    TwitterProvider({
-      clientId: process.env.TWITTER_CLIENT_ID as string,
-      clientSecret: process.env.TWITTER_CLIENT_SECRET as string,
     }),
     CredentialsProvider({
       credentials: {

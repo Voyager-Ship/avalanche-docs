@@ -4,17 +4,8 @@
 --    telegram_account).
 ALTER TABLE "User" RENAME COLUMN "additional_social_media" TO "additional_social_accounts";
 
--- 2. Drop the x_verified_at column. The presence of x_access_token is now
---    the OAuth-link signal, matching the GitHub pattern
---    (github_account + non-null github_access_token = connected).
+-- 2. Drop the x_verified_at column. There is no longer an X OAuth flow on
+--    Builder Hub (X linking was removed alongside this rename), so the
+--    timestamp it tracked has no consumer. x_account remains as a plain
+--    optional URL field that users can fill in manually.
 ALTER TABLE "User" DROP COLUMN IF EXISTS "x_verified_at";
-
--- 3. Store the X OAuth access token and refresh token, both encrypted with
---    X_TOKEN_SECRET via lib/x-token.ts. X 2.0 access tokens expire after
---    ~2 hours; the refresh token (issued because we request the
---    `offline.access` scope) lets us swap a dead access token for a new
---    pair without bouncing the user through OAuth again. X rotates the
---    refresh token on each use, so refreshXAccessToken() persists both
---    halves of the new pair.
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "x_access_token" TEXT;
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "x_refresh_token" TEXT;

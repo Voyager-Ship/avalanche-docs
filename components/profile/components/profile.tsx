@@ -41,8 +41,6 @@ export interface ProfileProps {
   isAutoSaving: boolean;
   githubConnected: boolean;
   onGithubDisconnect: () => Promise<void>;
-  xConnected: boolean;
-  onXDisconnect: () => Promise<void>;
   handleRemoveSkill: (skillToRemove: string) => void;
   handleAddSocial: () => void;
   handleRemoveSocial: (index: number) => void;
@@ -58,8 +56,6 @@ export default function Profile({
   isAutoSaving,
   githubConnected,
   onGithubDisconnect,
-  xConnected,
-  onXDisconnect,
   handleRemoveSkill,
   handleAddSocial,
   handleRemoveSocial,
@@ -474,49 +470,12 @@ export default function Profile({
                     <FormItem className="flex flex-row items-center gap-4">
                       <FormLabel className="w-32 shrink-0">X</FormLabel>
                       <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <FormControl>
-                            <Input
-                              placeholder="yourhandle"
-                              {...field}
-                              value={((field.value as string) || "")
-                                .replace(/^(?:https?:\/\/)?(?:www\.)?(?:x|twitter)\.com\//i, "")
-                                .replace(/\/+$/, "")}
-                              readOnly
-                            />
-                          </FormControl>
-                          {xConnected ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="shrink-0 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:border-green-500 dark:hover:bg-green-950 dark:hover:text-green-300"
-                              onClick={onXDisconnect}
-                            >
-                              <Check className="h-4 w-4 mr-2" />
-                              Connected
-                            </Button>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="shrink-0"
-                              asChild
-                            >
-                              <a href="/api/auth/x-link">
-                                <svg
-                                  viewBox="0 0 24 24"
-                                  className="h-4 w-4 mr-2 fill-current"
-                                  aria-hidden="true"
-                                >
-                                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                                </svg>
-                                Connect
-                              </a>
-                            </Button>
-                          )}
-                        </div>
+                        <FormControl>
+                          <Input
+                            placeholder="https://x.com/yourhandle"
+                            {...field}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </div>
                     </FormItem>

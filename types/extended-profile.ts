@@ -33,7 +33,6 @@ export type ExtendedProfile = {
     x_account: string | null;
     linkedin_account: string | null;
     githubConnected?: boolean;
-    xConnected?: boolean;
     wallet?: string[] | null;
     additional_social_accounts: string[];
     skills: string[];

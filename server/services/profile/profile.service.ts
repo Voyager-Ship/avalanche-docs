@@ -54,7 +54,6 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
         github_account: user.github_account || null,
         githubConnected: Boolean(user.github_access_token),
         x_account: user.x_account || null,
-        xConnected: Boolean(user.x_access_token),
         linkedin_account: user.linkedin_account || null,
         wallet: Array.isArray(user.wallet) ? (user.wallet.length > 0 ? user.wallet : null) : (user.wallet ? [user.wallet] : null),
         additional_social_accounts: user.additional_social_accounts || [],
@@ -95,6 +94,7 @@ function buildUserUpdateData(
     if (profileData.notification_email !== undefined) updateData.notification_email = profileData.notification_email;
     if (profileData.image !== undefined) updateData.image = profileData.image;
     if (profileData.country !== undefined) updateData.country = profileData.country;
+    if (profileData.x_account !== undefined) updateData.x_account = nullableTrimmedString(profileData.x_account);
     if (profileData.linkedin_account !== undefined) updateData.linkedin_account = nullableTrimmedString(profileData.linkedin_account);
     if (profileData.wallet !== undefined) updateData.wallet = profileData.wallet ?? [];
     if (profileData.skills !== undefined) updateData.skills = profileData.skills;

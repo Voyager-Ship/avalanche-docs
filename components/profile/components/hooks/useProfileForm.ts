@@ -36,27 +36,29 @@ export const profileSchema = z.object({
   // Legacy fields (for backward compatibility)
   company_name: z.string().optional(),
   role: z.string().optional(),
+  // All four typed social fields are optional. Regex still applies when a
+  // non-empty value is present; an empty string passes through as "clear."
   github_account: z
-    .string()
-    .min(1, "GitHub profile is required")
-    .regex(GITHUB_ACCOUNT_PATTERN, "Enter a valid GitHub username or github.com URL"),
+    .union([z.string().regex(GITHUB_ACCOUNT_PATTERN, "Enter a valid GitHub username or github.com URL"), z.literal("")])
+    .optional()
+    .default(""),
   x_account: z
-    .string()
-    .min(1, "X (Twitter) profile URL is required")
-    .regex(X_ACCOUNT_PATTERN, "Enter a URL like https://x.com/yourhandle"),
+    .union([z.string().regex(X_ACCOUNT_PATTERN, "Enter a URL like https://x.com/yourhandle"), z.literal("")])
+    .optional()
+    .default(""),
   linkedin_account: z
-    .string()
-    .min(1, "LinkedIn URL is required")
-    .regex(LINKEDIN_ACCOUNT_PATTERN, "Enter a LinkedIn URL like https://www.linkedin.com/in/username"),
+    .union([z.string().regex(LINKEDIN_ACCOUNT_PATTERN, "Enter a LinkedIn URL like https://www.linkedin.com/in/username"), z.literal("")])
+    .optional()
+    .default(""),
   wallet: z.array(z.string()).optional().default([]),
   additional_social_accounts: z.array(z.url("Must be a valid URL")).optional().default([]),
   skills: z.array(z.string()).default([]),
   notifications: z.boolean().default(false),
   profile_privacy: z.string().default("public"),
   telegram_account: z
-    .string()
-    .min(1, "Telegram username is required")
-    .regex(TELEGRAM_ACCOUNT_PATTERN, "Enter a valid Telegram username (5-32 chars, starts with a letter)"),
+    .union([z.string().regex(TELEGRAM_ACCOUNT_PATTERN, "Enter a valid Telegram username (5-32 chars, starts with a letter)"), z.literal("")])
+    .optional()
+    .default(""),
 });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -105,7 +107,6 @@ export function useProfileForm() {
   const isInitialLoadRef = useRef(true);
   const lastSavedDataRef = useRef<string>("");
   const [githubConnected, setGithubConnected] = useState(false);
-  const [xConnected, setXConnected] = useState(false);
 
   // Initialize form with react-hook-form and Zod
   const form = useForm<ProfileFormValues>({
@@ -200,7 +201,6 @@ export function useProfileForm() {
         };
 
         setGithubConnected(Boolean(profile.githubConnected));
-        setXConnected(Boolean(profile.xConnected));
         form.reset(formValues);
         lastSavedDataRef.current = JSON.stringify(formValues);
         setTimeout(() => { isInitialLoadRef.current = false; }, 500);
@@ -313,7 +313,6 @@ export function useProfileForm() {
         role,
         wallet,
         github_account: _githubAccount,
-        x_account: _xAccount,
         ...restData
       } = data;
 
@@ -482,7 +481,6 @@ export function useProfileForm() {
         role,
         wallet,
         github_account: _githubAccount,
-        x_account: _xAccount,
         ...restData
       } = data;
 
@@ -630,8 +628,6 @@ export function useProfileForm() {
     isAutoSaving,
     githubConnected,
     setGithubConnected,
-    xConnected,
-    setXConnected,
     handleFileSelect,
     handleAddSkill,
     handleRemoveSkill,
