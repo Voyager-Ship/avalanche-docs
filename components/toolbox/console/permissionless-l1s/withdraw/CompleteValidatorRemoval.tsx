@@ -34,6 +34,12 @@ interface CompleteValidatorRemovalProps {
   stakingManagerAddress: string;
   tokenType: TokenType;
   subnetIdL1: string;
+  /**
+   * @deprecated Unused. For Complete steps, the signing subnet is always the
+   * L1's own subnet (subnetIdL1) — see the comment in handleAggregate. Prop
+   * kept in the interface so existing callers don't break, but the value is
+   * intentionally ignored.
+   */
   signingSubnetId?: string;
   pChainTxId?: string;
   onSuccess: (data: { txHash: string; message: string }) => void;
@@ -59,7 +65,7 @@ const CompleteValidatorRemoval: React.FC<CompleteValidatorRemovalProps> = ({
   stakingManagerAddress,
   tokenType,
   subnetIdL1,
-  signingSubnetId,
+  // signingSubnetId intentionally not destructured — see prop doc.
   pChainTxId: initialPChainTxId,
   onSuccess,
   onError,
@@ -158,9 +164,23 @@ const CompleteValidatorRemoval: React.FC<CompleteValidatorRemovalProps> = ({
         '11111111111111111111111111111111LpoYY',
       );
 
+      // Critical: for the Complete step, the warp goes FROM P-Chain TO the L1
+      // (P-Chain's acknowledgement that the SetL1ValidatorWeight tx was accepted).
+      // Per Avalanche9000 design, P-Chain warps about an L1 are signed by the
+      // L1's own validators — NOT the subnet that owns the warp's source chain.
+      // That's the inverse of the Initiate/PChain-submit direction (where the
+      // warp is L1->P-Chain and is signed by the StakingManager's home chain's
+      // subnet, i.e. Primary Network for composition-model L1s).
+      //
+      // Always pass subnetIdL1 here, never vmcCtx.signingSubnetId. For
+      // inheritance-model L1s they happen to be equal so the bug stays hidden;
+      // for composition-model L1s (Frozen Drift, etc.) passing
+      // vmcCtx.signingSubnetId asks Primary Network to sign and the aggregator
+      // hangs forever because Primary Network validators don't sign P-Chain
+      // warps about L1s.
       const aggregateSignaturePromise = aggregateSignature({
         message: bytesToHex(l1WeightMsg),
-        signingSubnetId: signingSubnetId || subnetIdL1,
+        signingSubnetId: subnetIdL1,
       });
 
       notify({ type: 'local', name: 'Aggregate P-Chain Signatures' }, aggregateSignaturePromise);
