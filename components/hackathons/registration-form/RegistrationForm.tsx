@@ -292,6 +292,14 @@ export function RegisterForm({
         hackathon_id = loadedData.hackathon_id;
         form.reset(parsedData);
         setRegistrationForm(loadedData);
+        if (loadedData.referralAttribution) {
+          const ra = loadedData.referralAttribution;
+          setReferrer({
+            teamId: ra.team_id_referrer ?? null,
+            teamIdOther: ra.team_id_referrer_other ?? null,
+            userId: ra.user_id_referrer ?? null,
+          });
+        }
       }
       setDataFromLocalStorage();
       await mergeProfileIntoStep1();
@@ -568,7 +576,13 @@ export function RegisterForm({
           {step === 1 && (
             <>
               <RegisterFormStep1 user={session?.user} lang={lang} />
-              <ReferralFormSection value={referrer} onChange={setReferrer} />
+              <ReferralFormSection
+                value={referrer}
+                onChange={setReferrer}
+                title={t(lang, "reg.referral.title")}
+                description={t(lang, "reg.referral.description")}
+                lang={lang}
+              />
             </>
           )}
           {step === 2 && <RegisterFormStep3 isOnlineHackathon={isOnlineHackathon} lang={lang} />}

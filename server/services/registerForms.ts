@@ -209,16 +209,26 @@ export async function createRegisterForm(
   } as unknown as RegistrationForm & { referralAttributed: boolean };
 }
 export async function getRegisterForm(email: string, hackathon_id: string) {
-  const registeredData = await prisma.registerForm.findFirst({
-    where: {
-      user: {
-        email: email,
+  const [registeredData, attribution] = await Promise.all([
+    prisma.registerForm.findFirst({
+      where: { user: { email }, hackathon_id },
+    }),
+    prisma.referralAttribution.findFirst({
+      where: {
+        target_type: "hackathon_registration",
+        target_id: hackathon_id,
+        user: { email },
       },
-      hackathon_id: hackathon_id,
-    },
-  });
+      select: {
+        team_id_referrer: true,
+        team_id_referrer_other: true,
+        user_id_referrer: true,
+      },
+    }),
+  ]);
 
-  return registeredData || null;
+  if (!registeredData) return null;
+  return { ...registeredData, referralAttribution: attribution ?? null };
 }
 export async function sendConfirmationMail(
   email: string,
