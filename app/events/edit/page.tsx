@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import HackathonsList from '@/components/hackathons/edit/HackathonsList';
 import { t } from './translations';
 import { useSession, SessionProvider } from "next-auth/react";
+import useHackathonsFilters from '@/hooks/useHackathonsFilters';
 import axios from 'axios';
 import { initialData, IDataMain, IDataContent, IDataLatest, ITrack, ISchedule, ISpeaker, IResource, IPartner } from './initials';
 import { LanguageButton } from './language-button';
@@ -1095,8 +1096,18 @@ const HackathonsEdit = () => {
   const [resourceTemplates, setResourceTemplates] = useState<ResourceTemplate[]>([]);
   const [loadingResourceTemplates, setLoadingResourceTemplates] = useState<boolean>(false);
   const { data: session, status } = useSession();
-  const [myHackathons, setMyHackathons] = useState<any[]>([]);
-  const [loadingHackathons, setLoadingHackathons] = useState<boolean>(true);
+  const HACKATHONS_PAGE_SIZE = 20;
+  const {
+    items: myHackathons,
+    setItems: setMyHackathons,
+    loading: loadingHackathons,
+    filters: hackathonsFilters,
+    setFiltersPartial: handleFiltersChange,
+    search: handleSearch,
+    loadMore: loadMoreHackathons,
+    hasMore: hackathonsHasMore,
+    refresh: refreshHackathons,
+  } = useHackathonsFilters(session?.user?.id, HACKATHONS_PAGE_SIZE);
   const [isSelectedHackathon, setIsSelectedHackathon] = useState(false);
   const [selectedHackathon, setSelectedHackathon] = useState<any | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -1233,32 +1244,13 @@ const HackathonsEdit = () => {
     }
   };
 
-  const getMyHackathons = async () => {
-    setLoadingHackathons(true);
-    try {
-      const response = await axios.get(
-        `/api/hackathons?joined_only=true`,
-        {
-          headers: {
-            id: session?.user?.id,
-          }
-        }
-      );
-      const hackathons = response.data?.hackathons ?? [];
-      console.log({ response: hackathons });
-      setMyHackathons(hackathons);
-    } catch (error) {
-      console.error('Error loading hackathons:', error);
-    } finally {
-      setLoadingHackathons(false);
-    }
-  }
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      getMyHackathons();
-      getSpeakers()
-      getResources()
+    if (status === 'authenticated' && session?.user) {
+      void refreshHackathons();
+      getSpeakers();
+      getResources();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, status]);
 
   const handleApplySpeakerTemplate = useCallback(
@@ -2093,7 +2085,7 @@ const HackathonsEdit = () => {
           }
           setIsSelectedHackathon(true);
           setShowForm(true);
-          void getMyHackathons();
+          void refreshHackathons();
           return true;
         } else {
           const data = await response.json().catch(() => ({}));
@@ -2156,7 +2148,7 @@ const HackathonsEdit = () => {
           }
           setIsSelectedHackathon(true);
           setShowForm(true);
-          void getMyHackathons();
+          void refreshHackathons();
           return true;
         } else {
           const data = await response.json().catch(() => ({}));
@@ -2778,6 +2770,11 @@ const HackathonsEdit = () => {
               loading={loadingHackathons}
               forceCollapsed={isSelectedHackathon || showForm}
               fullHeight={!isSelectedHackathon && !showForm}
+              filters={hackathonsFilters}
+              onFiltersChange={handleFiltersChange}
+              onSearch={handleSearch}
+              onLoadMore={loadMoreHackathons}
+              hasMore={hackathonsHasMore}
             />
             {(isSelectedHackathon || showForm) && (
               <div className="mt-2 mb-1 border-b border-zinc-200 dark:border-zinc-800" />

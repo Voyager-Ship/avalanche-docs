@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, ExternalLink, Pencil, MoreHorizontal, Rows3 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronDown, ChevronUp, ExternalLink, Pencil, MoreHorizontal, Rows3, X, Search } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +21,20 @@ type HackathonsListProps = {
   forceCollapsed?: boolean;
   /** When true the list grows to fill available vertical space instead of capping at 320px. */
   fullHeight?: boolean;
+  /** Optional: filters and handlers for server-side filtering/pagination */
+  filters?: {
+    search?: string;
+    visibility?: 'all' | 'public' | 'private';
+    sort?: 'start_date_desc' | 'start_date_asc';
+  };
+  onFiltersChange?: (filters: {
+    search?: string;
+    visibility?: 'all' | 'public' | 'private';
+    sort?: 'start_date_desc' | 'start_date_asc';
+  }) => void;
+  onSearch?: (q: string) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
 };
 
 function formatDate(dateStr: string | undefined | null): string {
@@ -39,26 +53,168 @@ export default function HackathonsList({
   loading,
   forceCollapsed = false,
   fullHeight = false,
+  filters,
+  onFiltersChange,
+  onSearch,
+  onLoadMore,
+  hasMore,
 }: HackathonsListProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // local debounced search state
+  const [localSearch, setLocalSearch] = useState(filters?.search ?? '');
+
+  // keep local input in sync when external filters change
+  useEffect(() => {
+    setLocalSearch(filters?.search ?? '');
+  }, [filters?.search]);
 
   // Auto-collapse when editing starts; re-expand when editing ends.
   useEffect(() => {
     setCollapsed(forceCollapsed);
   }, [forceCollapsed]);
 
+  // Debounce search input and call onSearch
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (onSearch && localSearch !== (filters?.search ?? '')) {
+        onSearch(localSearch);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localSearch]);
+
+  // Infinite scroll / load more sentinel
+  useEffect(() => {
+    if (!onLoadMore || !sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !loading && hasMore) {
+            onLoadMore();
+          }
+        });
+      },
+      { root: el.parentElement, rootMargin: '200px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [onLoadMore, loading, hasMore]);
+
   const title = isDevrel
     ? language === 'en'
-      ? 'All Hackathons'
-      : 'Todos los Hackathons'
+      ? 'All Events'
+      : 'Todos los Eventos'
     : t[language].myHackathons;
 
-  if (!loading && !myHackathons.length) return null;
+  const noEventsMessage = t[language].noEventsFound;
+
+  // Show empty state with filters visible instead of hiding component
+  if (!loading && !myHackathons.length) {
+    return (
+      <div
+        className={[
+          'rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm flex flex-col overflow-visible',
+          fullHeight && !collapsed ? 'flex-1 min-h-0' : '',
+        ].join(' ')}
+      >
+        {/* Header */}
+        <button
+          type="button"
+          onClick={() => setCollapsed((prev) => !prev)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors border-b border-zinc-200 dark:border-zinc-700 cursor-pointer flex-shrink-0"
+        >
+          <div className="flex justify-center items-center gap-2">
+            <Rows3 className="w-4 h-4 text-[#e84142]"/>
+            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</span>
+          </div>
+          {collapsed ? (
+            <ChevronDown className="w-4 h-4 text-zinc-400" />
+          ) : (
+            <ChevronUp className="w-4 h-4 text-zinc-400" />
+          )}
+        </button>
+
+        {/* Filters: visible only when expanded */}
+        {!collapsed && (
+          <div
+            className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative flex-1">
+              <input
+                aria-label={language === 'en' ? 'Search events' : 'Buscar eventos'}
+                placeholder={language === 'en' ? 'Search...' : 'Buscar...'}
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                className="text-sm px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-red-400 w-full"
+              />
+              {localSearch && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLocalSearch('');
+                    if (onSearch) onSearch('');
+                  }}
+                  aria-label={language === 'en' ? 'Clear search' : 'Limpiar búsqueda'}
+                  title={language === 'en' ? 'Clear search' : 'Limpiar búsqueda'}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 bg-transparent"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            <select
+              aria-label={language === 'en' ? 'Visibility filter' : 'Filtro de visibilidad'}
+              value={filters?.visibility ?? 'all'}
+              onChange={(e) =>
+                onFiltersChange &&
+                onFiltersChange({ ...(filters ?? {}), visibility: e.target.value as any })
+              }
+              className="text-sm px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+            >
+              <option value="all">{language === 'en' ? 'All' : 'Todos'}</option>
+              <option value="public">{language === 'en' ? 'Public' : 'Público'}</option>
+              <option value="private">{language === 'en' ? 'Private' : 'Privado'}</option>
+            </select>
+
+            <select
+              aria-label={language === 'en' ? 'Sort' : 'Orden'}
+              value={filters?.sort ?? 'start_date_desc'}
+              onChange={(e) =>
+                onFiltersChange &&
+                onFiltersChange({ ...(filters ?? {}), sort: e.target.value as any })
+              }
+              className="text-sm px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+            >
+              <option value="start_date_desc">{language === 'en' ? 'Newest' : 'Más recientes'}</option>
+              <option value="start_date_asc">{language === 'en' ? 'Oldest' : 'Más antiguos'}</option>
+            </select>
+          </div>
+        )}
+
+        {/* Empty state message */}
+        {!collapsed && (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <Search className="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3" />
+            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              {noEventsMessage}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
       className={[
-        'rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden flex flex-col',
+        'rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm flex flex-col overflow-visible',
         fullHeight && !collapsed ? 'flex-1 min-h-0' : '',
       ].join(' ')}
     >
@@ -84,6 +240,85 @@ export default function HackathonsList({
         )}
       </button>
 
+      {/* Filters: visible only when expanded */}
+      {!collapsed && (
+        <div
+          className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="relative flex-1">
+            <input
+              aria-label={language === 'en' ? 'Search events' : 'Buscar eventos'}
+              placeholder={language === 'en' ? 'Search...' : 'Buscar...'}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="text-sm px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-red-400 w-full"
+            />
+            {localSearch && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLocalSearch('');
+                  if (onSearch) onSearch('');
+                }}
+                aria-label={language === 'en' ? 'Clear search' : 'Limpiar búsqueda'}
+                title={language === 'en' ? 'Clear search' : 'Limpiar búsqueda'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 bg-transparent"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          <select
+            aria-label={language === 'en' ? 'Visibility filter' : 'Filtro de visibilidad'}
+            value={filters?.visibility ?? 'all'}
+            onChange={(e) => {
+              // Apply any pending search changes first
+              if (localSearch !== (filters?.search ?? '') && onSearch) {
+                onSearch(localSearch);
+              }
+              // Then apply the visibility filter with current search
+              onFiltersChange &&
+                onFiltersChange({
+                  ...(filters ?? {}),
+                  visibility: e.target.value as any,
+                  // Ensure current search is preserved
+                  search: localSearch || filters?.search || '',
+                });
+            }}
+            className="text-sm px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+          >
+            <option value="all">{language === 'en' ? 'All' : 'Todos'}</option>
+            <option value="public">{language === 'en' ? 'Public' : 'Público'}</option>
+            <option value="private">{language === 'en' ? 'Private' : 'Privado'}</option>
+          </select>
+
+          <select
+            aria-label={language === 'en' ? 'Sort' : 'Orden'}
+            value={filters?.sort ?? 'start_date_desc'}
+            onChange={(e) => {
+              // Apply any pending search changes first
+              if (localSearch !== (filters?.search ?? '') && onSearch) {
+                onSearch(localSearch);
+              }
+              // Then apply the sort with current search
+              onFiltersChange &&
+                onFiltersChange({
+                  ...(filters ?? {}),
+                  sort: e.target.value as any,
+                  // Ensure current search is preserved
+                  search: localSearch || filters?.search || '',
+                });
+            }}
+            className="text-sm px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+          >
+            <option value="start_date_desc">{language === 'en' ? 'Newest' : 'Más recientes'}</option>
+            <option value="start_date_asc">{language === 'en' ? 'Oldest' : 'Más antiguos'}</option>
+          </select>
+        </div>
+      )}
       {/* Body */}
       {!collapsed && (
         <>
