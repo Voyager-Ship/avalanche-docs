@@ -1096,7 +1096,8 @@ const HackathonsEdit = () => {
   const [resourceTemplates, setResourceTemplates] = useState<ResourceTemplate[]>([]);
   const [loadingResourceTemplates, setLoadingResourceTemplates] = useState<boolean>(false);
   const { data: session, status } = useSession();
-  const HACKATHONS_PAGE_SIZE = 20;
+  // Fetch all hackathons at once instead of paginating (max 10000)
+  const HACKATHONS_PAGE_SIZE = 10000;
   const {
     items: myHackathons,
     setItems: setMyHackathons,

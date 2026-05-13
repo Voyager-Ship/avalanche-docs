@@ -60,7 +60,6 @@ export default function HackathonsList({
   hasMore,
 }: HackathonsListProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // local debounced search state
   const [localSearch, setLocalSearch] = useState(filters?.search ?? '');
@@ -86,23 +85,7 @@ export default function HackathonsList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localSearch]);
 
-  // Infinite scroll / load more sentinel
-  useEffect(() => {
-    if (!onLoadMore || !sentinelRef.current) return;
-    const el = sentinelRef.current;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !loading && hasMore) {
-            onLoadMore();
-          }
-        });
-      },
-      { root: el.parentElement, rootMargin: '200px' }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [onLoadMore, loading, hasMore]);
+  // Note: Infinite scroll disabled - all hackathons are now loaded at once with max pageSize
 
   const title = isDevrel
     ? language === 'en'
@@ -351,7 +334,7 @@ export default function HackathonsList({
                 'overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800',
                 fullHeight ? 'flex-1 min-h-0' : '',
               ].join(' ')}
-              style={!fullHeight ? { maxHeight: '320px' } : undefined}
+              style={!fullHeight ? { maxHeight: '500px' } : { maxHeight: '500px' }}
             >
               {myHackathons.map((hackathon) => {
                 const isSelected = hackathon.id === selectedId;
