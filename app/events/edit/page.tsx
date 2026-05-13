@@ -2969,7 +2969,7 @@ const HackathonsEdit = () => {
                   )}
                 </div>
                 {/* Event Type option */}
-                <div className="rounded-lg p-6 mb-6 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700">
+                <div className="rounded-lg p-6 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
                     <div>
                       <h2 className='font-medium text-xl mb-2 block'>Event Type</h2>

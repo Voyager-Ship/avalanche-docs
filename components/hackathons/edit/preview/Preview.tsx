@@ -58,7 +58,7 @@ export default function HackathonPreviewTabs({
         className="h-full"
       >
         <TabsList className="mb-4 grid w-full grid-cols-2">
-          <TabsTrigger value="hackathon-preview">Hackathon Preview</TabsTrigger>
+          <TabsTrigger value="hackathon-preview">Event Preview</TabsTrigger>
           <TabsTrigger value="stages-submit-form">Stages Submit Form</TabsTrigger>
         </TabsList>
 
