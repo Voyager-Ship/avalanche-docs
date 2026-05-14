@@ -116,7 +116,7 @@ export default function RegisterFormStep1({ user, lang = "en" }: Step1Props) {
           />
           <FormField
             control={form.control}
-            name="telegram_user"
+            name="telegram_account"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t(lang, "reg.step1.telegram.label")}</FormLabel>
