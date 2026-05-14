@@ -69,6 +69,7 @@ export default async function EvaluatePage({
             },
           },
           evaluations: {
+            where: { form_data_id: { not: null }, verdict: { not: null } },
             include: {
               evaluator: { select: { id: true, name: true } },
             },
@@ -180,14 +181,14 @@ export default async function EvaluatePage({
         currentStage: fd.current_stage ?? 0,
         evaluations: fd.evaluations.map((e) => ({
           id: e.id,
-          formDataId: e.form_data_id ?? fd.id,
+          formDataId: e.form_data_id!,
           evaluatorId: e.evaluator_id,
           evaluatorName: e.evaluator.name ?? "Unknown",
-          verdict: (e.verdict ?? "maybe") as EvaluationData["verdict"],
+          verdict: e.verdict as EvaluationData["verdict"],
           comment: e.comment,
           scoreOverall: e.score_overall,
           scores: e.scores as Record<string, number> | null,
-          stage: e.stage ?? 0,
+          stage: e.stage,
           createdAt: e.created_at.toISOString(),
         })),
       };
