@@ -97,7 +97,7 @@ const PartnerItem = memo(function PartnerItem({
                   reader.readAsDataURL(file);
                 }
               }}
-              className="w-full p-2 border border-zinc-600 rounded bg-zinc-800 text-zinc-200 cursor-pointer"
+              className="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-200 cursor-pointer"
             />
           </div>
 

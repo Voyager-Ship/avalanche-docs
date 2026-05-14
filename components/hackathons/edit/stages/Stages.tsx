@@ -478,20 +478,6 @@ export default function HackathonsEditStages({
   }
   useEffect(() => {
     if (stages.length === 0) {
-      setFormDataContent({
-        ...formDataContent,
-        stages: [
-          {
-            label: 'First stage',
-            date: eventStartDate,
-            deadline: eventEndDate,
-            component: undefined,
-            submitForm: {
-              fields: [BASE_SUBMIT_FORM_FIELDS.project_name.field],
-            },
-          }
-        ],
-      } as IDataContent)
       return
     }
 

@@ -37,7 +37,8 @@ export default function HackathonPreviewTabs({
   onActiveTabChange,
   selectedStageForm,
 }: HackathonPreviewTabsProps): React.JSX.Element {
-  const stages: HackathonStage[] = previewHackathon.content?.stages ?? [];
+  const stages: HackathonStage[] = (previewHackathon.content?.stages ?? [])
+    .filter((s) => s.submitForm?.fields && s.submitForm.fields.length > 0);
   const accordionRef = useRef<HTMLDivElement>(null);
   const isMounted = useRef(false);
   const [openStage, setOpenStage] = React.useState<string>('');

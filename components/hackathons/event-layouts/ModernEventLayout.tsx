@@ -67,10 +67,12 @@ export default function ModernEventLayout({
       ? `${format(validStartDate, "MMMM d")} - ${format(validEndDate, "d, yyyy")}`
       : `${format(validStartDate, "MMMM d")} - ${format(validEndDate, "MMMM d, yyyy")}`;
 
-  const bannerSrc =
-    hackathon.banner?.trim().length > 0
-      ? hackathon.banner
-      : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/main_banner_img-crBsoLT7R07pdstPKvRQkH65yAbpFX.png";
+  const isValidSrc = (src: string | undefined | null) =>
+    /^(https?:\/\/|\/)/.test((src ?? '').trim());
+
+  const bannerSrc = isValidSrc(hackathon.banner)
+    ? hackathon.banner!
+    : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/main_banner_img-crBsoLT7R07pdstPKvRQkH65yAbpFX.png";
 
   const hasAbout = Boolean(hackathon.content.tracks_text);
   const hasTracks =
@@ -126,7 +128,7 @@ export default function ModernEventLayout({
       <div className="pl-4 flex gap-4 items-center">
         <Image
           src={
-            hackathon.icon.trim().length > 0
+            isValidSrc(hackathon.icon)
               ? hackathon.icon
               : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/project-logo-ILfO9EujWnQj1xMZpIIWTZ8mc87I7f.png"
           }
