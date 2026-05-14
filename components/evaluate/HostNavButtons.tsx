@@ -10,6 +10,9 @@ type Props = {
   hackathonId: string;
 };
 
+const BUTTON_CLASS =
+  "flex items-center gap-2 px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer";
+
 export async function HostNavButtons({ hackathonId }: Props) {
   const session = await getAuthSession();
   if (!session?.user) return null;
@@ -26,18 +29,18 @@ export async function HostNavButtons({ hackathonId }: Props) {
       {canManage && (
         <Link
           href={`/events/${hackathonId}/admin-panel/judges`}
-          className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-800"
+          className={BUTTON_CLASS}
         >
-          <Gavel className="size-3.5" />
+          <Gavel size={16} />
           Judges
         </Link>
       )}
       {canEvaluate && (
         <Link
           href={`/events/${hackathonId}/evaluate`}
-          className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-800"
+          className={BUTTON_CLASS}
         >
-          <ClipboardCheck className="size-3.5" />
+          <ClipboardCheck size={16} />
           Evaluate
         </Link>
       )}

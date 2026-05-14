@@ -222,7 +222,7 @@ export function HackathonEvaluateDashboard({
         />
       </div>
 
-      <div className="rounded-md border border-zinc-800">
+      <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
         <Table>
           <TableHeader>
             <TableRow>
@@ -238,7 +238,7 @@ export function HackathonEvaluateDashboard({
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-sm text-zinc-500">
+                <TableCell colSpan={7} className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-600 dark:text-zinc-500">
                   No projects yet.
                 </TableCell>
               </TableRow>
@@ -257,31 +257,31 @@ export function HackathonEvaluateDashboard({
                       {p.logo_url ? (
                         <img src={p.logo_url} alt="" className="size-9 shrink-0 rounded object-cover" />
                       ) : (
-                        <div className="size-9 shrink-0 rounded bg-zinc-800" />
+                        <div className="size-9 shrink-0 rounded bg-zinc-200 dark:bg-zinc-800" />
                       )}
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-medium text-zinc-100">
+                        <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
                           {p.project_name}
                         </div>
-                        <div className="truncate text-xs text-zinc-500">
+                        <div className="truncate text-xs text-zinc-500 dark:text-zinc-600 dark:text-zinc-500">
                           {p.short_description}
                         </div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-xs text-zinc-400">
+                  <TableCell className="text-xs text-zinc-500 dark:text-zinc-600 dark:text-zinc-400">
                     {p.members.length} member{p.members.length === 1 ? "" : "s"}
                   </TableCell>
-                  <TableCell className="text-right text-xs text-zinc-500">
+                  <TableCell className="text-right text-xs text-zinc-500 dark:text-zinc-600 dark:text-zinc-500">
                     {new Date(p.created_at).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="text-right text-sm text-zinc-300">
+                  <TableCell className="text-right text-sm text-zinc-700 dark:text-zinc-300">
                     {p.evaluations.length}
                   </TableCell>
-                  <TableCell className="text-right text-sm text-zinc-300">
+                  <TableCell className="text-right text-sm text-zinc-700 dark:text-zinc-300">
                     {avg !== null ? `${avg.toFixed(1)} / 5` : "—"}
                   </TableCell>
-                  <TableCell className="text-right text-sm font-medium text-zinc-100">
+                  <TableCell className="text-right text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     {mine?.score_overall ?? "—"}
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -296,7 +296,7 @@ export function HackathonEvaluateDashboard({
                         <Trophy
                           className={
                             "size-3.5 " +
-                            (p.is_winner ? "text-amber-300" : "text-zinc-500")
+                            (p.is_winner ? "text-amber-300" : "text-zinc-500 dark:text-zinc-600 dark:text-zinc-500")
                           }
                         />
                         {p.is_winner ? "Winner" : "Pick"}
@@ -306,7 +306,7 @@ export function HackathonEvaluateDashboard({
                         <Trophy className="size-3.5" /> Winner
                       </span>
                     ) : (
-                      <span className="text-xs text-zinc-600">—</span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-600">—</span>
                     )}
                   </TableCell>
                 </TableRow>
