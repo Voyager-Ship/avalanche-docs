@@ -3,9 +3,8 @@ import { getHackathon } from '@/server/services/hackathons'
 import { getAuthSession } from '@/lib/auth/authSession'
 import { getRegisterForm } from '@/server/services/registerForms'
 import { getUserById } from '@/server/services/getUser'
-import StageSubmitPageContent from '@/components/hackathons/project-submission/stages/submit-form/page-content'
+import StageSubmitAccordionView from '@/components/hackathons/project-submission/stages/submit-form/StageSubmitAccordionView'
 import { ProjectSubmissionProvider } from '@/components/hackathons/project-submission/context/ProjectSubmissionContext'
-import { useProjectByHackaUser } from '@/hooks/use-get-project-hacka-user'
 
 type SubmitPageProps = {
   params: Promise<{ id: string }>
@@ -41,9 +40,8 @@ export default async function HackathonSubmitPage({
   }
 
   const stages = hackathon.content.stages ?? []
-  const stage = stages[stageIndex]
 
-  if (!stage) {
+  if (stages.length === 0) {
     redirect(`/hackathons/${id}`)
   }
 
@@ -53,11 +51,11 @@ export default async function HackathonSubmitPage({
     <ProjectSubmissionProvider>
       <main className="container py-4 sm:px-2 lg:py-16">
         <div className="mt-8 px-4">
-          <StageSubmitPageContent
+          <StageSubmitAccordionView
             hackathon={hackathon}
             hackathonCreator={hackathonCreator}
-            stage={stage}
-            stageIndex={stageIndex}
+            stages={stages}
+            initialStageIndex={stageIndex}
             user={session?.user}
           />
         </div>

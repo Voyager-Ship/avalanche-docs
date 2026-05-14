@@ -100,7 +100,7 @@ export const t = {
     switchToSpanish: 'Switch to Spanish',
     switchToEnglish: 'Switch to English',
     requiredFieldsError: 'Please fill in all required fields before continuing.',
-    myHackathons: "My Hackathons",
+    myHackathons: "My Events",
     update: "Update",
     save: "Save",
     confirmDeletePrompt: '¿Confirm delete?',
@@ -138,6 +138,7 @@ export const t = {
     manualModeInfoBanner: 'You are adding schedule items manually. Google Calendar integration is disabled in this mode.',
     basicInfo: 'Basic info',
     datesTime: 'Dates & time',
+    noEventsFound: 'No events found with the applied filters',
   },
   es: {
     mainTopics: 'Información Básica',
@@ -240,7 +241,7 @@ export const t = {
     switchToSpanish: 'Cambiar a español',
     switchToEnglish: 'Cambiar a inglés',
     requiredFieldsError: 'Por favor complete todos los campos requeridos antes de continuar.',
-    myHackathons: "Mis Hackathones",
+    myHackathons: "Mis Eventos",
     update: "Actualizar",
     save: "Guardar",
     confirmDeletePrompt: '¿Confirmar eliminación?',
@@ -278,5 +279,6 @@ export const t = {
     manualModeInfoBanner: 'Estás agregando eventos manualmente. La integración con Google Calendar está desactivada en este modo.',
     basicInfo: 'Información básica',
     datesTime: 'Fechas y horario',
+    noEventsFound: 'No se encontraron eventos con los filtros aplicados',
   }
 }; 

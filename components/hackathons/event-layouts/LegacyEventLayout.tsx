@@ -93,7 +93,7 @@ export default function LegacyEventLayout({
       <div className="pl-4 flex flex-wrap gap-4 items-center">
         <Image
           src={
-            hackathon.icon.trim().length > 0
+            /^(https?:\/\/|\/)/.test((hackathon.icon ?? '').trim())
               ? hackathon.icon
               : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/project-logo-ILfO9EujWnQj1xMZpIIWTZ8mc87I7f.png"
           }
@@ -142,8 +142,8 @@ export default function LegacyEventLayout({
               hackathonId={id}
               customLink={hackathon.content.join_custom_link}
               bannerSrc={
-                hackathon.banner?.trim().length > 0
-                  ? hackathon.banner
+                /^(https?:\/\/|\/)/.test((hackathon.banner ?? '').trim())
+                  ? hackathon.banner!
                   : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/main_banner_img-crBsoLT7R07pdstPKvRQkH65yAbpFX.png"
               }
               altText="Hackathon background"

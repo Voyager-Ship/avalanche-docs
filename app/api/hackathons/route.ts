@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
       date: searchParams.get('date') || undefined,
       status: searchParams.get('status') as HackathonStatus || undefined,
       search: searchParams.get('search') || undefined,
+      visibility: (searchParams.get('visibility') as 'all' | 'public' | 'private') || undefined,
+      sort: searchParams.get('sort') || undefined,
       event: searchParams.get('event') || undefined,
     };
     

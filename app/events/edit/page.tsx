@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import HackathonsList from '@/components/hackathons/edit/HackathonsList';
 import { t } from './translations';
 import { useSession, SessionProvider } from "next-auth/react";
+import useHackathonsFilters from '@/hooks/useHackathonsFilters';
 import axios from 'axios';
 import { initialData, IDataMain, IDataContent, IDataLatest, ITrack, ISchedule, ISpeaker, IResource, IPartner } from './initials';
 import { LanguageButton } from './language-button';
@@ -912,7 +913,7 @@ const SpeakerItem = memo(function SpeakerItem({ speaker, index, onChange, onDone
                     reader.readAsDataURL(file);
                   }
                 }}
-                className="w-full p-2 border border-zinc-600 rounded bg-zinc-800 text-zinc-200 cursor-pointer"
+                className="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-200 cursor-pointer"
               />
             </div>
 
@@ -1095,8 +1096,19 @@ const HackathonsEdit = () => {
   const [resourceTemplates, setResourceTemplates] = useState<ResourceTemplate[]>([]);
   const [loadingResourceTemplates, setLoadingResourceTemplates] = useState<boolean>(false);
   const { data: session, status } = useSession();
-  const [myHackathons, setMyHackathons] = useState<any[]>([]);
-  const [loadingHackathons, setLoadingHackathons] = useState<boolean>(true);
+  // Fetch all hackathons at once instead of paginating (max 10000)
+  const HACKATHONS_PAGE_SIZE = 10000;
+  const {
+    items: myHackathons,
+    setItems: setMyHackathons,
+    loading: loadingHackathons,
+    filters: hackathonsFilters,
+    setFiltersPartial: handleFiltersChange,
+    search: handleSearch,
+    loadMore: loadMoreHackathons,
+    hasMore: hackathonsHasMore,
+    refresh: refreshHackathons,
+  } = useHackathonsFilters(session?.user?.id, HACKATHONS_PAGE_SIZE);
   const [isSelectedHackathon, setIsSelectedHackathon] = useState(false);
   const [selectedHackathon, setSelectedHackathon] = useState<any | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -1233,32 +1245,13 @@ const HackathonsEdit = () => {
     }
   };
 
-  const getMyHackathons = async () => {
-    setLoadingHackathons(true);
-    try {
-      const response = await axios.get(
-        `/api/events?managed=true`,
-        {
-          headers: {
-            id: session?.user?.id,
-          }
-        }
-      );
-      const hackathons = response.data?.hackathons ?? [];
-      console.log({ response: hackathons });
-      setMyHackathons(hackathons);
-    } catch (error) {
-      console.error('Error loading hackathons:', error);
-    } finally {
-      setLoadingHackathons(false);
-    }
-  }
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      getMyHackathons();
-      getSpeakers()
-      getResources()
+    if (status === 'authenticated' && session?.user) {
+      void refreshHackathons();
+      getSpeakers();
+      getResources();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, status]);
 
   const handleApplySpeakerTemplate = useCallback(
@@ -1412,6 +1405,8 @@ const HackathonsEdit = () => {
   const step6Ref = useRef<HTMLDivElement | null>(null);
   const step1BasicTabRef = useRef<HTMLButtonElement | null>(null);
   const step1DatesTabRef = useRef<HTMLButtonElement | null>(null);
+  const advancedOptionsRef = useRef<HTMLDivElement | null>(null);
+  const [advancedOptionsOpen, setAdvancedOptionsOpen] = React.useState<string>('');
 
   // Preview error flags and refs to clear any leftover inline styles
   const [bannerPreviewError, setBannerPreviewError] = useState<boolean>(false);
@@ -1855,6 +1850,19 @@ const HackathonsEdit = () => {
 
     if (section === 'Participants & Prizes') {
       collapsedKey = 'about'; targetRef = step4Ref; stepKey = 'step4';
+    } else if (section === 'Advanced Options' || path === 'latest.custom_link' || path === 'content.join_custom_link' || path === 'content.submission_custom_link') {
+      // Advanced Options is an accordion below the Content section — expand it and scroll to it.
+      setAdvancedOptionsOpen('options');
+      requestAnimationFrame(() => {
+        const container = leftPanelRef.current;
+        const el = advancedOptionsRef.current;
+        if (!container || !el) return;
+        const elRect = el.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const scrollPosition = container.scrollTop + (elRect.top - containerRect.top);
+        container.scrollTo({ top: scrollPosition - 16, behavior: 'smooth' });
+      });
+      return;
     } else if (section === 'Basic Info' || path.startsWith('main.') || path === 'cohostsEmails') {
       collapsedKey = 'main'; targetRef = step1Ref; stepKey = 'step1';
     } else if (section === 'Stages' || path.startsWith('content.stages.')) {
@@ -2093,7 +2101,7 @@ const HackathonsEdit = () => {
           }
           setIsSelectedHackathon(true);
           setShowForm(true);
-          void getMyHackathons();
+          void refreshHackathons();
           return true;
         } else {
           const data = await response.json().catch(() => ({}));
@@ -2156,7 +2164,7 @@ const HackathonsEdit = () => {
           }
           setIsSelectedHackathon(true);
           setShowForm(true);
-          void getMyHackathons();
+          void refreshHackathons();
           return true;
         } else {
           const data = await response.json().catch(() => ({}));
@@ -2578,7 +2586,7 @@ const HackathonsEdit = () => {
       {/* OverlaySpinner */}
       <OverlaySpinner open={loading} message={language === 'es' ? 'Guardando cambios...' : 'Saving Changes...'} />
       {/* Header */}
-      <div className="backdrop-blur-lg bg-fd-background/80 dark:bg-black border-b border-zinc-200 dark:border-zinc-700 h-14 flex items-center justify-center">
+      <div className="relative z-10 shrink-0 backdrop-blur-lg bg-fd-background/80 dark:bg-zinc-950/80 border-b border-zinc-200 dark:border-zinc-700 h-14 flex items-center justify-center">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-1.5">
             <AvalancheLogo className="size-7" fill="currentColor"/>
@@ -2778,6 +2786,11 @@ const HackathonsEdit = () => {
               loading={loadingHackathons}
               forceCollapsed={isSelectedHackathon || showForm}
               fullHeight={!isSelectedHackathon && !showForm}
+              filters={hackathonsFilters}
+              onFiltersChange={handleFiltersChange}
+              onSearch={handleSearch}
+              onLoadMore={loadMoreHackathons}
+              hasMore={hackathonsHasMore}
             />
             {(isSelectedHackathon || showForm) && (
               <div className="mt-2 mb-1 border-b border-zinc-200 dark:border-zinc-800" />
@@ -2969,7 +2982,7 @@ const HackathonsEdit = () => {
                   )}
                 </div>
                 {/* Event Type option */}
-                <div className="rounded-lg p-6 mb-6 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700">
+                <div className="rounded-lg p-6 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
                     <div>
                       <h2 className='font-medium text-xl mb-2 block'>Event Type</h2>
@@ -3601,7 +3614,7 @@ const HackathonsEdit = () => {
                                       reader.readAsDataURL(file);
                                     }
                                   }}
-                                  className="w-full p-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                                  className="w-full p-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
                                 />
                               </div>
 
@@ -3615,7 +3628,7 @@ const HackathonsEdit = () => {
                                     setFormDataLatest({ ...formDataLatest, banner: e.target.value }); 
                                     scrollToSection('about'); 
                                   }}
-                                  className="w-full p-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                                  className="w-full p-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                                   disabled={false}
                                   autoComplete="off"
                                 />
@@ -3680,7 +3693,7 @@ const HackathonsEdit = () => {
                                       reader.readAsDataURL(file);
                                     }
                                   }}
-                                  className="w-full p-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                                  className="w-full p-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
                                 />
                               </div>
 
@@ -3693,7 +3706,7 @@ const HackathonsEdit = () => {
                                     setFormDataLatest({ ...formDataLatest, small_banner: e.target.value }); 
                                     scrollToSection('about'); 
                                   }}
-                                  className="w-full p-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                                  className="w-full p-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
                                   disabled={false}
                                   autoComplete="off"
                                 />
@@ -4148,10 +4161,12 @@ const HackathonsEdit = () => {
                   <Accordion
                     type="single"
                     collapsible
+                    value={advancedOptionsOpen}
+                    onValueChange={setAdvancedOptionsOpen}
                     className="w-full rounded-md border mt-6 px-4 py-2"
                   >
                     <AccordionItem value={'options'}>
-                      <AccordionPrimitive.Header className="flex">
+                      <AccordionPrimitive.Header className="flex" ref={advancedOptionsRef}>
                         <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between gap-2 py-1 text-sm font-medium outline-none [&[data-state=open]_svg.chevron]:rotate-180">
                           <span>Advanced options</span>
                           <div className="flex items-center gap-2">
