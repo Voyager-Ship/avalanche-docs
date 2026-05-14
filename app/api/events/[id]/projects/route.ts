@@ -26,6 +26,7 @@ const projectMetaSelect = {
   tags: true,
   website: true,
   socials: true,
+  is_winner: true,
   created_at: true,
   updated_at: true,
 } as const;

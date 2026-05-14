@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ExternalLink, Github, Loader2 } from "lucide-react";
+import { ExternalLink, Github, Loader2, Trophy } from "lucide-react";
 
 type Evaluator = {
   id: string;
@@ -60,6 +60,7 @@ type Project = {
   tracks: string[];
   categories: string[];
   tags: string[];
+  is_winner: boolean | null;
   created_at: string;
   members: Member[];
   evaluations: Evaluation[];
@@ -68,6 +69,7 @@ type Project = {
 type Props = {
   hackathonId: string;
   viewerId: string;
+  canPickWinners: boolean;
   projects: Project[];
 };
 
@@ -91,10 +93,38 @@ function averageScore(evals: Evaluation[]): number | null {
   return scored.reduce((a, e) => a + (e.score_overall ?? 0), 0) / scored.length;
 }
 
-export function HackathonEvaluateDashboard({ hackathonId, viewerId, projects: initialProjects }: Props) {
+export function HackathonEvaluateDashboard({
+  hackathonId,
+  viewerId,
+  canPickWinners,
+  projects: initialProjects,
+}: Props) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [openProjectId, setOpenProjectId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [winnerSaving, setWinnerSaving] = useState<string | null>(null);
+
+  async function toggleWinner(projectId: string, next: boolean) {
+    setWinnerSaving(projectId);
+    const previous = projects;
+    setProjects((prev) =>
+      prev.map((p) => (p.id === projectId ? { ...p, is_winner: next } : p)),
+    );
+    try {
+      const res = await fetch(`/api/projects/${projectId}/winner`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ is_winner: next }),
+      });
+      if (!res.ok) {
+        setProjects(previous);
+      }
+    } catch {
+      setProjects(previous);
+    } finally {
+      setWinnerSaving(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -141,12 +171,13 @@ export function HackathonEvaluateDashboard({ hackathonId, viewerId, projects: in
               <TableHead className="w-[80px] text-right">Reviews</TableHead>
               <TableHead className="w-[100px] text-right">Avg score</TableHead>
               <TableHead className="w-[110px] text-right">My score</TableHead>
+              <TableHead className="w-[100px] text-right">Winner</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-sm text-zinc-500">
+                <TableCell colSpan={7} className="py-8 text-center text-sm text-zinc-500">
                   No projects yet.
                 </TableCell>
               </TableRow>
@@ -195,6 +226,34 @@ export function HackathonEvaluateDashboard({ hackathonId, viewerId, projects: in
                   </TableCell>
                   <TableCell className="text-right text-sm font-medium text-zinc-100">
                     {mine?.score_overall ?? "—"}
+                  </TableCell>
+                  <TableCell
+                    className="text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {canPickWinners ? (
+                      <Button
+                        variant={p.is_winner ? "default" : "ghost"}
+                        size="sm"
+                        disabled={winnerSaving === p.id}
+                        onClick={() => toggleWinner(p.id, !p.is_winner)}
+                        aria-pressed={Boolean(p.is_winner)}
+                      >
+                        <Trophy
+                          className={
+                            "size-3.5 " +
+                            (p.is_winner ? "text-amber-300" : "text-zinc-500")
+                          }
+                        />
+                        {p.is_winner ? "Winner" : "Pick"}
+                      </Button>
+                    ) : p.is_winner ? (
+                      <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-300">
+                        <Trophy className="size-3.5" /> Winner
+                      </span>
+                    ) : (
+                      <span className="text-xs text-zinc-600">—</span>
+                    )}
                   </TableCell>
                 </TableRow>
               );
