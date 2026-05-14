@@ -124,6 +124,7 @@ export default function Submission({
           hackathonId={hackathon.id}
           hackathonTitle={hackathon.title}
           lang={lang}
+          isAuthenticated={isAuthenticated}
         />
         <Dialog>
           <DialogTrigger asChild>

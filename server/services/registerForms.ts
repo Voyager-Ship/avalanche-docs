@@ -10,6 +10,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/prisma/prisma";
 import { RegistrationForm } from "@/types/registrationForm";
 import { sendMail } from "./mail";
+import { recordReferralAttribution } from "./referrals";
 
 export const registerValidations: Validation[] = [
   {
@@ -155,7 +156,6 @@ export async function createRegisterForm(
       user: {
         connect: { email: registerData.email },
       },
-      utm: registerData.utm ?? "",
       city: registerData.city ?? "",
       telegram_user: registerData.telegram_user ?? "",
       company_name: registerData.company_name ?? null,
@@ -172,10 +172,22 @@ export async function createRegisterForm(
       tools: (registerData.tools ?? []).join(","),
       web3_proficiency: registerData.web3_proficiency ?? "",
       github_portfolio: registerData.github_portfolio ?? "",
-      ...(registerData.referrer_handle ? { referrer_handle: registerData.referrer_handle } : {}),
     },
   });
   registerData.id = newRegisterFormData.id;
+
+  let referralAttributed = false;
+  try {
+    const attribution = await recordReferralAttribution({
+      targetType: "hackathon_registration",
+      targetId: newRegisterFormData.hackathon_id,
+      userEmail: newRegisterFormData.email,
+      attribution: (registerData as any).referral_attribution ?? null,
+    });
+    referralAttributed = Boolean(attribution);
+  } catch (error) {
+    console.error("[Referral] Failed to record hackathon registration attribution:", error);
+  }
   
   // Send registration data to HubSpot
   try {
@@ -191,7 +203,10 @@ export async function createRegisterForm(
   );
   revalidatePath("/api/register-form/");
 
-  return newRegisterFormData as unknown as RegistrationForm;
+  return {
+    ...newRegisterFormData,
+    referralAttributed,
+  } as unknown as RegistrationForm & { referralAttributed: boolean };
 }
 export async function getRegisterForm(email: string, hackathon_id: string) {
   const registeredData = await prisma.registerForm.findFirst({
@@ -282,8 +297,7 @@ export async function sendRegistrationToHubSpot(
       'avalanche_ecosystem_member': registrationData.avalanche_ecosystem_member ? 'Yes' : 'No',
       //'hackathon_event_id': registrationData.hackathon_id, // TODO: add this to the HS form
       //'hackathon_event_title': hackathon?.title || '', // TODO: add this to the HS form
-      
-      //'registration_utm_source': registrationData.utm || '', // TODO: add this to the HS form
+
       'marketing_consent': registrationData.newsletter_subscription ? 'Yes' : 'No', // TODO: add this to the HS form
       'gdpr': registrationData.terms_event_conditions ? 'Yes' : 'No' // TODO: add this to the HS form
     };

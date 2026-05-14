@@ -27,40 +27,44 @@ import { hsEmploymentRoles } from "@/constants/hs_employment_role";
 import { X, Link2, Wallet, User, FileText, Zap } from "lucide-react";
 import { WalletConnectButton } from "./WalletConnectButton";
 import { SkillsAutocomplete } from "./SkillsAutocomplete";
-import { useProfileForm } from "./hooks/useProfileForm";
+import type { UseFormReturn } from "react-hook-form";
+import type { ProfileFormValues } from "./hooks/useProfileForm";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Toaster } from "@/components/ui/toaster";
 import { ProfileChecklist } from "./ProfileChecklist";
+import { z } from "zod";
 
-export default function Profile() {
+export interface ProfileProps {
+  form: UseFormReturn<ProfileFormValues>;
+  watchedValues: Partial<ProfileFormValues>;
+  isSaving: boolean;
+  isAutoSaving: boolean;
+  githubConnected: boolean;
+  onGithubDisconnect: () => Promise<void>;
+  handleRemoveSkill: (skillToRemove: string) => void;
+  handleAddSocial: () => void;
+  handleRemoveSocial: (index: number) => void;
+  handleAddWallet: (address: string) => void;
+  handleRemoveWallet: (index: number) => void;
+  onSubmit: (e?: React.BaseSyntheticEvent) => Promise<void>;
+}
+
+export default function Profile({
+  form,
+  watchedValues,
+  isSaving,
+  isAutoSaving,
+  githubConnected,
+  onGithubDisconnect,
+  handleRemoveSkill,
+  handleAddSocial,
+  handleRemoveSocial,
+  handleAddWallet,
+  handleRemoveWallet,
+  onSubmit,
+}: ProfileProps) {
   const [newSkill, setNewSkill] = useState("");
   const [newSocial, setNewSocial] = useState("");
-
-  // Use custom hook for all profile logic
-  const {
-    form,
-    watchedValues,
-    isLoading,
-    isSaving,
-    isAutoSaving,
-    handleRemoveSkill,
-    handleAddSocial,
-    handleRemoveSocial,
-    handleAddWallet,
-    handleRemoveWallet,
-    onSubmit,
-  } = useProfileForm();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -68,19 +72,21 @@ export default function Profile() {
       <div className=" rounded-lg   p-6">
         {/* Title Section */}
         <div className="mb-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Personal</h2>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 Complete your profile to unlock badges, grants and tailored opportunities
               </p>
             </div>
-            {isAutoSaving && (
-              <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
-                <span>Saving...</span>
-              </div>
-            )}
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              {isAutoSaving && (
+                <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                  <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                  <span>Saving...</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -140,7 +146,7 @@ export default function Profile() {
                     name="country"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center gap-4">
-                        <FormLabel className="w-32 shrink-0">City of Residence</FormLabel>
+                        <FormLabel className="w-32 shrink-0">Country</FormLabel>
                         <div className="flex-1">
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
@@ -165,7 +171,7 @@ export default function Profile() {
                   {/* Roles */}
                   <div className="space-y-4">
                     <div className="flex flex-row items-center gap-4">
-                      <FormLabel className="flex-shrink-0">Select all roles that apply.</FormLabel>
+                      <FormLabel className="shrink-0">Select all roles that apply.</FormLabel>
                     </div>
                     
                     {/* Student */}
@@ -406,13 +412,45 @@ export default function Profile() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center gap-4">
                       <FormLabel className="w-32 shrink-0">GitHub</FormLabel>
-                      <div className="flex-1">
-                        <FormControl>
-                          <Input 
-                            placeholder="https://github.com/username" 
-                            {...field} 
-                          />
-                        </FormControl>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <FormControl>
+                            <Input
+                              placeholder="https://github.com/username"
+                              {...field}
+                            />
+                          </FormControl>
+                          {githubConnected ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="shrink-0"
+                              onClick={onGithubDisconnect}
+                            >
+                              Desconectar
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="shrink-0"
+                              asChild
+                            >
+                              <a href="/api/auth/github-link">
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  className="h-4 w-4 mr-2 fill-current"
+                                  aria-hidden="true"
+                                >
+                                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+                                </svg>
+                                Conectar
+                              </a>
+                            </Button>
+                          )}
+                        </div>
                         <FormMessage />
                       </div>
                     </FormItem>
@@ -425,7 +463,7 @@ export default function Profile() {
                   name="wallet"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start gap-4">
-                      <FormLabel className="w-32 shrink-0 pt-2">Wallets</FormLabel>
+                      <FormLabel className="w-32 shrink-0 pt-2">EVM Wallet</FormLabel>
                       <div className="flex-1">
                         <FormControl>
                           <div className="space-y-2">
@@ -494,13 +532,24 @@ export default function Profile() {
                   name="socials"
                   render={({ field }) => {
                     const handleAddNewSocial = () => {
-                      if (newSocial.trim()) {
-                        const currentSocials = field.value || [];
-                        if (!currentSocials.includes(newSocial.trim())) {
-                          field.onChange([...currentSocials, newSocial.trim()]);
-                          setNewSocial("");
-                        }
+                      const socialLink = newSocial.trim();
+                      if (!socialLink) return;
+
+                      const isValidUrl = z.url("Must be a valid URL").safeParse(socialLink);
+                      if (!isValidUrl.success) {
+                        form.setError("socials", {
+                          type: "manual",
+                          message: "Must be a valid URL",
+                        });
+                        return;
                       }
+
+                      const currentSocials = field.value || [];
+                      if (!currentSocials.includes(socialLink)) {
+                        field.onChange([...currentSocials, socialLink]);
+                      }
+                      form.clearErrors("socials");
+                      setNewSocial("");
                     };
 
                     return (
@@ -533,7 +582,12 @@ export default function Profile() {
                               {/* Input for adding new social */}
                               <Input
                                 value={newSocial}
-                                onChange={(e) => setNewSocial(e.target.value)}
+                                onChange={(e) => {
+                                  setNewSocial(e.target.value);
+                                  if (form.formState.errors.socials) {
+                                    form.clearErrors("socials");
+                                  }
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === "Tab") {
                                     e.preventDefault();

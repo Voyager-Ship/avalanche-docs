@@ -12,7 +12,9 @@ export async function getProfile(id: string) {
             notification_email: true,
             notifications: true,
             profile_privacy: true,
-            social_media: true
+            social_media: true,
+            team_id: true,
+            country: true,
         }
     });
 
@@ -41,6 +43,14 @@ export async function updateProfile(id: string, profileData: Partial<Profile>) {
             }
         })
         return profileData as Profile;
+    }
+
+    // Name must not be empty when provided
+    if (profileData.name !== undefined) {
+        const trimmed = typeof profileData.name === 'string' ? profileData.name.trim() : '';
+        if (trimmed.length === 0) {
+            throw new Error('Name cannot be empty.');
+        }
     }
 
     const data = { ...profileData }

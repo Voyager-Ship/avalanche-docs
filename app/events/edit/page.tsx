@@ -1237,7 +1237,7 @@ const HackathonsEdit = () => {
     setLoadingHackathons(true);
     try {
       const response = await axios.get(
-        `/api/hackathons?joined_only=true`,
+        `/api/events?managed=true`,
         {
           headers: {
             id: session?.user?.id,
@@ -2068,8 +2068,8 @@ const HackathonsEdit = () => {
 
     if (selectedHackathon === null) {
       try {
-        const response = await fetch('/api/hackathons', {
-          method: 'POST',
+        const response = await fetch('/api/events', {
+          method: 'POST', 
           headers: {
             'Content-Type': 'application/json',
           },
@@ -2130,8 +2130,8 @@ const HackathonsEdit = () => {
 
       try {
 
-        const response = await fetch(`/api/hackathons/${hackathonId}`, {
-          method: 'PUT',
+        const response = await fetch(`/api/events/${selectedHackathon?.id}`, {
+          method: 'PUT', 
           headers: {
             'Content-Type': 'application/json',
           },
@@ -2186,8 +2186,8 @@ const HackathonsEdit = () => {
   const handleDeleteClick = async () => {
     console.log('delete');
     try {
-      const response = await fetch(`/api/hackathons/${selectedHackathon?.id}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/events/${selectedHackathon?.id}`, {
+        method: 'DELETE', 
         headers: {
           'Content-Type': 'application/json',
         },
@@ -2200,9 +2200,9 @@ const HackathonsEdit = () => {
 
   const handleToggleVisibility = async (hackathonId: string, isPublic: boolean) => {
     try {
-      console.log({ isPublic })
-      const response = await fetch(`/api/hackathons/${selectedHackathon?.id}`, {
-        method: 'PUT',
+      console.log({isPublic})
+      const response = await fetch(`/api/events/${selectedHackathon?.id}`, {
+        method: 'PUT', 
         headers: {
           'Content-Type': 'application/json',
         },

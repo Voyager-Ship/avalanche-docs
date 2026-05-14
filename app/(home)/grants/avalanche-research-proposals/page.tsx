@@ -16,6 +16,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { formSchema, researchAreas, MAX_BUDGET_USD, type ResearchProposalFormData } from "@/types/researchProposalForm";
+import { clearStoredReferralAttribution } from "@/lib/referrals/client";
+import {
+  ReferralFormSection,
+  buildReferralAttributionPayload,
+} from "@/components/referrals/ReferralFormSection";
+import { EMPTY_REFERRER, type ReferrerPickerValue } from "@/components/referrals/ReferrerPicker";
 
 const LINK_HELPER = "Make sure the link is set to \"Anyone with the link can view\" so reviewers can access it without a request.";
 
@@ -27,6 +33,7 @@ export default function ResearchProposalForm() {
   const [submissionStatus, setSubmissionStatus] = useState<"success" | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [authGateState, setAuthGateState] = useState<"checking" | "ready" | "prompt">("checking");
+  const [referrer, setReferrer] = useState<ReferrerPickerValue>(EMPTY_REFERRER);
 
   useLoginCompleteListener(async () => {
     await update();
@@ -102,16 +109,20 @@ export default function ResearchProposalForm() {
   async function onSubmit(values: ResearchProposalFormData) {
     setIsSubmitting(true);
     setSubmitError(null);
+    const referralPayload = buildReferralAttributionPayload(referrer);
 
     try {
       const response = await fetch("/api/grants/avalanche-research-proposals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          ...referralPayload,
+        }),
       });
 
       const result = (await response.json().catch(() => null)) as
-        | { success?: boolean; message?: string }
+        | { success?: boolean; message?: string; referralAttributed?: boolean }
         | null;
 
       if (!response.ok || !result?.success) {
@@ -120,7 +131,11 @@ export default function ResearchProposalForm() {
 
       setSubmitError(null);
       setSubmissionStatus("success");
+      if (result.referralAttributed) {
+        clearStoredReferralAttribution();
+      }
       form.reset();
+      setReferrer(EMPTY_REFERRER);
       if (session?.user?.email) form.setValue("email", session.user.email);
     } catch (error) {
       setSubmitError(
@@ -177,6 +192,7 @@ export default function ResearchProposalForm() {
               setSubmitError(null);
               setSubmissionStatus(null);
               form.reset();
+              setReferrer(EMPTY_REFERRER);
               if (session?.user?.email) form.setValue("email", session.user.email);
             }}
           >
@@ -474,6 +490,8 @@ export default function ResearchProposalForm() {
                   </FormItem>
                 )}
               />
+
+              <ReferralFormSection value={referrer} onChange={setReferrer} />
 
               <FormField
                 control={form.control}
