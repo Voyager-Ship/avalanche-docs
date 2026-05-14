@@ -10,7 +10,6 @@ import { SafeImage } from "@/components/common/SafeImage";
 import { HackathonHeader } from "@/types/hackathons";
 import AutoScroll from "embla-carousel-auto-scroll";
 import Link from "next/link";
-import React from "react";
 import { normalizeEventsLang, t } from "@/lib/events/i18n";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +19,9 @@ type SponsorsProps = {
   isPreview?: boolean;
 };
 
+const stripSurfaceClass =
+  "border-y border-zinc-200 bg-white dark:border-zinc-300/25 dark:bg-zinc-100";
+
 function Sponsors({ hackathon, isPreview = false }: SponsorsProps) {
   const lang = normalizeEventsLang(hackathon.content?.language);
   const plugin = AutoScroll({
@@ -28,6 +30,9 @@ function Sponsors({ hackathon, isPreview = false }: SponsorsProps) {
     stopOnMouseEnter: false,
     playOnInit: true,
   });
+
+  const partners = hackathon.content.partners;
+  const useStaticRow = partners.length <= 5;
 
   return (
     <section className="min-w-0 w-full max-w-full">
@@ -46,34 +51,60 @@ function Sponsors({ hackathon, isPreview = false }: SponsorsProps) {
           isPreview && "w-full max-w-full rounded-lg",
         )}
       >
-        <Carousel
-          plugins={[plugin]}
-          className={cn(
-            "w-full border-y border-zinc-200 bg-white py-4 dark:border-zinc-300/25 dark:bg-zinc-100",
-            isPreview && "rounded-lg border-x",
-          )}
-          opts={{
-            loop: true,
-            dragFree: false,
-          }}
-        >
-          <CarouselContent>
-            {hackathon.content.partners.map((partner, index) => (
-              <CarouselItem
+        {useStaticRow ? (
+          <div
+            className={cn(
+              "flex w-full flex-wrap items-center justify-around gap-6 px-4 py-4 sm:gap-8 sm:px-8",
+              stripSurfaceClass,
+              isPreview && "rounded-lg border-x",
+            )}
+          >
+            {partners.map((partner, index) => (
+              <div
                 key={index}
-                className="basis-[45%] sm:basis-1/3 md:basis-1/4 lg:basis-1/5 h-44 items-center justify-center flex"
+                className="flex h-28 min-w-0 shrink-0 items-center justify-center"
               >
                 <SafeImage
                   src={partner.logo}
                   alt={partner.name}
-                  frameClassName="h-[100px] w-[140px] sm:h-[120px] sm:w-[200px] max-w-full"
+                  frameClassName="h-[100px] w-[160px] sm:w-[180px] max-w-full"
                   imageClassName="object-contain opacity-90 grayscale transition hover:opacity-100 hover:grayscale-0 dark:opacity-90 dark:hover:opacity-100"
                   fallbackIcon="image"
                 />
-              </CarouselItem>
+              </div>
             ))}
-          </CarouselContent>
-        </Carousel>
+          </div>
+        ) : (
+          <Carousel
+            plugins={[plugin]}
+            className={cn(
+              "w-full py-4",
+              stripSurfaceClass,
+              isPreview && "rounded-lg border-x",
+            )}
+            opts={{
+              loop: true,
+              dragFree: false,
+            }}
+          >
+            <CarouselContent>
+              {partners.map((partner, index) => (
+                <CarouselItem
+                  key={index}
+                  className="flex h-44 basis-[45%] items-center justify-center sm:basis-1/3 md:basis-1/4 lg:basis-1/5"
+                >
+                  <SafeImage
+                    src={partner.logo}
+                    alt={partner.name}
+                    frameClassName="h-[100px] w-[140px] max-w-full sm:h-[120px] sm:w-[200px]"
+                    imageClassName="object-contain opacity-90 grayscale transition hover:opacity-100 hover:grayscale-0 dark:opacity-90 dark:hover:opacity-100"
+                    fallbackIcon="image"
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+        )}
       </div>
       <div className="flex justify-center mt-8">
         {hackathon.content.become_sponsor_link && (
