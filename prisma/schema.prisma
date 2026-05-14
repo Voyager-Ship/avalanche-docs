@@ -49,17 +49,14 @@ model User {
   user_name                  String?
   bio                        String?
   notification_email         String?
-  telegram_account           String?
-  github_account             String?
-  x_account                  String?
-  linkedin_account           String?
-  additional_social_accounts String[]                  @default([])
   notifications              Boolean?
   profile_privacy            String?                   @default("public")
+  additional_social_accounts String[]                  @default([])
   custom_attributes          String[]
-  team_id                    String?
+  telegram_account           String?
   created_at                 DateTime                  @default(now()) @db.Timestamptz(3)
   country                    String?
+  github_account             String?
   noun_avatar_enabled        Boolean                   @default(false)
   noun_avatar_seed           Json?
   skills                     String[]                  @default([])
@@ -67,6 +64,11 @@ model User {
   wallet                     String[]                  @default([])
   notification_means         Json?                     @default("{}")
   github_access_token        String?
+  x_account                  String?
+  linkedin_account           String?
+  team_id                    String?
+  linkedin_url               String?
+  x_handle                   String?
   chatConversations          ChatConversation[]
   consoleLog                 ConsoleLog[]
   evaluations                Evaluation[]              @relation("Evaluations")
@@ -77,15 +79,17 @@ model User {
   managedTestnetNodes        NodeRegistration[]
   Notification               Notification[]
   oauthCodes                 OAuthCode[]
+  referralAttributions       ReferralAttribution[]     @relation("ReferralAttributionUser")
+  referralAttributionsMade   ReferralAttribution[]     @relation("ReferralAttributionReferrer")
+  referralLinks              ReferralLink[]            @relation("ReferralLinkOwner")
   registrations              RegisterForm[]
   Repository                 Repository[]
   statsPlaygrounds           StatsPlayground[]
   statsPlaygroundFavorites   StatsPlaygroundFavorite[] @relation("StatsPlaygroundFavorites")
   badges                     UserBadge[]
   validatorAlerts            ValidatorAlert[]
-  referralLinks              ReferralLink[]            @relation("ReferralLinkOwner")
-  referralAttributionsMade   ReferralAttribution[]     @relation("ReferralAttributionReferrer")
-  referralAttributions       ReferralAttribution[]     @relation("ReferralAttributionUser")
+
+  @@index([team_id])
 }
 
 model VerificationToken {
@@ -118,6 +122,8 @@ model RegisterForm {
   updated_at              DateTime  @updatedAt @db.Timestamptz(3)
   web3_proficiency        String
   telegram_account        String?
+  utm                     String?
+  referrer_handle         String?
   user                    User      @relation(fields: [email], references: [email], onDelete: Cascade)
   hackathon               Hackathon @relation(fields: [hackathon_id], references: [id], onDelete: Cascade)
 
@@ -288,8 +294,8 @@ model ReferralLink {
   destination_url String
   created_at      DateTime              @default(now()) @db.Timestamptz(3)
   disabled_at     DateTime?             @db.Timestamptz(3)
-  owner           User                  @relation("ReferralLinkOwner", fields: [owner_user_id], references: [id], onDelete: Cascade)
   attributions    ReferralAttribution[]
+  owner           User                  @relation("ReferralLinkOwner", fields: [owner_user_id], references: [id], onDelete: Cascade)
 
   @@index([owner_user_id])
   @@index([team_id])
@@ -304,14 +310,14 @@ model ReferralAttribution {
   user_id                String?
   user_id_referrer       String?
   team_id_referrer       String?
-  team_id_referrer_other String?
   target_type            String
   target_id              String?
   path                   String?
   created_at             DateTime      @default(now()) @db.Timestamptz(3)
-  referralLink           ReferralLink? @relation(fields: [referral_link_id], references: [id], onDelete: SetNull)
-  referrer               User?         @relation("ReferralAttributionReferrer", fields: [user_id_referrer], references: [id], onDelete: SetNull)
-  user                   User?         @relation("ReferralAttributionUser", fields: [user_id], references: [id], onDelete: SetNull)
+  team_id_referrer_other String?
+  referralLink           ReferralLink? @relation(fields: [referral_link_id], references: [id])
+  user                   User?         @relation("ReferralAttributionUser", fields: [user_id], references: [id])
+  referrer               User?         @relation("ReferralAttributionReferrer", fields: [user_id_referrer], references: [id])
 
   @@index([referral_link_id])
   @@index([user_id])
@@ -471,19 +477,19 @@ model ResearchProposalApplication {
 }
 
 model Speaker {
-  id       String @id @default(uuid())
   name     String
-  icon     String
+  icon     String?
   category String
   picture  String
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 }
 
 model Resource {
-  id          String @id @default(uuid())
-  title       String
-  description String
-  link        String
-  icon        String
+  title       String?
+  description String?
+  link        String?
+  icon        String?
+  id          String  @id @default(dbgenerated("(gen_random_uuid())::text"))
 }
 
 model ValidatorAlert {
