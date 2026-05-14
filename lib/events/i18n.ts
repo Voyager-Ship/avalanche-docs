@@ -380,6 +380,8 @@ const dict: Record<EventsLang, Dict> = {
     "reg.dialog.body": "Your application has been Approved. Join the",
     "reg.dialog.telegramLink": "Telegram group",
     "reg.dialog.bodyEnd": "to get all the support you need.",
+    "reg.dialog.updateTitle": "Registration Updated",
+    "reg.dialog.updateBody": "Your registration has been updated successfully.",
 
     // Referral
     "referral.button.label": "Refer a Friend",
@@ -392,6 +394,16 @@ const dict: Record<EventsLang, Dict> = {
     "referral.modal.shareOn": "Share on",
     "referral.share.xText": "Join me at {title} — a hackathon on Avalanche! Register here: {link}",
     "referral.share.linkedinText": "Join me at {title} — a hackathon on Avalanche! Register here: {link}",
+
+    // Registration confirmation email
+    "reg.email.subject": "Hackathon Registration",
+    "reg.email.h2": "Hackathon registration",
+    "reg.email.yourRegFor": "Your registration for",
+    "reg.email.hasBeenApproved": "has been approved. Please",
+    "reg.email.chatLinkText": "join the hackathon chat",
+    "reg.email.automated": "This is an automated message — please do not reply.",
+    "reg.email.ignore": "If you did not expect this invitation, you can safely ignore this email.",
+    "reg.email.footer": "Avalanche Builder's Hub © 2025",
 
     // Invitation email
     "invitation.email.subject": "You're invited to collaborate on \"{projectName}\"",
@@ -798,6 +810,8 @@ const dict: Record<EventsLang, Dict> = {
     "reg.dialog.body": "Tu solicitud ha sido aprobada. Únete al",
     "reg.dialog.telegramLink": "grupo de Telegram",
     "reg.dialog.bodyEnd": "para obtener todo el apoyo que necesitas.",
+    "reg.dialog.updateTitle": "Registro actualizado",
+    "reg.dialog.updateBody": "Tu registro ha sido actualizado exitosamente.",
 
     // Referral
     "referral.button.label": "Invitar a un amigo",
@@ -810,6 +824,16 @@ const dict: Record<EventsLang, Dict> = {
     "referral.modal.shareOn": "Compartir en",
     "referral.share.xText": "Únete a {title} — un hackathon en Avalanche. Regístrate aquí: {link}",
     "referral.share.linkedinText": "Únete a {title} — un hackathon en Avalanche. Regístrate aquí: {link}",
+
+    // Registration confirmation email
+    "reg.email.subject": "Registro de Hackathon",
+    "reg.email.h2": "Registro de hackathon",
+    "reg.email.yourRegFor": "Tu registro para",
+    "reg.email.hasBeenApproved": "ha sido aprobado. Por favor",
+    "reg.email.chatLinkText": "únete al chat del hackathon",
+    "reg.email.automated": "Este es un mensaje automático — por favor no respondas.",
+    "reg.email.ignore": "Si no esperabas esta invitación, puedes ignorar este correo con seguridad.",
+    "reg.email.footer": "Avalanche Builder's Hub © 2025",
 
     // Invitation email
     "invitation.email.subject": "Te invitaron a colaborar en \"{projectName}\"",

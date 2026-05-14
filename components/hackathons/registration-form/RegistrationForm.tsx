@@ -189,6 +189,8 @@ export function RegisterForm({
         employee_role: profile.user_type?.employee_role || current.employee_role || "",
         is_developer: profile.user_type?.is_developer ?? current.is_developer ?? false,
         is_enthusiast: profile.user_type?.is_enthusiast ?? current.is_enthusiast ?? false,
+        founder_check: profile.user_type?.founder_check ?? current.founder_check ?? false,
+        avalanche_ecosystem_member: profile.user_type?.avalanche_ecosystem_member ?? current.avalanche_ecosystem_member ?? false,
       };
       form.reset(merged);
     } catch (err) {
@@ -235,6 +237,8 @@ export function RegisterForm({
           employee_role: (step1.employee_role ?? "").trim(),
           company_name: roleCompany.trim() || userType.company_name,
           role: roleLabel.trim() || userType.role,
+          founder_check: Boolean(step1.founder_check),
+          avalanche_ecosystem_member: Boolean(step1.avalanche_ecosystem_member),
         },
       };
       await fetch(`/api/profile/extended/${userId}`, {
@@ -677,6 +681,7 @@ export function RegisterForm({
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         lang={lang}
+        isUpdate={!!formLoaded}
       />
     </div>
   );
