@@ -90,7 +90,6 @@ export default async function EvaluatePage({
       const bgFormData = (rawFormData?.build_games ?? rawFormData) as Record<string, unknown>;
       const applicantData = (rawFormData?.applicant as Record<string, unknown>) ?? null;
 
-      // Find BG application for lead member (for area, name fallbacks)
       const bgApp = fd.project.members.reduce<(typeof bgApplications)[number] | null>((found, m) => {
         if (found) return found;
         const email = m.user?.email ?? m.email;
@@ -107,7 +106,6 @@ export default async function EvaluatePage({
         ? `${applicantData.first_name ?? ""} ${applicantData.last_name ?? ""}`.trim()
         : bgApp ? `${bgApp.first_name} ${bgApp.last_name}` : null;
 
-      // Per-member applications
       const memberApplications = fd.project.members.map((m) => {
         const email = m.user?.email ?? m.email ?? "";
         const memberBgApp = email ? bgAppByEmail.get(email.toLowerCase()) : null;
@@ -182,9 +180,6 @@ export default async function EvaluatePage({
         currentStage: fd.current_stage ?? 0,
         evaluations: fd.evaluations.map((e) => ({
           id: e.id,
-          // Evaluations fetched via FormData always have form_data_id and
-          // verdict populated; the columns are nullable to support the new
-          // hackathon-judging flow where evaluations attach to Project instead.
           formDataId: e.form_data_id ?? fd.id,
           evaluatorId: e.evaluator_id,
           evaluatorName: e.evaluator.name ?? "Unknown",

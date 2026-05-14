@@ -31,8 +31,24 @@ const projectMetaSelect = {
   updated_at: true,
 } as const;
 
-export async function GET(_request: NextRequest, context: Params) {
+export async function GET(request: NextRequest, context: Params) {
   const { id: hackathonId } = await context.params;
+
+  const apiKeyHeader =
+    request.headers.get("authorization") ?? request.headers.get("Authorization");
+  const hasApiKey = verifyHackathonProjectsApiKey(apiKeyHeader);
+
+  let internalAuthorized = false;
+  if (!hasApiKey) {
+    const session = await getAuthSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    internalAuthorized = await canEvaluateHackathon(session, hackathonId);
+    if (!internalAuthorized) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   const hackathon = await prisma.hackathon.findUnique({
     where: { id: hackathonId },
@@ -42,10 +58,7 @@ export async function GET(_request: NextRequest, context: Params) {
     return NextResponse.json({ error: "Hackathon not found" }, { status: 404 });
   }
 
-  const session = await getAuthSession();
-  const authorized = await canEvaluateHackathon(session, hackathonId);
-
-  if (authorized) {
+  if (internalAuthorized) {
     const projects = await prisma.project.findMany({
       where: { hackaton_id: hackathonId },
       orderBy: { created_at: "asc" },
@@ -80,25 +93,19 @@ export async function GET(_request: NextRequest, context: Params) {
     return NextResponse.json({ hackathon, projects, scope: "internal" });
   }
 
-  const apiKeyHeader =
-    _request.headers.get("authorization") ?? _request.headers.get("Authorization");
-  if (verifyHackathonProjectsApiKey(apiKeyHeader)) {
-    const projects = await prisma.project.findMany({
-      where: { hackaton_id: hackathonId },
-      orderBy: { created_at: "asc" },
-      select: {
-        ...projectMetaSelect,
-        members: {
-          select: {
-            id: true,
-            status: true,
-            role: true,
-          },
+  const projects = await prisma.project.findMany({
+    where: { hackaton_id: hackathonId },
+    orderBy: { created_at: "asc" },
+    select: {
+      ...projectMetaSelect,
+      members: {
+        select: {
+          id: true,
+          status: true,
+          role: true,
         },
       },
-    });
-    return NextResponse.json({ hackathon, projects, scope: "external" });
-  }
-
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    },
+  });
+  return NextResponse.json({ hackathon, projects, scope: "external" });
 }

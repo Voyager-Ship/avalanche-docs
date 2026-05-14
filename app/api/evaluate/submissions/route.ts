@@ -112,9 +112,6 @@ export async function GET(request: NextRequest) {
         currentStage: fd.current_stage ?? 0,
         evaluations: fd.evaluations.map((e) => ({
           id: e.id,
-          // Evaluations reached via FormData always have form_data_id and
-          // verdict populated; the columns are nullable to support the new
-          // hackathon-judging flow where evaluations attach to Project instead.
           formDataId: e.form_data_id ?? fd.id,
           evaluatorId: e.evaluator_id,
           evaluatorName: e.evaluator.name ?? "Unknown",
