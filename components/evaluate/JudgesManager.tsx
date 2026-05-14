@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,30 +39,41 @@ function initials(name: string | null, email: string | undefined): string {
 export function JudgesManager({ hackathonId, initialJudges }: Props) {
   const [judges, setJudges] = useState<Judge[]>(initialJudges);
   const [pendingUser, setPendingUser] = useState<SearchUser | null>(null);
-  const [confirming, startConfirm] = useTransition();
+  const [confirming, setConfirming] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const excludedIds = judges.map((j) => j.user.id);
 
   async function confirmAssignment() {
     if (!pendingUser) return;
     setError(null);
+    setConfirming(true);
+    setConfirmed(false);
     const userToAssign = pendingUser;
-    const res = await fetch(`/api/events/${hackathonId}/judges`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ userId: userToAssign.id }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body?.error ?? `Failed to assign (${res.status})`);
-      return;
+    try {
+      const res = await fetch(`/api/events/${hackathonId}/judges`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ userId: userToAssign.id }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body?.error ?? `Failed to assign (${res.status})`);
+        return;
+      }
+      const { judge } = (await res.json()) as { judge: Judge };
+      setJudges((prev) => {
+        if (prev.some((j) => j.user.id === judge.user.id)) return prev;
+        return [...prev, judge];
+      });
+      setConfirmed(true);
+      setTimeout(() => {
+        setConfirmed(false);
+        setPendingUser(null);
+      }, 1500);
+    } finally {
+      setConfirming(false);
     }
-    const { judge } = (await res.json()) as { judge: Judge };
-    setJudges((prev) => {
-      if (prev.some((j) => j.user.id === judge.user.id)) return prev;
-      return [...prev, judge];
-    });
-    setPendingUser(null);
   }
 
   async function removeJudge(userId: string) {
@@ -143,22 +154,25 @@ export function JudgesManager({ hackathonId, initialJudges }: Props) {
                   setPendingUser(null);
                   setError(null);
                 }}
-                disabled={confirming}
+                disabled={confirming || confirmed}
               >
                 <X className="size-4" />
                 Cancel
               </Button>
               <Button
                 size="sm"
-                onClick={() => startConfirm(() => void confirmAssignment())}
-                disabled={confirming}
+                onClick={() => void confirmAssignment()}
+                disabled={confirming || confirmed}
+                className={confirmed ? "bg-green-600 hover:bg-green-600" : ""}
               >
                 {confirming ? (
                   <Loader2 className="size-4 animate-spin" />
+                ) : confirmed ? (
+                  <Check className="size-4" />
                 ) : (
                   <Check className="size-4" />
                 )}
-                Confirm assignment
+                {confirming ? "Assigning..." : confirmed ? "Assigned!" : "Confirm assignment"}
               </Button>
             </div>
           </div>
