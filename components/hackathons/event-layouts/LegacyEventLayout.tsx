@@ -14,6 +14,7 @@ import MentorsJudges from "@/components/hackathons/hackathon/sections/MentorsJud
 import OverviewBanner from "@/components/hackathons/hackathon/sections/OverviewBanner";
 import JoinButton from "@/components/hackathons/hackathon/JoinButton";
 import JoinBannerLink from "@/components/hackathons/hackathon/JoinBannerLink";
+import { EventReferralButton } from "@/components/hackathons/hackathon/EventReferralModal";
 import type { HackathonHeader } from "@/types/hackathons";
 import { normalizeEventsLang, t } from "@/lib/events/i18n";
 import StagesSection from "@/components/hackathons/hackathon/sections/StagesSection";
@@ -89,10 +90,10 @@ export default function LegacyEventLayout({
 
   return (
     <main className="container sm:px-2 py-4 lg:py-16">
-      <div className="pl-4 flex gap-4 items-center">
+      <div className="pl-4 flex flex-wrap gap-4 items-center">
         <Image
           src={
-            hackathon.icon.trim().length > 0
+            /^(https?:\/\/|\/)/.test((hackathon.icon ?? '').trim())
               ? hackathon.icon
               : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/project-logo-ILfO9EujWnQj1xMZpIIWTZ8mc87I7f.png"
           }
@@ -101,6 +102,14 @@ export default function LegacyEventLayout({
           height={40}
         />
         <span className="text-sm sm:text-xl font-bold">{hackathon.title}</span>{" "}
+        {isHackathon && (
+          <EventReferralButton
+            hackathonId={id}
+            hackathonTitle={hackathon.title}
+            lang={lang}
+            isAuthenticated={isAuthenticated}
+          />
+        )}
         <JoinButton
           isRegistered={isRegistered}
           isAuthenticated={isAuthenticated}
@@ -133,8 +142,8 @@ export default function LegacyEventLayout({
               hackathonId={id}
               customLink={hackathon.content.join_custom_link}
               bannerSrc={
-                hackathon.banner?.trim().length > 0
-                  ? hackathon.banner
+                /^(https?:\/\/|\/)/.test((hackathon.banner ?? '').trim())
+                  ? hackathon.banner!
                   : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/main_banner_img-crBsoLT7R07pdstPKvRQkH65yAbpFX.png"
               }
               altText="Hackathon background"
@@ -162,7 +171,9 @@ export default function LegacyEventLayout({
             {isHackathon && <Submission hackathon={hackathon} isRegistered={isRegistered} isAuthenticated={isAuthenticated} utm={utm} />}
             {hasSpeakers && <MentorsJudges hackathon={hackathon} />}
             <Community hackathon={hackathon} />
-            {hasPartners && <Sponsors hackathon={hackathon} />}
+            {hasPartners && (
+              <Sponsors hackathon={hackathon} isPreview={isPreview} />
+            )}
           </div>
         </div>
       </div>

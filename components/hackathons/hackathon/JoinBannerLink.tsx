@@ -3,6 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  appendReferralTrackingParams,
+  useCurrentReferralCode,
+} from "@/lib/referrals/client";
 
 interface JoinBannerLinkProps {
   isRegistered: boolean;
@@ -21,14 +25,15 @@ export default function JoinBannerLink({
   altText = "Hackathon background",
   utm = ""
 }: JoinBannerLinkProps) {
-  
+  const currentReferralCode = useCurrentReferralCode();
+
   const getHref = () => {
     // Always allow navigation to registration form (even if registered, so they can modify)
     if (customLink) {
       return customLink;
     }
     const baseUrl = `/events/registration-form?event=${hackathonId}`;
-    return utm ? `${baseUrl}&utm=${utm}` : baseUrl;
+    return appendReferralTrackingParams(baseUrl, { referralCode: currentReferralCode, utm });
   };
 
   const getTarget = () => {
@@ -40,14 +45,14 @@ export default function JoinBannerLink({
       href={getHref()}
       target={getTarget()}
     >
-      <Image
+      <img
         src={bannerSrc}
         alt={altText}
-        width={1270}
-        height={760}
-        className="w-full h-full"
-        priority
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+        }}
       />
     </Link>
   );
-} 
+}

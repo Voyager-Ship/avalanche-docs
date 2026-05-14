@@ -12,6 +12,7 @@ import Resources from "@/components/hackathons/hackathon/sections/Resources";
 import Community from "@/components/hackathons/hackathon/sections/Community";
 import MentorsJudges from "@/components/hackathons/hackathon/sections/MentorsJudges";
 import JoinButton from "@/components/hackathons/hackathon/JoinButton";
+import { EventReferralButton } from "@/components/hackathons/hackathon/EventReferralModal";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { format } from "date-fns";
 import type { HackathonHeader } from "@/types/hackathons";
@@ -67,10 +68,12 @@ export default function ModernEventLayout({
       ? `${format(validStartDate, "MMMM d")} - ${format(validEndDate, "d, yyyy")}`
       : `${format(validStartDate, "MMMM d")} - ${format(validEndDate, "MMMM d, yyyy")}`;
 
-  const bannerSrc =
-    hackathon.banner?.trim().length > 0
-      ? hackathon.banner
-      : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/main_banner_img-crBsoLT7R07pdstPKvRQkH65yAbpFX.png";
+  const isValidSrc = (src: string | undefined | null) =>
+    /^(https?:\/\/|\/)/.test((src ?? '').trim());
+
+  const bannerSrc = isValidSrc(hackathon.banner)
+    ? hackathon.banner!
+    : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/main_banner_img-crBsoLT7R07pdstPKvRQkH65yAbpFX.png";
 
   const hasAbout = Boolean(hackathon.content.tracks_text);
   const hasTracks =
@@ -123,10 +126,10 @@ export default function ModernEventLayout({
 
   return (
     <main className="container sm:px-2 py-4 lg:py-16">
-      <div className="pl-4 flex gap-4 items-center">
+      <div className="pl-4 flex flex-wrap gap-4 items-center">
         <Image
           src={
-            hackathon.icon.trim().length > 0
+            isValidSrc(hackathon.icon)
               ? hackathon.icon
               : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/project-logo-ILfO9EujWnQj1xMZpIIWTZ8mc87I7f.png"
           }
@@ -135,13 +138,21 @@ export default function ModernEventLayout({
           height={40}
         />
         <span className="text-sm sm:text-xl font-bold">{hackathon.title}</span>{" "}
+        {isHackathon && (
+          <EventReferralButton
+            hackathonId={id}
+            hackathonTitle={hackathon.title}
+            lang={lang}
+            isAuthenticated={isAuthenticated}
+          />
+        )}
         <JoinButton
           isRegistered={isRegistered}
           isAuthenticated={isAuthenticated}
           hackathonId={id}
           customLink={hackathon.content.join_custom_link}
           customText={hackathon.content.join_custom_text}
-          className="w-2/5 md:w-1/3 lg:w-1/4 cursor-pointer"
+          className="cursor-pointer"
           variant="red"
           showChatWhenRegistered={true}
           utm={utm}
@@ -209,7 +220,7 @@ export default function ModernEventLayout({
             </div>
 
             {/* Register Button */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 flex flex-col items-end gap-1">
               <JoinButton
                 isRegistered={isRegistered}
                 hackathonId={id}
@@ -221,6 +232,14 @@ export default function ModernEventLayout({
                 utm={utm}
                 lang={lang}
               />
+              {isRegistered && (
+                <a
+                  href={`/events/registration-form?event=${id}`}
+                  className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 underline underline-offset-2 transition-colors"
+                >
+                  {t(lang, "join.editRegistration")}
+                </a>
+              )}
             </div>
           </div>
 
@@ -246,7 +265,9 @@ export default function ModernEventLayout({
             {isHackathon && <Submission hackathon={hackathon} isRegistered={isRegistered} isAuthenticated={isAuthenticated} utm={utm} />}
             {hasSpeakers && <MentorsJudges hackathon={hackathon} />}
             <Community hackathon={hackathon} />
-            {hasPartners && <Sponsors hackathon={hackathon} />}
+            {hasPartners && (
+              <Sponsors hackathon={hackathon} isPreview={isPreview} />
+            )}
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Tabs,
   TabsContent,
@@ -8,24 +8,17 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import HackathonPreview from '../../HackathonPreview';
 import StageSubmitPageContent from '../../project-submission/stages/submit-form/page-content';
 import type { HackathonHeader } from '@/types/hackathons';
 import { HackathonStage } from '@/types/hackathon-stage';
 
 type PreviewTabValue = 'hackathon-preview' | 'stages-submit-form';
-
-type StageOption = {
-  id?: string;
-  label?: string;
-};
 
 type HackathonPreviewTabsProps = {
   previewHackathon: HackathonHeader;
@@ -44,11 +37,18 @@ export default function HackathonPreviewTabs({
   onActiveTabChange,
   selectedStageForm,
 }: HackathonPreviewTabsProps): React.JSX.Element {
-  const [selectedStage, setSelectedStage] = React.useState<string>(selectedStageForm);
-  const stages: HackathonStage[] = previewHackathon.content?.stages ?? [];
+  const stages: HackathonStage[] = (previewHackathon.content?.stages ?? [])
+    .filter((s) => s.submitForm?.fields && s.submitForm.fields.length > 0);
+  const accordionRef = useRef<HTMLDivElement>(null);
+  const isMounted = useRef(false);
+  const [openStage, setOpenStage] = React.useState<string>('');
 
   useEffect(() => {
-    setSelectedStage(selectedStageForm);
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    setOpenStage(selectedStageForm);
   }, [selectedStageForm]);
 
   return (
@@ -59,7 +59,7 @@ export default function HackathonPreviewTabs({
         className="h-full"
       >
         <TabsList className="mb-4 grid w-full grid-cols-2">
-          <TabsTrigger value="hackathon-preview">Hackathon Preview</TabsTrigger>
+          <TabsTrigger value="hackathon-preview">Event Preview</TabsTrigger>
           <TabsTrigger value="stages-submit-form">Stages Submit Form</TabsTrigger>
         </TabsList>
 
@@ -74,35 +74,36 @@ export default function HackathonPreviewTabs({
         </TabsContent>
 
         <TabsContent value="stages-submit-form">
-          {previewHackathon && stages[Number(selectedStage)] ? (
-            <div className="space-y-2 rounded-lg auto border border-zinc-200 p-4 dark:border-zinc-800">
-              <Label htmlFor="stage-form-select">Stage form</Label>
-
-              <Select value={selectedStage} onValueChange={(value: string) => setSelectedStage(value)}>
-                <SelectTrigger id="stage-form-select" className="w-full">
-                  <SelectValue placeholder="Select a stage form" />
-                </SelectTrigger>
-
-                <SelectContent>
-                  {stages.map(
-                    (stage: StageOption, index: number): React.JSX.Element => (
-                      <SelectItem
-                        key={stage.id ?? `${stage.label ?? 'stage'}-${index}`}
-                        value={String(index)}
-                      >
-                        {stage.label || `Stage ${index + 1}`}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-              <StageSubmitPageContent
-                hackathon={previewHackathon}
-                hackathonCreator={''}
-                stage={stages[Number(selectedStage)]}
-                stageIndex={stages.findIndex((s) => s.label === stages[Number(selectedStage)].label)}
-                renderInPreview={true}
-              />
+          {previewHackathon && stages.length > 0 ? (
+            <div className="space-y-4" ref={accordionRef}>
+              <Accordion
+                type="single"
+                value={openStage}
+                onValueChange={setOpenStage}
+                collapsible
+              >
+                {stages.map((stage: HackathonStage, index: number) => (
+                  <AccordionItem
+                    key={`stage-form-${index}`}
+                    value={String(index)}
+                    data-stage-index={index}
+                    className="my-2 border rounded-lg px-4 bg-white dark:bg-zinc-800"
+                  >
+                    <AccordionTrigger className="hover:no-underline py-4">
+                      <span className="font-semibold">{stage.label || `Stage ${index + 1}`}</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4">
+                      <StageSubmitPageContent
+                        hackathon={previewHackathon}
+                        hackathonCreator={''}
+                        stage={stage}
+                        stageIndex={index}
+                        renderInPreview={true}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px]">

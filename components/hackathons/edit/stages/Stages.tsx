@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import * as AccordionPrimitive from '@radix-ui/react-accordion'
-import { ChevronDownIcon } from 'lucide-react'
+import { ChevronDownIcon, TriangleAlert as TriangleAlertIcon, CircleX } from 'lucide-react'
 import {
   Accordion,
   AccordionContent,
@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { Divider } from '@/components/ui/divider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { t } from '@/app/events/edit/translations'
@@ -87,6 +88,7 @@ type StageFormProps = {
     stageIndex: number,
     fields: SubmitFormField[]
   ) => void
+  onFormLockedChange: (index: number, locked: boolean) => void
   onRemove: (index: number) => void
   setSelectedStageForm: (index: string) => void
   setActivePreviewTab: (tab: string) => void
@@ -353,6 +355,23 @@ export default function HackathonsEditStages({
     syncStagesToParent(updatedStages)
   }
 
+  const updateFormLocked = (index: number, locked: boolean): void => {
+    const updatedStages: HackathonStage[] = stages.map(
+      (stage: HackathonStage, currentIndex: number) => {
+        if (currentIndex !== index) {
+          return stage
+        }
+
+        return {
+          ...stage,
+          formLocked: locked,
+        }
+      }
+    )
+
+    syncStagesToParent(updatedStages)
+  }
+
   const addSubmitFormField = (
     stageIndex: number,
     type: SubmitFormFieldType
@@ -459,20 +478,6 @@ export default function HackathonsEditStages({
   }
   useEffect(() => {
     if (stages.length === 0) {
-      setFormDataContent({
-        ...formDataContent,
-        stages: [
-          {
-            label: 'First stage',
-            date: eventStartDate,
-            deadline: eventEndDate,
-            component: undefined,
-            submitForm: {
-              fields: [BASE_SUBMIT_FORM_FIELDS.project_name.field],
-            },
-          }
-        ],
-      } as IDataContent)
       return
     }
 
@@ -522,6 +527,7 @@ export default function HackathonsEditStages({
                     onRemove={() => removeStage(index)}
                     tooltipLabel="Delete stage"
                     size={18}
+                    language={language}
                   />
                 </div>
               </AccordionPrimitive.Trigger>
@@ -546,6 +552,7 @@ export default function HackathonsEditStages({
                 onUpdateSubmitFormField={updateSubmitFormField}
                 onRemoveSubmitFormField={removeSubmitFormField}
                 onReplaceSubmitFormFields={replaceSubmitFormFields}
+                onFormLockedChange={updateFormLocked}
                 onRemove={removeStage}
                 setSelectedStageForm={setSelectedStageForm}
                 setActivePreviewTab={setActivePreviewTab}
@@ -581,39 +588,40 @@ function StageForm({
   onUpdateSubmitFormField,
   onRemoveSubmitFormField,
   onReplaceSubmitFormFields,
+  onFormLockedChange,
   setSelectedStageForm,
   setActivePreviewTab,
   selectedPredefinedFields,
 }: StageFormProps): React.JSX.Element {
-  const validateDates = (): { error: string | null } => {
+  const validateDates = (): { error: string | null; warning: string | null } => {
     if (stage.date && stage.deadline) {
       const stageStart = new Date(stage.date)
       const stageEnd = new Date(stage.deadline)
       const eventStart = new Date(eventStartDate)
       const eventEnd = new Date(eventEndDate)
-      
-      // Validar que la fecha de fin sea mayor que la de inicio del stage
+
+      // Validar que la fecha de fin sea mayor que la de inicio del stage (error)
       if (stageEnd < stageStart) {
-        return { error: t[language].stageEndDateBeforeStartDate }
+        return { error: t[language].stageEndDateBeforeStartDate, warning: null }
       }
-      
-      // Validar que la fecha de inicio del stage no sea antes de la del hackathon
+
+      // Validar que la fecha de inicio del stage no sea antes de la del hackathon (error)
       if (eventStartDate && stageStart < eventStart) {
-        const errorMsg = language === 'es' 
-          ? 'La fecha de inicio del stage no puede ser antes de la fecha de inicio del hackathon'
-          : 'Stage start date cannot be before the hackathon start date'
-        return { error: errorMsg }
+        const warnMsg = language === 'es'
+          ? 'La fecha de inicio del stage no debería ser antes de la fecha de inicio del hackathon'
+          : 'Stage start date should not be before the hackathon start date'
+        return { error: null, warning: warnMsg }
       }
-      
-      // Validar que la fecha de fin del stage no sea después de la del hackathon
+
+      // Validar que la fecha de fin del stage no sea después de la del hackathon (warning — permitimos extender)
       if (eventEndDate && stageEnd > eventEnd) {
-        const errorMsg = language === 'es'
-          ? 'La fecha de fin del stage no puede ser después de la fecha de fin del hackathon'
-          : 'Stage end date cannot be after the hackathon end date'
-        return { error: errorMsg }
+        const warnMsg = t[language].stageEndDateAfterHackathonWarning ?? (language === 'es'
+          ? 'La fecha de fin del stage no debería ser después de la fecha de fin del Hackathon'
+          : 'Stage end date should not be after the hackathon end date')
+        return { error: null, warning: warnMsg }
       }
     }
-    return { error: null }
+    return { error: null, warning: null }
   }
 
   const dateValidation = validateDates()
@@ -662,7 +670,16 @@ function StageForm({
             }
           />
           {dateValidation.error && (
-            <p className="text-sm text-red-500">{dateValidation.error}</p>
+            <div className="mt-1 flex items-center gap-2 text-red-500">
+              <CircleX className="w-4 h-4 inline-block" />
+              <p className="text-sm text-red-500">{dateValidation.error}</p>
+            </div>
+          )}
+          {dateValidation.warning && (
+            <div className="mt-1 flex items-center gap-2 text-yellow-500">
+              <TriangleAlertIcon className="w-4 h-4 shrink-0 text-yellow-500" />
+              <p className="text-sm text-yellow-500">{dateValidation.warning}</p>
+            </div>
           )}
         </div>
 
@@ -713,6 +730,7 @@ function StageForm({
             index={index}
             component={stage.component}
             onChange={onStageComponentChange}
+            language={language}
           />
         )}
 
@@ -721,11 +739,27 @@ function StageForm({
             index={index}
             component={stage.component}
             onChange={onStageComponentChange}
+            language={language}
           />
         )}
       </TabsContent>
 
-      <TabsContent value="submit" className="mt-4">
+      <TabsContent value="submit" className="mt-4 space-y-4">
+        <div className="flex items-center justify-between rounded-md border p-4 bg-slate-50 dark:bg-slate-900">
+          <div className="space-y-0.5">
+            <Label htmlFor={`form-locked-${index}`} className="font-medium cursor-pointer">
+              Block Form Editing
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Prevent changes to this stage's form configuration
+            </p>
+          </div>
+          <Switch
+            id={`form-locked-${index}`}
+            checked={stage.formLocked ?? false}
+            onCheckedChange={(checked) => onFormLockedChange(index, checked)}
+          />
+        </div>
         <StageSubmitForm
           stageIndex={index}
           submitForm={stage.submitForm}
@@ -737,6 +771,7 @@ function StageForm({
           setSelectedStageForm={setSelectedStageForm}
           setActivePreviewTab={setActivePreviewTab}
           selectedPredefinedFields={selectedPredefinedFields}
+          language={language}
         />
       </TabsContent>
     </Tabs>

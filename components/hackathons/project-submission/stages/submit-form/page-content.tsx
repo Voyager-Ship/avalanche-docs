@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
 import {
@@ -23,6 +22,12 @@ import { X } from 'lucide-react'
 import TeamMembersWrapper from './team-members-wrapper'
 import { useProjectByHackaUser } from '@/hooks/use-get-project-hacka-user'
 import { useProjectFormData } from '../../hooks/useGetFormDataFromProject'
+import {
+  validateTextInput,
+  validateUrlInput,
+  validateStringArray,
+  detectDangerousUrl,
+} from '@/utils/input-validator'
 
 type StageSubmitValues = Record<string, string | string[]>
 
@@ -139,7 +144,8 @@ export default function StageSubmitPageContent({
     (field: SubmitFormField): boolean =>
       isRequiredFieldEmpty(field, watchedValues[field.id])
   )
-  const isSaveDisabled: boolean = isSubmitting || hasMissingRequiredFields
+  const hasValidationErrors: boolean = Object.keys(form.formState.errors).length > 0
+  const isSaveDisabled: boolean = isSubmitting || hasMissingRequiredFields || hasValidationErrors
   const fieldLabelClassName: string = 'font-medium text-zinc-800 dark:text-white'
   const fieldDescriptionClassName: string = 'text-sm text-zinc-600 dark:text-zinc-400'
   const inputClassName: string =
@@ -182,8 +188,15 @@ export default function StageSubmitPageContent({
             control={form.control}
             name={textField.id}
             rules={{
-              validate: (value: string | string[] | undefined): true | string =>
-                validateRequiredString(value, textField),
+              validate: (value: string | string[] | undefined): true | string => {
+                // First check if required
+                const requiredCheck = validateRequiredString(value, textField)
+                if (requiredCheck !== true) {
+                  return requiredCheck
+                }
+                // Then check for dangerous content
+                return validateTextInput(value, textField.label)
+              },
             }}
             render={({ field: rhfField }) => (
               <FormItem>
@@ -220,8 +233,15 @@ export default function StageSubmitPageContent({
             control={form.control}
             name={linkField.id}
             rules={{
-              validate: (value: string | string[] | undefined): true | string =>
-                validateRequiredArray(value, linkField),
+              validate: (value: string | string[] | undefined): true | string => {
+                // First check if required
+                const requiredCheck = validateRequiredArray(value, linkField)
+                if (requiredCheck !== true) {
+                  return requiredCheck
+                }
+                // Then check for dangerous URLs
+                return validateUrlInput(value)
+              },
             }}
             render={({ field: rhfField }) => {
               const links: string[] = Array.isArray(rhfField.value)
@@ -257,6 +277,11 @@ export default function StageSubmitPageContent({
                 const trimmedValue: string = draftValue.trim()
 
                 if (!trimmedValue) {
+                  return
+                }
+
+                // Check for dangerous URL
+                if (detectDangerousUrl(trimmedValue)) {
                   return
                 }
 
@@ -299,7 +324,9 @@ export default function StageSubmitPageContent({
                   return
                 }
 
-                form.setValue(linkField.id, [normalizeUrl(value)], {
+                const normalizedUrl: string = normalizeUrl(value)
+
+                form.setValue(linkField.id, [normalizedUrl], {
                   shouldDirty: true,
                   shouldValidate: true,
                 })
@@ -426,8 +453,15 @@ export default function StageSubmitPageContent({
             control={form.control}
             name={chipsField.id}
             rules={{
-              validate: (value: string | string[] | undefined): true | string =>
-                validateRequiredString(value, chipsField),
+              validate: (value: string | string[] | undefined): true | string => {
+                // First check if required
+                const requiredCheck = validateRequiredString(value, chipsField)
+                if (requiredCheck !== true) {
+                  return requiredCheck
+                }
+                // Then check for dangerous content
+                return validateTextInput(value, chipsField.label)
+              },
             }}
             render={({ field: rhfField }) => {
               const chips: string[] = chipsField.chips ?? []
@@ -488,8 +522,15 @@ export default function StageSubmitPageContent({
             control={form.control}
             name={multiSelectField.id}
             rules={{
-              validate: (value: string | string[] | undefined): true | string =>
-                validateRequiredArray(value, multiSelectField),
+              validate: (value: string | string[] | undefined): true | string => {
+                // First check if required
+                const requiredCheck = validateRequiredArray(value, multiSelectField)
+                if (requiredCheck !== true) {
+                  return requiredCheck
+                }
+                // Then check for dangerous content
+                return validateStringArray(value, multiSelectField.label)
+              },
             }}
             render={({ field: rhfField }) => {
               const selectedValues: string[] = Array.isArray(rhfField.value)
@@ -556,40 +597,9 @@ export default function StageSubmitPageContent({
   const handleSubmit = async (values: StageSubmitValues): Promise<void> => {
     try {
       setIsSubmitting(true)
+      // Values are already validated by form validation rules
+      // No dangerous input can reach here because submit button is disabled if validation fails
       const valuesForSubmit: StageSubmitValues = { ...values }
-
-      stage.submitForm?.fields.forEach((field: SubmitFormField): void => {
-        if (field.type !== SubmitFormFieldType.Link) {
-          return
-        }
-
-        const linkField: LinkStagesSubmitFormField =
-          field as LinkStagesSubmitFormField
-        const currentLinks: string[] = Array.isArray(values[linkField.id])
-          ? (values[linkField.id] as string[])
-          : []
-        const maxLinks: number | null =
-          typeof linkField.maxLinks === 'number' && linkField.maxLinks > 0
-            ? linkField.maxLinks
-            : null
-
-        valuesForSubmit[linkField.id] = currentLinks
-          .slice(0, maxLinks ?? undefined)
-          .map((link: string): string => {
-            const trimmedLink: string = link.trim()
-
-            if (
-              !trimmedLink ||
-              trimmedLink.startsWith('http://') ||
-              trimmedLink.startsWith('https://')
-            ) {
-              return trimmedLink
-            }
-
-            return `https://${trimmedLink}`
-          })
-          .filter((link: string): boolean => link.length > 0)
-      })
 
       const response: Response = await fetch('/api/project/form-data', {
         method: 'POST',

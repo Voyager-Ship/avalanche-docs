@@ -1,8 +1,5 @@
 import { redirect } from "next/navigation";
-import {
-  getFilteredHackathons,
-  getHackathon,
-} from "@/server/services/hackathons";
+import { getHackathon } from "@/server/services/hackathons";
 import { getRegisterForm } from "@/server/services/registerForms";
 import { getAuthSession } from "@/lib/auth/authSession";
 import Image from "next/image";
@@ -25,13 +22,6 @@ import { getUserById } from "@/server/services/getUser";
 
 export const revalidate = 60;
 export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  const { hackathons } = await getFilteredHackathons({});
-  return hackathons.map((hackathon) => ({
-    id: hackathon.id,
-  }));
-}
 
 export async function generateMetadata({
   params,

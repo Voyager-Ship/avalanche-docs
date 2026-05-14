@@ -237,7 +237,11 @@ const CompletePChainRegistration: React.FC<CompletePChainRegistrationProps> = ({
         );
       }
 
-      // Step 6: Aggregate P-Chain signature
+      // Step 6: Aggregate P-Chain signature.
+      // The warp here is from P-Chain (its registration acknowledgement),
+      // signed by the validators who can attest to the validator's existence
+      // on P-Chain — the canonical aggregator routes by source chain when
+      // signingSubnetId is unset/falls-through.
       const aggregateSignaturePromise = aggregateSignature({
         message: bytesToHex(l1ValidatorRegistrationMessage),
         justification: bytesToHex(justification),
@@ -340,7 +344,7 @@ const CompletePChainRegistration: React.FC<CompletePChainRegistrationProps> = ({
     (!isCoreWallet && !!pChainSignature);
 
   const step1Complete = !!pChainTxIdState.trim();
-  const step2Complete = !!txHash;
+  const step2Complete = !!registrationComplete;
 
   return (
     <div className="space-y-3">

@@ -53,8 +53,8 @@ async function tryLoadImage(
       return null;
     }
     
-    const contentType = imageResponse.headers['content-type'] || 'image/png';
-    
+    const contentType = String(imageResponse.headers['content-type'] || 'image/png');
+
     // Skip WebP images as they cause issues with ImageResponse
     if (contentType.includes('webp') || contentType === 'image/webp') {
       return null;
@@ -116,7 +116,7 @@ export async function GET(
 
   try {
     const res = await axios.get(
-      `${process.env.NEXTAUTH_URL}/api/hackathons/${id}`,
+      `${process.env.NEXTAUTH_URL}/api/events/${id}`,
       {
         headers: {
           'Cache-Control': 'no-store',

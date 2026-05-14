@@ -3,6 +3,7 @@ import { persist, createJSONStorage, combine } from 'zustand/middleware';
 import { useWalletStore } from './walletStore';
 import { localStorageComp, STORE_VERSION } from './utils';
 import { useMemo } from 'react';
+import { findL1ByEvmChainId } from '@/lib/console/l1-dashboard';
 
 export type FaucetThresholds = {
   threshold: number; // min balance threshold to trigger drip
@@ -20,6 +21,8 @@ export type L1ListItem = {
   subnetId: string;
   wrappedTokenAddress: string;
   validatorManagerAddress: string;
+  /** Blockchain ID where the Validator Manager contract is deployed. */
+  validatorManagerBlockchainId?: string;
   rewardCalculatorAddress?: string;
   logoUrl: string;
   wellKnownTeleporterRegistryAddress?: string;
@@ -33,6 +36,11 @@ export type L1ListItem = {
     symbol: string;
     decimals: number;
   };
+  /** Stringified genesis JSON used when creating this L1, when known.
+   *  Populated by the create-L1 wizard or by the Add Chain modal's
+   *  optional paste field. Absent for older entries and for imported
+   *  external chains where the user did not have the genesis. */
+  genesisData?: string;
 };
 
 const l1ListInitialStateFuji = {
@@ -71,6 +79,7 @@ const l1ListInitialStateFuji = {
       subnetId: 'i9gFpZQHPLcGfZaQLiwFAStddQD7iTKBpFfurPFJsXm1CkTZK',
       wrappedTokenAddress: '0xc85a1b7876eabbacf1d6551c58e0759788cf8d02',
       validatorManagerAddress: '0x0646263a231b4fde6f62d4de63e18df7e6ad94d6',
+      validatorManagerBlockchainId: '98qnjenm7MBd8G2cPZoRvZrgJC33JGSAAKghsQ6eojbLCeRNp',
       logoUrl:
         'https://images.ctfassets.net/gcj8jwzm6086/7kyTY75fdtnO6mh7f0osix/4c92c93dd688082bfbb43d5d910cbfeb/Echo_Subnet_Logo.png',
       wellKnownTeleporterRegistryAddress: '0xF86Cb19Ad8405AEFa7d09C778215D2Cb6eBfB228',
@@ -165,7 +174,10 @@ export const getL1ListStore = (isTestnet: boolean) => {
       testnetStoreSingleton = create(
         persist(
           combine(l1ListInitialStateFuji, (set, get) => ({
-            addL1: (l1: L1ListItem) => set((state) => ({ l1List: [...state.l1List, l1] })),
+            // Force isTestnet=true so the testnet store invariant holds even
+            // when callers pass a wrong/stale flag (e.g. Glacier's mainnet
+            // fallback for a brand-new Fuji L1).
+            addL1: (l1: L1ListItem) => set((state) => ({ l1List: [...state.l1List, { ...l1, isTestnet: true }] })),
             removeL1: (l1Id: string) => set((state) => ({ l1List: state.l1List.filter((l) => l.id !== l1Id) })),
             setNativeCurrencyInfo: (chainId: number, info: { name: string; symbol: string; decimals: number }) => {
               set((state) => ({
@@ -202,7 +214,8 @@ export const getL1ListStore = (isTestnet: boolean) => {
       mainnetStoreSingleton = create(
         persist(
           combine(l1ListInitialStateMainnet, (set, get) => ({
-            addL1: (l1: L1ListItem) => set((state) => ({ l1List: [...state.l1List, l1] })),
+            // Force isTestnet=false to keep the mainnet store invariant.
+            addL1: (l1: L1ListItem) => set((state) => ({ l1List: [...state.l1List, { ...l1, isTestnet: false }] })),
             removeL1: (l1Id: string) => set((state) => ({ l1List: state.l1List.filter((l) => l.id !== l1Id) })),
             setNativeCurrencyInfo: (chainId: number, info: { name: string; symbol: string; decimals: number }) => {
               set((state) => ({
@@ -251,13 +264,23 @@ export const useL1ListStore = () => {
 
 export const useSelectedL1 = (): L1ListItem | undefined => {
   const walletChainId = useWalletStore((s) => s.walletChainId);
-  const l1List = useL1ListStore()((state: { l1List: L1ListItem[] }) => state.l1List);
-  return useMemo(() => l1List.find((l1: L1ListItem) => l1.evmChainId === walletChainId), [l1List, walletChainId]);
+  const isTestnet = useWalletStore((s) => s.isTestnet);
+  const testnetL1List = getL1ListStore(true)((state: { l1List: L1ListItem[] }) => state.l1List);
+  const mainnetL1List = getL1ListStore(false)((state: { l1List: L1ListItem[] }) => state.l1List);
+  return useMemo(() => {
+    const activeFirstLists = isTestnet ? [testnetL1List, mainnetL1List] : [mainnetL1List, testnetL1List];
+    return findL1ByEvmChainId(walletChainId, activeFirstLists) ?? undefined;
+  }, [isTestnet, mainnetL1List, testnetL1List, walletChainId]);
 };
 
 export const useL1ByChainId = (chainId: string): L1ListItem | undefined => {
-  const l1List = useL1ListStore()((state: { l1List: L1ListItem[] }) => state.l1List);
-  return useMemo(() => l1List.find((l1: L1ListItem) => l1.id === chainId), [l1List, chainId]);
+  const isTestnet = useWalletStore((s) => s.isTestnet);
+  const testnetL1List = getL1ListStore(true)((state: { l1List: L1ListItem[] }) => state.l1List);
+  const mainnetL1List = getL1ListStore(false)((state: { l1List: L1ListItem[] }) => state.l1List);
+  return useMemo(() => {
+    const activeFirstLists = isTestnet ? [testnetL1List, mainnetL1List] : [mainnetL1List, testnetL1List];
+    return activeFirstLists.flat().find((l1: L1ListItem) => l1.id === chainId);
+  }, [chainId, isTestnet, mainnetL1List, testnetL1List]);
 };
 
 // Native currency hooks for L1 store

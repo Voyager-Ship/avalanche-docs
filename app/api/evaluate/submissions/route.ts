@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth/authSession";
 import { prisma } from "@/prisma/prisma";
+import { canAccessEvaluationTools } from "@/lib/auth/permissions";
 
 function computeStageProgress(origin: string, data: Record<string, unknown>): number {
   if (origin !== "build_games") return 0;
@@ -12,18 +13,11 @@ function computeStageProgress(origin: string, data: Record<string, unknown>): nu
   return 0;
 }
 
-function hasJudgeAccess(attributes: string[] | undefined): boolean {
-  return (
-    attributes?.includes("devrel") === true ||
-    attributes?.includes("judge") === true
-  );
-}
-
 export async function GET(request: NextRequest) {
   try {
     const session = await getAuthSession();
 
-    if (!session?.user?.id || !hasJudgeAccess(session.user.custom_attributes)) {
+    if (!session?.user?.id || !canAccessEvaluationTools(session.user.custom_attributes)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 401 });
     }
 
@@ -44,7 +38,7 @@ export async function GET(request: NextRequest) {
             members: {
               include: {
                 user: {
-                  select: { id: true, name: true, email: true, country: true, github: true, telegram_user: true },
+                  select: { id: true, name: true, email: true, country: true, github_account: true, telegram_account: true },
                 },
               },
             },
@@ -90,8 +84,8 @@ export async function GET(request: NextRequest) {
         applicantName: leadUser?.name ?? applicantName ?? "Unknown",
         applicantEmail: leadUser?.email ?? (applicantData?.email as string) ?? lead?.email ?? "",
         country: leadUser?.country ?? (applicantData?.country as string) ?? "",
-        telegram: leadUser?.telegram_user ?? (applicantData?.telegram as string) ?? null,
-        github: leadUser?.github ?? (applicantData?.github as string) ?? null,
+        telegram: leadUser?.telegram_account ?? (applicantData?.telegram as string) ?? null,
+        github: leadUser?.github_account ?? (applicantData?.github as string) ?? null,
         areaOfFocus,
         stageProgress,
         applicationData,

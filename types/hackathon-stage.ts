@@ -4,6 +4,7 @@ export type HackathonStage = {
   deadline: string;
   component?: StageComponent;
   submitForm?: StageSubmitForm;
+  formLocked?: boolean;
 };
 
 export type StageComponent = CardComponent | TagsComponent;

@@ -1,12 +1,15 @@
 import { z } from "zod";
 import { SubmitFormFieldType } from "@/types/hackathon-stage";
 
-const urlOrEmptySchema = z.union([z.url(), z.literal("")]);
-const nullableUrlOrEmptySchema = z.union([z.url(), z.literal(""), z.null()]);
+const URL_ERROR = 'Please enter a valid URL starting with https:// (e.g., https://example.com)';
+const IMG_URL_ERROR = 'Please enter a valid image URL starting with https:// (e.g., https://example.com/image.png)';
+
+const urlOrEmptySchema = z.union([z.url(URL_ERROR), z.literal("")]);
+const nullableUrlOrEmptySchema = z.union([z.url(URL_ERROR), z.literal(""), z.null()]);
 
 /** File picker preview in editor uses data URLs; union ensures they validate even if z.url() is strict. */
 const imageUrlSchema = z.union([
-  z.url(),
+  z.url(IMG_URL_ERROR),
   z
     .string()
     .max(2_500_000)
@@ -82,13 +85,14 @@ const stageSchema = z.object({
 });
 
 const partnersSchema = z.object({
-  name: z.string().max(120),
-  logo: z.string().max(2048),
+  name: z.string().min(1).max(120),
+  logo: imageUrlSchema,
 });
 
 const trackSchema = z.object({
   icon: z.string().max(128),
   logo: z.string().max(2048),
+  // min(1) is enforced via superRefine only when event === 'hackathon'
   name: z.string().max(120),
   partner: z.string().max(120),
   description: z.string().max(5000),
@@ -98,7 +102,7 @@ const trackSchema = z.object({
 const scheduleSchema = z.object({
   url: nullableUrlOrEmptySchema,
   date: z.string().min(1, 'Date is required').max(64),
-  name: z.string().max(100),
+  name: z.string().min(1).max(100),
   category: z.string().max(30),
   location: z.string().max(100),
   description: z.string().max(500),
@@ -115,7 +119,7 @@ const speakerSchema = z.object({
 const resourceSchema = z.object({
   icon: z.string().max(128),
   link: urlOrEmptySchema,
-  title: z.string().max(120),
+  title: z.string().min(1).max(120),
   description: z.string().max(500),
 });
 
@@ -157,9 +161,9 @@ export const hackathonEditSchema = z.object({
     stages: z.array(stageSchema).max(12).optional().default([]),
   }),
   latest: z.object({
-    start_date: z.string().trim().min(1).max(64),
-    end_date: z.string().trim().min(1).max(64),
-    timezone: z.string().trim().min(1).max(100),
+    start_date: z.string().trim().min(1, 'Please set a start date for the event.').max(64),
+    end_date: z.string().trim().min(1, 'Please set an end date for the event.').max(64),
+    timezone: z.string().trim().min(1, 'Please select a timezone.').max(100),
     banner: imageUrlSchema,
     icon: z.string(),
     small_banner: imageUrlSchema,
@@ -171,6 +175,21 @@ export const hackathonEditSchema = z.object({
   }),
   cohostsEmails: z.array(z.string().email()).max(50),
 }).superRefine((data, ctx) => {
+  // Tracks are only relevant for hackathon events. When the event type is
+  // different (bootcamp, workshop, …) the Tracks section is hidden, so we
+  // must skip track-level validation to avoid blocking the save.
+  if (data.latest.event === 'hackathon') {
+    data.content.tracks.forEach((track, index) => {
+      if (!track.name || track.name.trim().length < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'String must contain at least 1 character(s)',
+          path: ['content', 'tracks', index, 'name'],
+        });
+      }
+    });
+  }
+
   const deadline = data.content.submission_deadline;
   const startDate = data.latest.start_date;
   const endDate = data.latest.end_date;

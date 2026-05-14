@@ -19,6 +19,7 @@ type StageCardsFormProps = {
   component: CardComponent
   index: number
   onChange: (index: number, component: CardComponent) => void
+  language?: 'en' | 'es'
 }
 
 type StageCardItem = CardComponent['cards'][number]
@@ -27,6 +28,7 @@ export default function StageCardsForm({
   component,
   index,
   onChange,
+  language = 'en',
 }: StageCardsFormProps): React.JSX.Element {
   const addCard = (): void => {
     const newCard: StageCardItem = {
@@ -106,6 +108,7 @@ export default function StageCardsForm({
                     onRemove={() => removeCard(cardIndex)}
                     tooltipLabel="Delete card"
                     size={18}
+                    language={language}
                   />
                 </div>
               </AccordionPrimitive.Trigger>

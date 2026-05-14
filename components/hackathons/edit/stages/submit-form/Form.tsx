@@ -51,6 +51,7 @@ type StageSubmitFormProps = {
   setSelectedStageForm: (index: string) => void
   setActivePreviewTab: (tab: string) => void
   selectedPredefinedFields: string[]
+  language?: 'en' | 'es'
 }
 
 function replaceSubmitFormFieldType(
@@ -114,7 +115,8 @@ export default function StageSubmitForm({
   onRemoveSubmitForm,
   setSelectedStageForm,
   setActivePreviewTab,
-  selectedPredefinedFields
+  selectedPredefinedFields,
+  language = 'en',
 }: StageSubmitFormProps): React.JSX.Element {
   const [importDialogOpen, setImportDialogOpen] = React.useState(false)
 
@@ -195,6 +197,7 @@ export default function StageSubmitForm({
                       onRemove={() => onRemoveField(stageIndex, fieldIndex)}
                       tooltipLabel="Delete field"
                       size={18}
+                      language={language}
                     />
                   </div>
                 </AccordionPrimitive.Trigger>
@@ -264,7 +267,7 @@ export default function StageSubmitForm({
                     )
                   }
 
-                  {!field.predefinedField && field.type === SubmitFormFieldType.Text && (
+                  {field.type === SubmitFormFieldType.Text && (
                     <TextStagesSubmitFormField
                       field={field as TextStagesSubmitFormFieldType}
                       onChange={(updatedField: TextStagesSubmitFormFieldType) =>
@@ -273,7 +276,7 @@ export default function StageSubmitForm({
                     />
                   )}
 
-                  {!field.predefinedField && field.type === SubmitFormFieldType.Link && (
+                  {field.type === SubmitFormFieldType.Link && (
                     <LinkStagesSubmitFormField
                       field={field as LinkStagesSubmitFormFieldType}
                       onChange={(updatedField: LinkStagesSubmitFormFieldType) =>
@@ -282,7 +285,7 @@ export default function StageSubmitForm({
                     />
                   )}
 
-                  {!field.predefinedField && field.type === SubmitFormFieldType.Chips && (
+                  {field.type === SubmitFormFieldType.Chips && (
                     <ChipsStagesSubmitFormField
                       field={field as ChipsStagesSubmitFormFieldType}
                       onChange={(updatedField: ChipsStagesSubmitFormFieldType) =>
@@ -291,7 +294,7 @@ export default function StageSubmitForm({
                     />
                   )}
                   {
-                    !field.predefinedField && field.type === SubmitFormFieldType.MultiSelect && (
+                    field.type === SubmitFormFieldType.MultiSelect && (
                       <MultiSelectStagesSubmitFormField
                         field={field as MultiSelectStagesSubmitFormFieldType}
                         onChange={(updatedField: MultiSelectStagesSubmitFormFieldType) =>

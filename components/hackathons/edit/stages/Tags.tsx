@@ -22,12 +22,14 @@ type StageTagsFormProps = {
     index: number,
     component: HackathonStage['component']
   ) => void
+  language?: 'en' | 'es'
 }
 
 export default function StageTagsForm({
   component,
   index,
   onChange,
+  language = 'en',
 }: StageTagsFormProps): React.JSX.Element {
   const addTag = (): void => {
     const newTag: TagItem = {
@@ -143,6 +145,7 @@ export default function StageTagsForm({
                     onRemove={() => removeTag(tagIndex)}
                     tooltipLabel="Delete item"
                     size={18}
+                    language={language}
                   />
                 </div>
               </AccordionPrimitive.Trigger>

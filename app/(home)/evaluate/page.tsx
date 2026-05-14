@@ -3,6 +3,7 @@ import { getAuthSession } from "@/lib/auth/authSession";
 import { prisma } from "@/prisma/prisma";
 import { EvaluateDashboard } from "@/components/evaluate/EvaluateDashboard";
 import type { SubmissionRow, EvaluationData } from "@/components/evaluate/types";
+import { canAccessEvaluationTools } from "@/lib/auth/permissions";
 
 function computeStageProgress(origin: string, data: Record<string, unknown>): number {
   if (origin !== "build_games") return 0;
@@ -25,10 +26,7 @@ export default async function EvaluatePage({
     redirect("/");
   }
 
-  const canAccess =
-    session.user?.custom_attributes?.some(
-      (attr: string) => attr === "devrel" || attr === "judge"
-    ) ?? false;
+  const canAccess = canAccessEvaluationTools(session.user?.custom_attributes);
 
   if (!canAccess) {
     redirect("/");
@@ -64,7 +62,7 @@ export default async function EvaluatePage({
               members: {
               include: {
                 user: {
-                  select: { id: true, name: true, email: true, country: true, github: true, telegram_user: true },
+                  select: { id: true, name: true, email: true, country: true, github_account: true, telegram_account: true },
                 },
               },
             },
@@ -138,10 +136,6 @@ export default async function EvaluatePage({
             previous_avalanche_grant: memberBgApp.previous_avalanche_grant,
             hackathon_experience: memberBgApp.hackathon_experience,
             hackathon_details: memberBgApp.hackathon_details,
-            how_did_you_hear: memberBgApp.how_did_you_hear,
-            how_did_you_hear_specify: memberBgApp.how_did_you_hear_specify,
-            referrer_name: memberBgApp.referrer_name,
-            referrer_handle: memberBgApp.referrer_handle,
           } as Record<string, unknown> : null,
         };
       });
@@ -159,8 +153,8 @@ export default async function EvaluatePage({
         applicantName: leadUser?.name ?? applicantName ?? (bgApp ? `${bgApp.first_name} ${bgApp.last_name}` : "Unknown"),
         applicantEmail: leadUser?.email ?? bgApp?.email ?? (applicantData?.email as string) ?? lead?.email ?? "",
         country: leadUser?.country ?? bgApp?.country ?? (applicantData?.country as string) ?? "",
-        telegram: leadUser?.telegram_user ?? bgApp?.telegram ?? (applicantData?.telegram as string) ?? null,
-        github: leadUser?.github ?? bgApp?.github ?? (applicantData?.github as string) ?? null,
+        telegram: leadUser?.telegram_account ?? bgApp?.telegram ?? (applicantData?.telegram as string) ?? null,
+        github: leadUser?.github_account ?? bgApp?.github ?? (applicantData?.github as string) ?? null,
         areaOfFocus,
         stageProgress,
         memberApplications,
