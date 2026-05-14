@@ -16,35 +16,49 @@ interface Props {
   evaluations?: EvaluationData[];
   currentUserId: string;
   isDevrel?: boolean;
+  /**
+   * When false, hides the "Stage Submissions" tab and the per-stage controls
+   * inside the Evaluation tab (AdvanceStageControls + StageHistory). Used by
+   * stage-less hackathons. Defaults to true so Build Games is unchanged.
+   */
+  showStages?: boolean;
+  /**
+   * New flow: attach the evaluation directly to a Project instead of the
+   * legacy FormData chain. When set, EvaluationPanel posts with projectId.
+   */
+  projectId?: string;
   onClose: () => void;
-  onEvaluationSaved?: (formDataId: string, evaluation: EvaluationData) => void;
+  onEvaluationSaved?: (key: string, evaluation: EvaluationData) => void;
   onStageAdvanced?: (formDataId: string, newStage: number) => void;
 }
 
-const TABS = [
+const ALL_TABS = [
   { id: "project" as const, label: "Project & Team" },
   { id: "submission" as const, label: "Stage Submissions" },
   { id: "evaluation" as const, label: "Evaluation" },
 ];
 
-type TabId = (typeof TABS)[number]["id"];
+type TabId = (typeof ALL_TABS)[number]["id"];
 
 export function SubmissionDetailPanel({
   row,
   evaluations: evalsProp,
   currentUserId,
   isDevrel = false,
+  showStages = true,
+  projectId,
   onClose,
   onEvaluationSaved: onParentEvalSaved,
   onStageAdvanced,
 }: Props) {
   const { project, formData, origin } = row;
+  const tabs = showStages ? ALL_TABS : ALL_TABS.filter((t) => t.id !== "submission");
   const [activeTab, setActiveTab] = useState<TabId>("project");
   const evaluations = evalsProp ?? row.evaluations;
 
   const handleEvaluationSaved = useCallback(
-    (formDataId: string, evaluation: EvaluationData) => {
-      onParentEvalSaved?.(formDataId, evaluation);
+    (key: string, evaluation: EvaluationData) => {
+      onParentEvalSaved?.(key, evaluation);
     },
     [onParentEvalSaved]
   );
@@ -85,7 +99,7 @@ export function SubmissionDetailPanel({
 
         {/* Tabs */}
         <div className="flex gap-1 px-6 pt-3 border-b border-zinc-200 dark:border-zinc-800">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -190,7 +204,7 @@ export function SubmissionDetailPanel({
           )}
 
           {/* Tab: Stage Submissions */}
-          {activeTab === "submission" && (
+          {showStages && activeTab === "submission" && (
             <div className="space-y-4">
               {eventConfig?.stageFields ? (
                 Object.entries(eventConfig.stageFields).map(
@@ -220,16 +234,19 @@ export function SubmissionDetailPanel({
           {/* Tab: Evaluation */}
           {activeTab === "evaluation" && (
             <div className="space-y-4">
-              <AdvanceStageControls
-                formDataId={row.formDataId}
-                currentStage={row.currentStage}
-                isDevrel={isDevrel}
-                onStageAdvanced={(id, stage) => onStageAdvanced?.(id, stage)}
-              />
+              {showStages && (
+                <AdvanceStageControls
+                  formDataId={row.formDataId}
+                  currentStage={row.currentStage}
+                  isDevrel={isDevrel}
+                  onStageAdvanced={(id, stage) => onStageAdvanced?.(id, stage)}
+                />
+              )}
 
               <EvaluationPanel
-                key={`${row.formDataId}-${row.currentStage}`}
-                formDataId={row.formDataId}
+                key={`${projectId ?? row.formDataId}-${row.currentStage}`}
+                formDataId={projectId ? undefined : row.formDataId}
+                projectId={projectId}
                 origin={origin}
                 evaluations={evaluations}
                 currentUserId={currentUserId}
@@ -238,10 +255,12 @@ export function SubmissionDetailPanel({
                 onEvaluationSaved={handleEvaluationSaved}
               />
 
-              <StageHistory
-                evaluations={evaluations}
-                currentStage={row.currentStage}
-              />
+              {showStages && (
+                <StageHistory
+                  evaluations={evaluations}
+                  currentStage={row.currentStage}
+                />
+              )}
             </div>
           )}
         </div>

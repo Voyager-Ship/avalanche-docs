@@ -8,13 +8,16 @@ import { VERDICT_BUTTON_COLORS, VERDICT_BADGE_COLORS, VERDICT_LABELS } from "./c
 import type { EvaluationData, Verdict } from "./types";
 
 interface Props {
-  formDataId: string;
+  /** Legacy / Build Games path: evaluation attaches to a FormData row. */
+  formDataId?: string;
+  /** New path: evaluation attaches directly to a Project. */
+  projectId?: string;
   origin: string;
   evaluations: EvaluationData[];
   currentUserId: string;
   stage: number;
   currentStage: number;
-  onEvaluationSaved: (formDataId: string, evaluation: EvaluationData) => void;
+  onEvaluationSaved: (key: string, evaluation: EvaluationData) => void;
 }
 
 const VERDICTS: { value: Verdict; label: string; color: string }[] = (
@@ -52,6 +55,7 @@ const STAGE_LABELS: Record<number, string> = {
 
 export function EvaluationPanel({
   formDataId,
+  projectId,
   origin,
   evaluations,
   currentUserId,
@@ -59,6 +63,9 @@ export function EvaluationPanel({
   currentStage,
   onEvaluationSaved,
 }: Props) {
+  if (!formDataId && !projectId) {
+    throw new Error("EvaluationPanel requires either formDataId or projectId");
+  }
   const myEvaluation = evaluations.find(
     (e) => e.evaluatorId === currentUserId && e.stage === stage
   );
@@ -104,12 +111,13 @@ export function EvaluationPanel({
       }
 
       const body: Record<string, unknown> = {
-        formDataId,
         verdict: selectedVerdict,
         comment: comment.trim() || undefined,
         scoreOverall: finalScore ?? undefined,
         stage,
       };
+      if (projectId) body.projectId = projectId;
+      else body.formDataId = formDataId;
 
       if (Object.keys(scoresPayload).length > 0) {
         body.scores = scoresPayload;
@@ -127,9 +135,9 @@ export function EvaluationPanel({
       }
 
       const data = await res.json();
-      onEvaluationSaved(formDataId, {
+      onEvaluationSaved(projectId ?? formDataId!, {
         id: data.id,
-        formDataId,
+        formDataId: formDataId ?? projectId!,
         evaluatorId: currentUserId,
         evaluatorName: "You",
         verdict: selectedVerdict,

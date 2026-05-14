@@ -1,16 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -19,7 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ExternalLink, Github, Loader2, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
+import { SubmissionDetailPanel } from "./SubmissionDetailPanel";
+import type { EvaluationData, SubmissionRow, Verdict } from "./types";
 
 type Evaluator = {
   id: string;
@@ -31,7 +25,9 @@ type Evaluator = {
 type Evaluation = {
   id: string;
   evaluator_id: string;
+  verdict: string | null;
   score_overall: number | null;
+  scores: unknown;
   comment: string | null;
   created_at: string;
   updated_at: string;
@@ -73,18 +69,69 @@ type Props = {
   projects: Project[];
 };
 
-const MIN = 0;
-const MAX = 100;
+function toEvaluationData(e: Evaluation): EvaluationData {
+  return {
+    id: e.id,
+    formDataId: "",
+    evaluatorId: e.evaluator_id,
+    evaluatorName: e.evaluator.name ?? e.evaluator.email,
+    verdict: (e.verdict ?? "maybe") as Verdict,
+    comment: e.comment,
+    scoreOverall: e.score_overall,
+    scores: (e.scores as Record<string, number> | null) ?? null,
+    createdAt: e.created_at,
+    stage: 0,
+  };
+}
 
-function initials(name: string | null, email: string): string {
-  const src = name ?? email;
-  return src
-    .split(/\s+/)
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+function teamLead(members: Member[]): Member | null {
+  return members.find((m) => m.role === "Lead") ?? members[0] ?? null;
+}
+
+function toSubmissionRow(project: Project, hackathonId: string): SubmissionRow {
+  const lead = teamLead(project.members);
+  return {
+    formDataId: project.id,
+    projectId: project.id,
+    projectName: project.project_name,
+    shortDescription: project.short_description,
+    hackathonId,
+    hackathonTitle: "",
+    origin: "hackathon",
+    formData: {},
+    finalVerdict: null,
+    project: {
+      id: project.id,
+      projectName: project.project_name,
+      shortDescription: project.short_description,
+      fullDescription: project.full_description ?? "",
+      techStack: project.tech_stack ?? "",
+      githubRepository: project.github_repository ?? "",
+      demoLink: project.demo_link ?? "",
+      demoVideoLink: project.demo_video_link ?? "",
+      tracks: project.tracks,
+      categories: project.categories,
+      isPreexistingIdea: false,
+      createdAt: project.created_at,
+      members: project.members.map((m) => ({
+        id: m.id,
+        email: m.email ?? "",
+        role: m.role,
+        status: m.status,
+      })),
+    },
+    evaluations: project.evaluations.map(toEvaluationData),
+    applicantName: lead?.email ?? "Team",
+    applicantEmail: lead?.email ?? "",
+    country: "",
+    telegram: null,
+    github: null,
+    areaOfFocus: null,
+    stageProgress: 0,
+    currentStage: 0,
+    memberApplications: [],
+    applicationData: null,
+  };
 }
 
 function averageScore(evals: Evaluation[]): number | null {
@@ -104,28 +151,6 @@ export function HackathonEvaluateDashboard({
   const [query, setQuery] = useState("");
   const [winnerSaving, setWinnerSaving] = useState<string | null>(null);
 
-  async function toggleWinner(projectId: string, next: boolean) {
-    setWinnerSaving(projectId);
-    const previous = projects;
-    setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, is_winner: next } : p)),
-    );
-    try {
-      const res = await fetch(`/api/projects/${projectId}/winner`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ is_winner: next }),
-      });
-      if (!res.ok) {
-        setProjects(previous);
-      }
-    } catch {
-      setProjects(previous);
-    } finally {
-      setWinnerSaving(null);
-    }
-  }
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return projects;
@@ -140,12 +165,48 @@ export function HackathonEvaluateDashboard({
 
   const openProject = projects.find((p) => p.id === openProjectId) ?? null;
 
-  function patchEvaluation(projectId: string, updated: Evaluation) {
+  async function toggleWinner(projectId: string, next: boolean) {
+    setWinnerSaving(projectId);
+    const previous = projects;
+    setProjects((prev) =>
+      prev.map((p) => (p.id === projectId ? { ...p, is_winner: next } : p)),
+    );
+    try {
+      const res = await fetch(`/api/projects/${projectId}/winner`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ is_winner: next }),
+      });
+      if (!res.ok) setProjects(previous);
+    } catch {
+      setProjects(previous);
+    } finally {
+      setWinnerSaving(null);
+    }
+  }
+
+  function handleEvaluationSaved(_projectKey: string, evaluation: EvaluationData) {
     setProjects((prev) =>
       prev.map((p) => {
-        if (p.id !== projectId) return p;
-        const others = p.evaluations.filter((e) => e.evaluator_id !== updated.evaluator_id);
-        return { ...p, evaluations: [updated, ...others] };
+        if (p.id !== openProjectId) return p;
+        const others = p.evaluations.filter((e) => e.evaluator_id !== evaluation.evaluatorId);
+        const fresh: Evaluation = {
+          id: evaluation.id,
+          evaluator_id: evaluation.evaluatorId,
+          verdict: evaluation.verdict,
+          score_overall: evaluation.scoreOverall,
+          scores: evaluation.scores,
+          comment: evaluation.comment,
+          created_at: evaluation.createdAt,
+          updated_at: evaluation.createdAt,
+          evaluator: {
+            id: evaluation.evaluatorId,
+            name: evaluation.evaluatorName === "You" ? "You" : evaluation.evaluatorName,
+            email: "",
+            image: null,
+          },
+        };
+        return { ...p, evaluations: [fresh, ...others] };
       }),
     );
   }
@@ -165,7 +226,7 @@ export function HackathonEvaluateDashboard({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[28%]">Project</TableHead>
+              <TableHead className="w-[32%]">Project</TableHead>
               <TableHead>Team</TableHead>
               <TableHead className="w-[120px] text-right">Submitted</TableHead>
               <TableHead className="w-[80px] text-right">Reviews</TableHead>
@@ -194,11 +255,7 @@ export function HackathonEvaluateDashboard({
                   <TableCell>
                     <div className="flex items-center gap-3">
                       {p.logo_url ? (
-                        <img
-                          src={p.logo_url}
-                          alt=""
-                          className="size-9 shrink-0 rounded object-cover"
-                        />
+                        <img src={p.logo_url} alt="" className="size-9 shrink-0 rounded object-cover" />
                       ) : (
                         <div className="size-9 shrink-0 rounded bg-zinc-800" />
                       )}
@@ -222,15 +279,12 @@ export function HackathonEvaluateDashboard({
                     {p.evaluations.length}
                   </TableCell>
                   <TableCell className="text-right text-sm text-zinc-300">
-                    {avg !== null ? avg.toFixed(1) : "—"}
+                    {avg !== null ? `${avg.toFixed(1)} / 5` : "—"}
                   </TableCell>
                   <TableCell className="text-right text-sm font-medium text-zinc-100">
                     {mine?.score_overall ?? "—"}
                   </TableCell>
-                  <TableCell
-                    className="text-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     {canPickWinners ? (
                       <Button
                         variant={p.is_winner ? "default" : "ghost"}
@@ -262,216 +316,17 @@ export function HackathonEvaluateDashboard({
         </Table>
       </div>
 
-      <Dialog open={openProjectId !== null} onOpenChange={(o) => !o && setOpenProjectId(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          {openProject && (
-            <ProjectDetail
-              project={openProject}
-              viewerId={viewerId}
-              onEvaluationSaved={(ev) => patchEvaluation(openProject.id, ev)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function ProjectDetail({
-  project,
-  viewerId,
-  onEvaluationSaved,
-}: {
-  project: Project;
-  viewerId: string;
-  onEvaluationSaved: (evaluation: Evaluation) => void;
-}) {
-  const mine = project.evaluations.find((e) => e.evaluator_id === viewerId);
-  const otherEvals = project.evaluations.filter((e) => e.evaluator_id !== viewerId);
-
-  const [score, setScore] = useState<string>(
-    mine?.score_overall !== null && mine?.score_overall !== undefined
-      ? String(mine.score_overall)
-      : "",
-  );
-  const [comment, setComment] = useState<string>(mine?.comment ?? "");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function save() {
-    setError(null);
-    const parsedScore = score.trim() === "" ? null : Number(score);
-    if (parsedScore !== null && (!Number.isFinite(parsedScore) || parsedScore < MIN || parsedScore > MAX)) {
-      setError(`Score must be between ${MIN} and ${MAX}, or empty.`);
-      return;
-    }
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/projects/${project.id}/evaluate`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          score_overall: parsedScore,
-          comment: comment.trim() === "" ? null : comment,
-        }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error ?? `Save failed (${res.status})`);
-      }
-      const { evaluation } = (await res.json()) as { evaluation: Evaluation };
-      onEvaluationSaved(evaluation);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-6">
-      <DialogHeader>
-        <DialogTitle className="text-xl">{project.project_name}</DialogTitle>
-      </DialogHeader>
-
-      <section className="flex flex-col gap-3">
-        <p className="text-sm text-zinc-300">{project.short_description}</p>
-        {project.full_description && (
-          <p className="whitespace-pre-wrap text-sm text-zinc-400">
-            {project.full_description}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-2 text-xs">
-          {project.tracks.map((t) => (
-            <span key={t} className="rounded bg-zinc-800 px-2 py-0.5 text-zinc-300">
-              {t}
-            </span>
-          ))}
-          {project.tags.map((t) => (
-            <span key={t} className="rounded bg-zinc-900 px-2 py-0.5 text-zinc-400">
-              #{t}
-            </span>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-3 text-xs">
-          {project.github_repository && (
-            <a
-              href={project.github_repository}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-zinc-300 underline-offset-2 hover:underline"
-            >
-              <Github className="size-3.5" /> Repo
-            </a>
-          )}
-          {project.demo_link && (
-            <a
-              href={project.demo_link}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-zinc-300 underline-offset-2 hover:underline"
-            >
-              <ExternalLink className="size-3.5" /> Demo
-            </a>
-          )}
-          {project.demo_video_link && (
-            <a
-              href={project.demo_video_link}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-zinc-300 underline-offset-2 hover:underline"
-            >
-              <ExternalLink className="size-3.5" /> Video
-            </a>
-          )}
-        </div>
-        {project.tech_stack && (
-          <div className="text-xs text-zinc-500">Stack: {project.tech_stack}</div>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-2 rounded-md border border-zinc-800 p-4">
-        <h3 className="text-sm font-medium text-zinc-200">Your evaluation</h3>
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-zinc-400" htmlFor="score-input">
-            Score (0–100)
-          </label>
-          <Input
-            id="score-input"
-            type="number"
-            min={MIN}
-            max={MAX}
-            step={1}
-            value={score}
-            onChange={(e) => setScore(e.target.value)}
-            className="w-24"
-          />
-        </div>
-        <Textarea
-          rows={4}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Leave a note about this project…"
+      {openProject && (
+        <SubmissionDetailPanel
+          row={toSubmissionRow(openProject, hackathonId)}
+          currentUserId={viewerId}
+          isDevrel={canPickWinners}
+          showStages={false}
+          projectId={openProject.id}
+          onClose={() => setOpenProjectId(null)}
+          onEvaluationSaved={handleEvaluationSaved}
         />
-        {error && <p className="text-xs text-red-400">{error}</p>}
-        <div className="flex justify-end">
-          <Button onClick={save} disabled={saving}>
-            {saving && <Loader2 className="size-4 animate-spin" />}
-            {mine ? "Update evaluation" : "Submit evaluation"}
-          </Button>
-        </div>
-        {mine && (
-          <p className="text-xs text-zinc-500">
-            Last saved {new Date(mine.updated_at).toLocaleString()}
-          </p>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-medium text-zinc-200">
-          Other judges&apos; evaluations{" "}
-          <span className="text-zinc-500">({otherEvals.length})</span>
-        </h3>
-        {otherEvals.length === 0 ? (
-          <p className="text-xs text-zinc-500">No other evaluations yet.</p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {otherEvals.map((e) => (
-              <li key={e.id} className="flex gap-3 rounded-md border border-zinc-800 p-3">
-                <Avatar className="size-8">
-                  {e.evaluator.image && (
-                    <AvatarImage
-                      src={e.evaluator.image}
-                      alt={e.evaluator.name ?? e.evaluator.email}
-                    />
-                  )}
-                  <AvatarFallback>
-                    {initials(e.evaluator.name, e.evaluator.email)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-sm font-medium text-zinc-100">
-                      {e.evaluator.name ?? e.evaluator.email}
-                    </span>
-                    <span className="text-sm font-semibold text-zinc-200">
-                      {e.score_overall ?? "—"}
-                    </span>
-                  </div>
-                  {e.comment && (
-                    <p className="mt-1 whitespace-pre-wrap text-xs text-zinc-400">
-                      {e.comment}
-                    </p>
-                  )}
-                  <p className="mt-1 text-[10px] uppercase tracking-wide text-zinc-600">
-                    {new Date(e.updated_at).toLocaleString()}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+      )}
+    </>
   );
 }

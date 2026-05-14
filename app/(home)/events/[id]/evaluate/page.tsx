@@ -62,7 +62,9 @@ export default async function HackathonEvaluatePage({
         select: {
           id: true,
           evaluator_id: true,
+          verdict: true,
           score_overall: true,
+          scores: true,
           comment: true,
           created_at: true,
           updated_at: true,
