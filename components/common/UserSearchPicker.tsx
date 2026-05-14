@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 export type SearchUser = {
   id: string;
   name: string | null;
-  email: string;
   image: string | null;
   user_name: string | null;
-  custom_attributes: string[];
+  email?: string;
+  custom_attributes?: string[];
 };
 
 type Props = {
@@ -18,6 +18,7 @@ type Props = {
   excludeUserIds?: string[];
   placeholder?: string;
   autoFocus?: boolean;
+  scope?: "public" | "admin";
 };
 
 function useDebounced<T>(value: T, delayMs: number): T {
@@ -30,7 +31,7 @@ function useDebounced<T>(value: T, delayMs: number): T {
 }
 
 function initials(user: SearchUser): string {
-  const source = user.name ?? user.email ?? "?";
+  const source = user.name ?? user.user_name ?? user.email ?? "?";
   return source
     .split(/\s+/)
     .map((part) => part[0])
@@ -43,8 +44,9 @@ function initials(user: SearchUser): string {
 export function UserSearchPicker({
   onSelect,
   excludeUserIds,
-  placeholder = "Search by name or email…",
+  placeholder = "Search by name…",
   autoFocus,
+  scope = "public",
 }: Props) {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounced(query, 250);
@@ -65,7 +67,8 @@ export function UserSearchPicker({
     }
     setLoading(true);
     setError(null);
-    fetch(`/api/users/search?q=${encodeURIComponent(debouncedQuery.trim())}`, {
+    const params = new URLSearchParams({ q: debouncedQuery.trim(), scope });
+    fetch(`/api/users/search?${params.toString()}`, {
       headers: { "content-type": "application/json" },
     })
       .then(async (res) => {
@@ -88,7 +91,7 @@ export function UserSearchPicker({
     return () => {
       active = false;
     };
-  }, [debouncedQuery]);
+  }, [debouncedQuery, scope]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -134,44 +137,51 @@ export function UserSearchPicker({
           )}
           {!loading &&
             !error &&
-            filtered.map((user) => (
-              <button
-                key={user.id}
-                type="button"
-                onClick={() => {
-                  onSelect(user);
-                  setQuery("");
-                  setOpen(false);
-                  setResults([]);
-                }}
-                className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-900"
-              >
-                <Avatar className="size-8">
-                  {user.image && <AvatarImage src={user.image} alt={user.name ?? user.email} />}
-                  <AvatarFallback>{initials(user)}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    {user.name ?? user.user_name ?? user.email}
+            filtered.map((user) => {
+              const subtitle = user.email ?? (user.user_name ? `@${user.user_name}` : null);
+              return (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => {
+                    onSelect(user);
+                    setQuery("");
+                    setOpen(false);
+                    setResults([]);
+                  }}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                >
+                  <Avatar className="size-8">
+                    {user.image && (
+                      <AvatarImage src={user.image} alt={user.name ?? user.email ?? "user"} />
+                    )}
+                    <AvatarFallback>{initials(user)}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      {user.name ?? user.user_name ?? user.email ?? "Unknown user"}
+                    </div>
+                    {subtitle && (
+                      <div className="truncate text-xs text-zinc-600 dark:text-zinc-500">
+                        {subtitle}
+                      </div>
+                    )}
                   </div>
-                  <div className="truncate text-xs text-zinc-600 dark:text-zinc-500">
-                    {user.email}
-                  </div>
-                </div>
-                {user.custom_attributes.length > 0 && (
-                  <div className="flex shrink-0 gap-1">
-                    {user.custom_attributes.slice(0, 2).map((attr) => (
-                      <span
-                        key={attr}
-                        className="rounded bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-700 dark:text-zinc-400"
-                      >
-                        {attr}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </button>
-            ))}
+                  {user.custom_attributes && user.custom_attributes.length > 0 && (
+                    <div className="flex shrink-0 gap-1">
+                      {user.custom_attributes.slice(0, 2).map((attr) => (
+                        <span
+                          key={attr}
+                          className="rounded bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-700 dark:text-zinc-400"
+                        >
+                          {attr}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
         </div>
       )}
     </div>

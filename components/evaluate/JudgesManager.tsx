@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { UserSearchPicker, type SearchUser } from "./UserSearchPicker";
+import { UserSearchPicker, type SearchUser } from "@/components/common/UserSearchPicker";
 import { Check, Loader2, Trash2, X } from "lucide-react";
 
 type Judge = {
@@ -25,8 +25,8 @@ type Props = {
   initialJudges: Judge[];
 };
 
-function initials(name: string | null, email: string): string {
-  const source = name ?? email;
+function initials(name: string | null, email: string | undefined): string {
+  const source = name ?? email ?? "?";
   return source
     .split(/\s+/)
     .map((part) => part[0])
@@ -91,6 +91,7 @@ export function JudgesManager({ hackathonId, initialJudges }: Props) {
 
         {!pendingUser ? (
           <UserSearchPicker
+            scope="admin"
             onSelect={(user) => {
               setError(null);
               setPendingUser(user);
@@ -120,7 +121,7 @@ export function JudgesManager({ hackathonId, initialJudges }: Props) {
                   {pendingUser.email}
                 </div>
               </div>
-              {pendingUser.custom_attributes.length > 0 && (
+              {pendingUser.custom_attributes && pendingUser.custom_attributes.length > 0 && (
                 <div className="flex shrink-0 gap-1">
                   {pendingUser.custom_attributes.slice(0, 2).map((attr) => (
                     <span

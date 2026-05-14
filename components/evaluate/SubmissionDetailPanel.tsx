@@ -16,16 +16,7 @@ interface Props {
   evaluations?: EvaluationData[];
   currentUserId: string;
   isDevrel?: boolean;
-  /**
-   * When false, hides the "Stage Submissions" tab and the per-stage controls
-   * inside the Evaluation tab (AdvanceStageControls + StageHistory). Used by
-   * stage-less hackathons. Defaults to true so Build Games is unchanged.
-   */
   showStages?: boolean;
-  /**
-   * New flow: attach the evaluation directly to a Project instead of the
-   * legacy FormData chain. When set, EvaluationPanel posts with projectId.
-   */
   projectId?: string;
   onClose: () => void;
   onEvaluationSaved?: (key: string, evaluation: EvaluationData) => void;
@@ -80,7 +71,6 @@ export function SubmissionDetailPanel({
         className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xl w-full max-w-5xl mx-4 max-h-[85vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-3 min-w-0">
             <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 truncate" title={row.projectName}>
@@ -97,7 +87,6 @@ export function SubmissionDetailPanel({
           </Button>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 px-6 pt-3 border-b border-zinc-200 dark:border-zinc-800">
           {tabs.map((tab) => (
             <button
@@ -114,9 +103,7 @@ export function SubmissionDetailPanel({
           ))}
         </div>
 
-        {/* Scrollable content */}
         <div className="overflow-auto max-h-[70vh] p-4 scroll-smooth">
-          {/* Tab: Project & Team */}
           {activeTab === "project" && (
             <div className="space-y-4">
               {!project ? (
@@ -203,7 +190,6 @@ export function SubmissionDetailPanel({
             </div>
           )}
 
-          {/* Tab: Stage Submissions */}
           {showStages && activeTab === "submission" && (
             <div className="space-y-4">
               {eventConfig?.stageFields ? (
@@ -231,7 +217,6 @@ export function SubmissionDetailPanel({
             </div>
           )}
 
-          {/* Tab: Evaluation */}
           {activeTab === "evaluation" && (
             <div className="space-y-4">
               {showStages && (
