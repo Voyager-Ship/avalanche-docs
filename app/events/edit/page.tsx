@@ -1107,7 +1107,7 @@ const HackathonsEdit = () => {
         main: initialData.main,
         content: {
           ...initialData.content,
-          partners: [{ name: '', logo: '' }],
+          partners: [],
           stages: [],
         },
         latest: initialData.latest,
@@ -1121,7 +1121,7 @@ const HackathonsEdit = () => {
     useWatch({ control, name: 'content' }) ??
     ({
       ...initialData.content,
-      partners: [{ name: '', logo: '' }],
+      partners: [],
       stages: [],
     } as IDataContent);
   const formDataLatest = useWatch({ control, name: 'latest' }) ?? initialData.latest;
@@ -1315,7 +1315,7 @@ const HackathonsEdit = () => {
       stages: hackathon.content?.stages ?? [],
       tracks: hackathon.content?.tracks ?? [{ icon: '', logo: '', name: '', partner: '', description: '', short_description: '' }],
       address: hackathon.content?.address ?? '',
-      partners: hackathon.content?.partners ?? [''],
+      partners: hackathon.content?.partners ?? [],
       schedule: hackathon.content?.schedule ?? [{ url: null, date: '', name: '', category: '', location: '', description: '', duration: 0 }],
       speakers: (hackathon.content?.speakers ?? []).map((s: any) => ({ ...s, picture: s.picture ?? '' })),
       resources: hackathon.content?.resources ?? [{ icon: '', link: '', title: '', description: '' }],
@@ -4107,7 +4107,6 @@ const HackathonsEdit = () => {
                                   onRemove={animateRemove.bind(null, 'partner', index, removePartner)}
                                   t={t}
                                   language={language}
-                                  partnersLength={formDataContent.partners.length}
                                   onImageFileTooLarge={() =>
                                     toast({
                                       title: 'The file is too large (Max: 2MB).',

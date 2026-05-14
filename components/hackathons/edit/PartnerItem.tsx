@@ -30,7 +30,6 @@ export type PartnerItemProps = {
   onRemove: (index: number) => void;
   t: typeof editTranslations;
   language: 'en' | 'es';
-  partnersLength: number;
   onImageFileTooLarge: () => void;
   fieldError?: (field: string) => string | null;
 };
@@ -42,7 +41,6 @@ const PartnerItem = memo(function PartnerItem({
   onRemove,
   t,
   language,
-  partnersLength,
   onImageFileTooLarge,
   fieldError,
 }: PartnerItemProps) {

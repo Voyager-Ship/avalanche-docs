@@ -246,7 +246,9 @@ export default function ModernEventLayout({
             {isHackathon && <Submission hackathon={hackathon} isRegistered={isRegistered} isAuthenticated={isAuthenticated} utm={utm} />}
             {hasSpeakers && <MentorsJudges hackathon={hackathon} />}
             <Community hackathon={hackathon} />
-            {hasPartners && <Sponsors hackathon={hackathon} />}
+            {hasPartners && (
+              <Sponsors hackathon={hackathon} isPreview={isPreview} />
+            )}
           </div>
         </div>
       </div>

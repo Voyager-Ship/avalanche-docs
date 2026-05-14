@@ -12,8 +12,15 @@ import AutoScroll from "embla-carousel-auto-scroll";
 import Link from "next/link";
 import React from "react";
 import { normalizeEventsLang, t } from "@/lib/events/i18n";
+import { cn } from "@/lib/utils";
 
-function Sponsors({ hackathon }: { hackathon: HackathonHeader }) {
+type SponsorsProps = {
+  hackathon: HackathonHeader;
+  /** Editor preview: strip stays within the panel width (no `vw`). Omitted on live pages. */
+  isPreview?: boolean;
+};
+
+function Sponsors({ hackathon, isPreview = false }: SponsorsProps) {
   const lang = normalizeEventsLang(hackathon.content?.language);
   const plugin = AutoScroll({
     speed: 1,
@@ -23,7 +30,7 @@ function Sponsors({ hackathon }: { hackathon: HackathonHeader }) {
   });
 
   return (
-    <section>
+    <section className="min-w-0 w-full max-w-full">
       <h2 className="text-4xl font-bold mb-8" id="sponsors">
         {t(lang, "section.partners.title")}
       </h2>
@@ -31,10 +38,20 @@ function Sponsors({ hackathon }: { hackathon: HackathonHeader }) {
       <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
         {t(lang, "section.partners.subtitle")}
       </p>
-      <div>
+      <div
+        className={cn(
+          "min-w-0 overflow-hidden",
+          !isPreview &&
+            "relative left-1/2 w-screen max-w-none -translate-x-1/2",
+          isPreview && "w-full max-w-full rounded-lg",
+        )}
+      >
         <Carousel
           plugins={[plugin]}
-          className="w-screen left-1/2 transform -translate-x-1/2 dark:bg-zinc-200 bg-zinc-700 py-4"
+          className={cn(
+            "w-full border-y border-zinc-200 bg-white py-4 dark:border-zinc-300/25 dark:bg-zinc-100",
+            isPreview && "rounded-lg border-x",
+          )}
           opts={{
             loop: true,
             dragFree: false,
@@ -44,13 +61,13 @@ function Sponsors({ hackathon }: { hackathon: HackathonHeader }) {
             {hackathon.content.partners.map((partner, index) => (
               <CarouselItem
                 key={index}
-                className="basis-1/2 sm:basis-1/3 md:basis-1/5 h-44 items-center justify-center flex"
+                className="basis-[45%] sm:basis-1/3 md:basis-1/4 lg:basis-1/5 h-44 items-center justify-center flex"
               >
                 <SafeImage
                   src={partner.logo}
                   alt={partner.name}
-                  frameClassName="h-[120px] w-[200px]"
-                  imageClassName="object-contain filter grayscale invert dark:invert-0"
+                  frameClassName="h-[100px] w-[140px] sm:h-[120px] sm:w-[200px] max-w-full"
+                  imageClassName="object-contain opacity-90 grayscale transition hover:opacity-100 hover:grayscale-0 dark:opacity-90 dark:hover:opacity-100"
                   fallbackIcon="image"
                 />
               </CarouselItem>
