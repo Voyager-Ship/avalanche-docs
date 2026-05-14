@@ -172,6 +172,7 @@ model Project {
   hackathon           Hackathon?          @relation(fields: [hackaton_id], references: [id], onDelete: Cascade)
   badges              ProjectBadge[]
   ProjectRepository   ProjectRepository[]
+  evaluations         Evaluation[]
 }
 
 model Member {
