@@ -13,7 +13,7 @@ import { ICON_OPTIONS } from '@/components/hackathons/edit/icon-registry';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import HackathonsList from '@/components/hackathons/edit/HackathonsList';
 import { t } from './translations';
-import { useSession, SessionProvider } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import useHackathonsFilters from '@/hooks/useHackathonsFilters';
 import axios from 'axios';
 import { initialData, IDataMain, IDataContent, IDataLatest, ITrack, ISchedule, ISpeaker, IResource, IPartner } from './initials';
@@ -2535,12 +2535,12 @@ const HackathonsEdit = () => {
       session.user.custom_attributes.includes("devrel");
   };
 
-  // Redirect unauthorized users
+  // Redirect unauthenticated users to home; authenticated without roles to home (same as proxy.ts)
   React.useEffect(() => {
-    if (status === "loading") return; // Still loading
+    if (status === "loading") return;
 
     if (status === "unauthenticated") {
-      window.location.href = "/login";
+      window.location.href = "/";
       return;
     }
 
@@ -4262,9 +4262,5 @@ const HackathonsEdit = () => {
 };
 
 export default function Page() {
-  return (
-    <SessionProvider>
-      <HackathonsEdit />
-    </SessionProvider>
-  );
-} 
+  return <HackathonsEdit />;
+}
