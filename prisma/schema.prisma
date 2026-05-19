@@ -8,34 +8,50 @@ datasource db {
 }
 
 model Hackathon {
-  id                 String         @id @default(uuid())
+  id                 String                   @id @default(uuid())
   title              String
   description        String
   location           String
   total_prizes       Int
   tags               String[]
-  content            Json           @default("{}")
-  end_date           DateTime       @default(now()) @db.Timestamptz(3)
-  start_date         DateTime       @default(now()) @db.Timestamptz(3)
-  timezone           String         @default("UTC")
-  banner             String         @default("")
-  icon               String         @default("")
-  small_banner       String         @default("")
+  content            Json                     @default("{}")
+  end_date           DateTime                 @default(now()) @db.Timestamptz(3)
+  start_date         DateTime                 @default(now()) @db.Timestamptz(3)
+  timezone           String                   @default("UTC")
+  banner             String                   @default("")
+  icon               String                   @default("")
+  small_banner       String                   @default("")
   participants       Int
   organizers         String?
-  top_most           Boolean?       @default(false)
+  top_most           Boolean?                 @default(false)
   custom_link        String?
   created_by         String?
   is_public          Boolean?
   updated_by         String?
-  event              String?        @default("hackathon")
-  cohosts            String[]       @default([])
-  new_layout         Boolean?       @default(false)
+  event              String?                  @default("hackathon")
+  cohosts            String[]                 @default([])
+  new_layout         Boolean?                 @default(false)
   google_calendar_id String?
-  created_by_user    User?          @relation(fields: [created_by], references: [id])
-  updated_by_user    User?          @relation("HackathonUpdatedBy", fields: [updated_by], references: [id])
+  evaluation_phase   HackathonEvaluationPhase @default(EVALUATION)
+  created_by_user    User?                    @relation(fields: [created_by], references: [id])
+  updated_by_user    User?                    @relation("HackathonUpdatedBy", fields: [updated_by], references: [id])
+  judges             HackathonJudge[]
   projects           Project[]
   registrations      RegisterForm[]
+}
+
+model HackathonJudge {
+  id           String    @id @default(uuid())
+  hackathon_id String
+  user_id      String
+  assigned_by  String
+  assigned_at  DateTime  @default(now()) @db.Timestamptz(3)
+  hackathon    Hackathon @relation(fields: [hackathon_id], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([hackathon_id, user_id])
+  @@index([hackathon_id])
+  @@index([user_id])
 }
 
 model User {
@@ -69,12 +85,14 @@ model User {
   team_id                    String?
   linkedin_url               String?
   x_handle                   String?
+  consent_sharing            Boolean?
   chatConversations          ChatConversation[]
   consoleLog                 ConsoleLog[]
   evaluations                Evaluation[]              @relation("Evaluations")
   faucetClaims               FaucetClaim[]
   hackathons                 Hackathon[]
   updated_hackathons         Hackathon[]               @relation("HackathonUpdatedBy")
+  hackathon_judge_roles      HackathonJudge[]
   memberships                Member[]
   managedTestnetNodes        NodeRegistration[]
   Notification               Notification[]
@@ -157,6 +175,9 @@ model Project {
   deployed_addresses  Json[]              @default([])
   website             Json?
   socials             Json?
+  winner_rank         ProjectWinnerRank?
+  consent_sharing     Boolean?
+  evaluations         Evaluation[]
   formData            FormData[]
   members             Member[]
   hackathon           Hackathon?          @relation(fields: [hackaton_id], references: [id], onDelete: Cascade)
@@ -393,21 +414,27 @@ model FormData {
 }
 
 model Evaluation {
-  id            String   @id @default(dbgenerated("gen_random_uuid()"))
-  form_data_id  String
+  id            String    @id @default(dbgenerated("gen_random_uuid()"))
+  form_data_id  String?
   evaluator_id  String
-  verdict       String
+  verdict       String?
   comment       String?
   score_overall Float?
   scores        Json?
-  created_at    DateTime @default(now()) @db.Timestamptz(3)
-  updated_at    DateTime @updatedAt @db.Timestamptz(3)
-  stage         Int      @default(0)
-  evaluator     User     @relation("Evaluations", fields: [evaluator_id], references: [id], onDelete: Cascade)
-  formData      FormData @relation(fields: [form_data_id], references: [id], onDelete: Cascade)
+  created_at    DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at    DateTime  @updatedAt @db.Timestamptz(3)
+  stage         Int       @default(0)
+  project_id    String?
+  hackathon_id  String?
+  evaluator     User      @relation("Evaluations", fields: [evaluator_id], references: [id], onDelete: Cascade)
+  formData      FormData? @relation(fields: [form_data_id], references: [id], onDelete: Cascade)
+  project       Project?  @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@unique([form_data_id, evaluator_id, stage])
+  @@unique([project_id, evaluator_id])
   @@index([form_data_id])
+  @@index([project_id])
+  @@index([hackathon_id])
   @@index([evaluator_id])
 }
 
@@ -608,4 +635,14 @@ model Repository {
   last_contribution  BigInt?
   ProjectRepository  ProjectRepository[]
   User               User?               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+enum HackathonEvaluationPhase {
+  EVALUATION
+  PICKING
+}
+
+enum ProjectWinnerRank {
+  FIRST_PLACE
+  WINNER
 }

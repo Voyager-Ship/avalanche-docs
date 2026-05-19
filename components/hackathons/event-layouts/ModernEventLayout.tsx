@@ -26,6 +26,7 @@ interface ModernEventLayoutProps {
   isAuthenticated: boolean;
   utm: string;
   isPreview?: boolean;
+  hostNavButtons?: React.ReactNode;
 }
 
 export default function ModernEventLayout({
@@ -35,6 +36,7 @@ export default function ModernEventLayout({
   isAuthenticated,
   utm,
   isPreview = false,
+  hostNavButtons,
 }: ModernEventLayoutProps) {
   const lang = normalizeEventsLang(hackathon.content?.language);
 
@@ -158,6 +160,7 @@ export default function ModernEventLayout({
           utm={utm}
           lang={lang}
         />
+        {isHackathon && hostNavButtons}
       </div>
       <div className="p-4 flex flex-col gap-24">
         <NavigationMenu items={menuItems} />
