@@ -74,7 +74,7 @@ export function detectDangerousUrl(url: string): boolean {
  * Returns error message if dangerous, otherwise returns true
  */
 export function validateTextInput(
-  value: string | string[] | undefined,
+  value: string | string[] | Array<{ name?: string; url?: string }> | undefined,
   fieldName: string
 ): true | string {
   if (!value || typeof value !== 'string') {
@@ -99,7 +99,7 @@ export function validateTextInput(
  * Returns error message if dangerous, otherwise returns true
  */
 export function validateUrlInput(
-  value: string | string[] | undefined
+  value: string | string[] | Array<{ url?: string }> | undefined
 ): true | string {
   if (!value) {
     return true
@@ -107,7 +107,9 @@ export function validateUrlInput(
 
   const urls = Array.isArray(value) ? value : [value]
 
-  for (const url of urls) {
+  for (const item of urls) {
+    const url = typeof item === 'string' ? item : item.url
+
     if (typeof url !== 'string') {
       continue
     }
@@ -131,7 +133,7 @@ export function validateUrlInput(
  * Returns error message if dangerous, otherwise returns true
  */
 export function validateStringArray(
-  value: string | string[] | undefined,
+  value: string | string[] | Array<{ name?: string; url?: string }> | undefined,
   fieldName: string
 ): true | string {
   if (!value || !Array.isArray(value)) {

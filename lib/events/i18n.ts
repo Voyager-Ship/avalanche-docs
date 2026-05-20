@@ -160,6 +160,10 @@ const dict: Record<EventsLang, Dict> = {
     "submission.step1.categories.searchPlaceholder": "Search categories",
     "submission.step1.otherCategory.label": "Specify Other Category",
     "submission.step1.otherCategory.placeholder": "Enter your custom category",
+    "submission.step1.projectRepositories.label": "Project Repositories",
+    "submission.step1.projectRepositories.namePlaceholder": "Repository name",
+    "submission.step1.projectRepositories.urlPlaceholder": "Repository URL",
+    "submission.step1.projectRepositories.addButton": "+ new repository",
     "submission.step1.deployedAddresses.label": "Deployed Addresses",
     "submission.step1.deployedAddresses.addButton": "+ new address",
     "submission.step1.team.title": "Team & Collaboration",
@@ -609,6 +613,10 @@ const dict: Record<EventsLang, Dict> = {
     "submission.step1.otherCategory.label": "Especifica otra categoría",
     "submission.step1.otherCategory.placeholder":
       "Ingresa tu categoría personalizada",
+    "submission.step1.projectRepositories.label": "Repositorios del proyecto",
+    "submission.step1.projectRepositories.namePlaceholder": "Nombre del repositorio",
+    "submission.step1.projectRepositories.urlPlaceholder": "URL del repositorio",
+    "submission.step1.projectRepositories.addButton": "+ nuevo repositorio",
     "submission.step1.deployedAddresses.label": "Direcciones desplegadas",
     "submission.step1.deployedAddresses.addButton": "+ nueva dirección",
     "submission.step1.team.title": "Equipo y colaboración",
@@ -911,4 +919,3 @@ export function t(
   if (!vars) return template;
   return template.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ""));
 }
-

@@ -29,7 +29,14 @@ import {
   detectDangerousUrl,
 } from '@/utils/input-validator'
 
-type StageSubmitValues = Record<string, string | string[]>
+type NamedLinkValue = {
+  name: string
+  url: string
+}
+
+type StageSubmitValue = string | string[] | NamedLinkValue[]
+
+type StageSubmitValues = Record<string, StageSubmitValue>
 
 type StageSubmitPageContentProps = {
   hackathon: HackathonHeader
@@ -70,7 +77,7 @@ function getRequiredMessage(label: string): string {
 }
 
 function validateRequiredString(
-  value: string | string[] | undefined,
+  value: StageSubmitValue | undefined,
   field: SubmitFormField
 ): true | string {
   if (!field.required) {
@@ -83,7 +90,7 @@ function validateRequiredString(
 }
 
 function validateRequiredArray(
-  value: string | string[] | undefined,
+  value: StageSubmitValue | undefined,
   field: SubmitFormField
 ): true | string {
   if (!field.required) {
@@ -91,14 +98,20 @@ function validateRequiredArray(
   }
 
   return Array.isArray(value) &&
-    value.some((item: string): boolean => item.trim().length > 0)
+    value.some((item: string | NamedLinkValue): boolean => {
+      if (typeof item === 'string') {
+        return item.trim().length > 0
+      }
+
+      return item.name.trim().length > 0 && item.url.trim().length > 0
+    })
     ? true
     : getRequiredMessage(field.label)
 }
 
 function isRequiredFieldEmpty(
   field: SubmitFormField,
-  value: string | string[] | undefined
+  value: StageSubmitValue | undefined
 ): boolean {
   if (!field.required) {
     return false
@@ -109,7 +122,13 @@ function isRequiredFieldEmpty(
     field.type === SubmitFormFieldType.MultiSelect
   ) {
     return !Array.isArray(value) ||
-      !value.some((item: string): boolean => item.trim().length > 0)
+      !value.some((item: string | NamedLinkValue): boolean => {
+        if (typeof item === 'string') {
+          return item.trim().length > 0
+        }
+
+        return item.name.trim().length > 0 && item.url.trim().length > 0
+      })
   }
 
   return typeof value !== 'string' || value.trim().length === 0
@@ -125,6 +144,7 @@ export default function StageSubmitPageContent({
 }: StageSubmitPageContentProps): React.JSX.Element | null {
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false)
   const [linkDrafts, setLinkDrafts] = React.useState<Record<string, string>>({})
+  const [linkNameDrafts, setLinkNameDrafts] = React.useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = React.useState<string>('form')
   const { projectId, teamName, loading } = useProjectByHackaUser({
     hackathonId: hackathon.id,
@@ -155,6 +175,7 @@ export default function StageSubmitPageContent({
 
   React.useEffect((): void => {
     setLinkDrafts({})
+    setLinkNameDrafts({})
 
     if (!projectId) {
       form.reset(buildDefaultValues(stage))
@@ -188,7 +209,7 @@ export default function StageSubmitPageContent({
             control={form.control}
             name={textField.id}
             rules={{
-              validate: (value: string | string[] | undefined): true | string => {
+              validate: (value: StageSubmitValue | undefined): true | string => {
                 // First check if required
                 const requiredCheck = validateRequiredString(value, textField)
                 if (requiredCheck !== true) {
@@ -233,7 +254,7 @@ export default function StageSubmitPageContent({
             control={form.control}
             name={linkField.id}
             rules={{
-              validate: (value: string | string[] | undefined): true | string => {
+              validate: (value: StageSubmitValue | undefined): true | string => {
                 // First check if required
                 const requiredCheck = validateRequiredArray(value, linkField)
                 if (requiredCheck !== true) {
@@ -245,16 +266,29 @@ export default function StageSubmitPageContent({
             }}
             render={({ field: rhfField }) => {
               const links: string[] = Array.isArray(rhfField.value)
-                ? (rhfField.value as string[])
+                ? (rhfField.value as Array<string | NamedLinkValue>)
+                    .filter((item): item is string => typeof item === 'string')
+                : []
+              const namedLinks: NamedLinkValue[] = Array.isArray(rhfField.value)
+                ? (rhfField.value as Array<string | NamedLinkValue>)
+                    .filter((item): item is NamedLinkValue => (
+                      typeof item === 'object' &&
+                      item !== null &&
+                      'url' in item &&
+                      'name' in item
+                    ))
                 : []
 
               const draftValue: string = linkDrafts[linkField.id] ?? ''
+              const draftName: string = linkNameDrafts[linkField.id] ?? ''
+              const withNames: boolean = linkField.withNames ?? false
+              const linkCount: number = withNames ? namedLinks.length : links.length
               const maxLinks: number | null =
                 typeof linkField.maxLinks === 'number' && linkField.maxLinks > 0
                   ? linkField.maxLinks
                   : null
               const isSingleLink: boolean = maxLinks === 1
-              const canAddMoreLinks: boolean = !maxLinks || links.length < maxLinks
+              const canAddMoreLinks: boolean = !maxLinks || linkCount < maxLinks
 
               const normalizeUrl = (url: string): string => {
                 const trimmedUrl: string = url.trim()
@@ -275,8 +309,9 @@ export default function StageSubmitPageContent({
                 }
 
                 const trimmedValue: string = draftValue.trim()
+                const trimmedName: string = draftName.trim()
 
-                if (!trimmedValue) {
+                if (!trimmedValue || (withNames && !trimmedName)) {
                   return
                 }
 
@@ -287,20 +322,33 @@ export default function StageSubmitPageContent({
 
                 const normalizedUrl: string = normalizeUrl(trimmedValue)
 
-                if (links.includes(normalizedUrl)) {
+                if (
+                  (!withNames && links.includes(normalizedUrl)) ||
+                  (withNames && namedLinks.some((link: NamedLinkValue): boolean => link.url === normalizedUrl))
+                ) {
                   setLinkDrafts((prev: Record<string, string>): Record<string, string> => ({
+                    ...prev,
+                    [linkField.id]: '',
+                  }))
+                  setLinkNameDrafts((prev: Record<string, string>): Record<string, string> => ({
                     ...prev,
                     [linkField.id]: '',
                   }))
                   return
                 }
 
-                form.setValue(linkField.id, [...links, normalizedUrl], {
+                form.setValue(linkField.id, withNames
+                  ? [...namedLinks, { name: trimmedName, url: normalizedUrl }]
+                  : [...links, normalizedUrl], {
                   shouldDirty: true,
                   shouldValidate: true,
                 })
 
                 setLinkDrafts((prev: Record<string, string>): Record<string, string> => ({
+                  ...prev,
+                  [linkField.id]: '',
+                }))
+                setLinkNameDrafts((prev: Record<string, string>): Record<string, string> => ({
                   ...prev,
                   [linkField.id]: '',
                 }))
@@ -311,14 +359,34 @@ export default function StageSubmitPageContent({
               ): void => {
                 const value: string = event.target.value
 
-                form.setValue(linkField.id, value.trim() ? [value] : [], {
+                form.setValue(linkField.id, value.trim()
+                  ? withNames
+                    ? [{ name: namedLinks[0]?.name ?? '', url: value }]
+                    : [value]
+                  : [], {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+
+              const handleSingleLinkNameChange = (
+                event: React.ChangeEvent<HTMLInputElement>
+              ): void => {
+                const value: string = event.target.value
+                const currentUrl: string = namedLinks[0]?.url ?? ''
+
+                form.setValue(linkField.id, value.trim() || currentUrl.trim()
+                  ? [{ name: value, url: currentUrl }]
+                  : [], {
                   shouldDirty: true,
                   shouldValidate: true,
                 })
               }
 
               const handleSingleLinkBlur = (): void => {
-                const value: string = links[0]?.trim() ?? ''
+                const value: string = withNames
+                  ? namedLinks[0]?.url?.trim() ?? ''
+                  : links[0]?.trim() ?? ''
 
                 if (!value) {
                   return
@@ -326,7 +394,9 @@ export default function StageSubmitPageContent({
 
                 const normalizedUrl: string = normalizeUrl(value)
 
-                form.setValue(linkField.id, [normalizedUrl], {
+                form.setValue(linkField.id, withNames
+                  ? [{ name: namedLinks[0]?.name ?? '', url: normalizedUrl }]
+                  : [normalizedUrl], {
                   shouldDirty: true,
                   shouldValidate: true,
                 })
@@ -335,7 +405,9 @@ export default function StageSubmitPageContent({
               const handleRemoveLink = (linkToRemove: string): void => {
                 form.setValue(
                   linkField.id,
-                  links.filter((link: string): boolean => link !== linkToRemove),
+                  withNames
+                    ? namedLinks.filter((link: NamedLinkValue): boolean => link.url !== linkToRemove)
+                    : links.filter((link: string): boolean => link !== linkToRemove),
                   {
                     shouldDirty: true,
                     shouldValidate: true,
@@ -353,10 +425,41 @@ export default function StageSubmitPageContent({
                   </FormLabel>
                   <FormDescription className={fieldDescriptionClassName}>{linkField.description}</FormDescription>
                   <div className="flex gap-2">
+                    {withNames && (
+                      <Input
+                        value={isSingleLink ? (namedLinks[0]?.name ?? '') : draftName}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
+                          if (isSingleLink) {
+                            handleSingleLinkNameChange(event)
+                            return
+                          }
+
+                          setLinkNameDrafts(
+                            (prev: Record<string, string>): Record<string, string> => ({
+                              ...prev,
+                              [linkField.id]: event.target.value,
+                            })
+                          )
+                        }}
+                        onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>): void => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            if (isSingleLink) {
+                              handleSingleLinkBlur()
+                              return
+                            }
+                            handleAddLink()
+                          }
+                        }}
+                        placeholder="Repository name"
+                        disabled={!isSingleLink && !canAddMoreLinks}
+                        className={inputClassName}
+                      />
+                    )}
                     <FormControl>
                       <Input
                         type="url"
-                        value={isSingleLink ? (links[0] ?? '') : draftValue}
+                        value={isSingleLink ? (withNames ? namedLinks[0]?.url ?? '' : links[0] ?? '') : draftValue}
                         onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
                           if (isSingleLink) {
                             handleSingleLinkChange(event)
@@ -399,7 +502,45 @@ export default function StageSubmitPageContent({
                     )}
                   </div>
 
-                  {!!links.length && (
+                  {withNames && !!namedLinks.length && (
+                    <div className="flex flex-wrap gap-2">
+                      {namedLinks.map((link: NamedLinkValue, index: number): React.JSX.Element => {
+                        const maxLength: number = 40
+                        const displayValue: string =
+                          link.url.length > maxLength
+                            ? `${link.url.slice(0, maxLength)}...`
+                            : link.url
+
+                        return (
+                          <div
+                            key={`${link.url}-${index}`}
+                            className="flex items-center gap-2 rounded-md border border-[#d66666]/20 bg-zinc-100 px-3 py-1.5 text-sm text-zinc-800 dark:bg-[rgba(255,255,255,0.03)] dark:text-white"
+                          >
+                            <span className="font-medium">{link.name}</span>
+                            <a
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#d66666] underline hover:text-[#ff8a8a]"
+                              title={link.url}
+                            >
+                              {displayValue}
+                            </a>
+
+                            <button
+                              type="button"
+                              className="cursor-pointer text-zinc-500 transition-colors hover:text-[#d66666] dark:text-zinc-400"
+                              onClick={(): void => handleRemoveLink(link.url)}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {!withNames && !!links.length && (
                     <div className="flex flex-wrap gap-2">
                       {links.map((link: string, index: number): React.JSX.Element => {
                         const maxLength: number = 40
@@ -453,7 +594,7 @@ export default function StageSubmitPageContent({
             control={form.control}
             name={chipsField.id}
             rules={{
-              validate: (value: string | string[] | undefined): true | string => {
+              validate: (value: StageSubmitValue | undefined): true | string => {
                 // First check if required
                 const requiredCheck = validateRequiredString(value, chipsField)
                 if (requiredCheck !== true) {
@@ -522,7 +663,7 @@ export default function StageSubmitPageContent({
             control={form.control}
             name={multiSelectField.id}
             rules={{
-              validate: (value: string | string[] | undefined): true | string => {
+              validate: (value: StageSubmitValue | undefined): true | string => {
                 // First check if required
                 const requiredCheck = validateRequiredArray(value, multiSelectField)
                 if (requiredCheck !== true) {

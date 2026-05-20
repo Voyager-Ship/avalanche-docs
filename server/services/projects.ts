@@ -363,6 +363,13 @@ export async function GetProjectByHackathonAndUser(
   if(project_id!==""){
     const project = await prisma.project.findFirst({
       where: { id: project_id },
+      include: {
+        ProjectRepository: {
+          include: {
+            Repository: true,
+          },
+        },
+      },
     });
     return project;
   }
@@ -376,6 +383,13 @@ export async function GetProjectByHackathonAndUser(
           status: {
             in: ["Confirmed", "Pending Confirmation"],
           },
+        },
+      },
+    },
+    include: {
+      ProjectRepository: {
+        include: {
+          Repository: true,
         },
       },
     },

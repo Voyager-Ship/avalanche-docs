@@ -89,6 +89,20 @@ export default function LinkStagesSubmitFormField({
       <label className="flex items-center gap-2">
         <input
           type="checkbox"
+          checked={field.withNames ?? false}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            onChange({
+              ...field,
+              withNames: event.target.checked,
+            })
+          }
+        />
+        Collect a name with each link
+      </label>
+
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
           checked={field.required}
           onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
             onChange({

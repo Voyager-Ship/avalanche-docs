@@ -26,6 +26,7 @@ export function createLinkStagesSubmitFormField(id?: string): LinkStagesSubmitFo
     placeholder: 'Enter a URL',
     description: '',
     maxLinks: 1,
+    withNames: false,
     required: false,
   };
 }

@@ -40,6 +40,7 @@ const linkFieldSchema = z.object({
   description: z.string().max(400).optional(),
   required: z.boolean(),
   maxLinks: z.number().int().positive().max(50).optional(),
+  withNames: z.boolean().optional(),
   predefinedField: z.boolean().optional(),
 });
 

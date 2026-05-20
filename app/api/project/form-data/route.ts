@@ -2,9 +2,14 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/protectedRoute';
 import { prisma } from '@/prisma/prisma';
 
+type ProjectRepositoryValue = {
+  name: string;
+  url: string;
+};
+
 type StageSubmitValues = Record<
   string,
-  string | string[] | Array<{ address: string }> | null
+  string | string[] | Array<{ address: string }> | ProjectRepositoryValue[] | null
 >;
 
 type StageSubmitRequestBody = {
@@ -221,6 +226,33 @@ export const POST = withAuth(async (request: Request, _context, session) => {
         return addresses.map((address) => ({ address }));
       };
 
+      const getProjectRepositoriesValue = (key: string): ProjectRepositoryValue[] | undefined => {
+        if (!Object.prototype.hasOwnProperty.call(values, key)) {
+          return undefined;
+        }
+
+        const value = values[key];
+
+        if (!Array.isArray(value)) {
+          return [];
+        }
+
+        return value
+          .filter((item): item is ProjectRepositoryValue => (
+            typeof item === 'object' &&
+            item !== null &&
+            'name' in item &&
+            'url' in item &&
+            typeof item.name === 'string' &&
+            typeof item.url === 'string'
+          ))
+          .map((item) => ({
+            name: item.name.trim(),
+            url: item.url.trim(),
+          }))
+          .filter((item) => item.name && item.url);
+      };
+
       let projectColumnsToUpdate: { [key: string]: unknown } = {};
       const projectColumnValues: Record<string, unknown> = {
         project_name: getStringValue('project_name', 'projectName'),
@@ -239,13 +271,59 @@ export const POST = withAuth(async (request: Request, _context, session) => {
         }
       });
 
-      const updatedProject = await tx.project.update({
+      await tx.project.update({
         where: {
           id: resolvedProject.id,
         },
         data: {
           updated_at: new Date(),
           ...projectColumnsToUpdate,
+        },
+      });
+
+      const projectRepositories = getProjectRepositoriesValue('project_repositories');
+
+      if (projectRepositories !== undefined) {
+        await tx.projectRepository.deleteMany({
+          where: {
+            project_id: resolvedProject.id,
+          },
+        });
+
+        for (const repository of projectRepositories) {
+          const createdRepository = await tx.repository.create({
+            data: {
+              repo_name: repository.name,
+              repo_id: repository.url,
+              user_id: sessionUserId,
+              commits: null,
+              first_contribution: null,
+              last_contribution: null,
+            },
+            select: {
+              id: true,
+            },
+          });
+
+          await tx.projectRepository.create({
+            data: {
+              project_id: resolvedProject.id,
+              repository_id: createdRepository.id,
+            },
+          });
+        }
+      }
+
+      const updatedProject = await tx.project.findUniqueOrThrow({
+        where: {
+          id: resolvedProject.id,
+        },
+        include: {
+          ProjectRepository: {
+            include: {
+              Repository: true,
+            },
+          },
         },
       });
 

@@ -12,6 +12,7 @@ import { EventsLang, t } from '@/lib/events/i18n';
 import { isValidHttpUrl, normalizeUrl } from '@/lib/url-validation';
 
 type KeyValueItem = { key: string; value: string };
+type ProjectRepositoryItem = { name: string; url: string };
 
 /** Converts any raw input into a normalized KeyValueItem[], dropping entries with empty value. */
 const toKeyValueItems = (val: unknown): KeyValueItem[] => {
@@ -91,6 +92,25 @@ const normalizeLinkArray = (val: unknown): string[] => {
     .filter((link) => link.length > 0);
 };
 
+const normalizeProjectRepositories = (val: unknown): ProjectRepositoryItem[] => {
+  if (!Array.isArray(val)) return [];
+
+  return val
+    .filter((item): item is ProjectRepositoryItem => (
+      typeof item === 'object' &&
+      item !== null &&
+      'name' in item &&
+      'url' in item &&
+      typeof (item as ProjectRepositoryItem).name === 'string' &&
+      typeof (item as ProjectRepositoryItem).url === 'string'
+    ))
+    .map((item) => ({
+      name: item.name.trim(),
+      url: normalizeUrl(item.url),
+    }))
+    .filter((item) => item.name || item.url);
+};
+
 /** Builds a schema for an array of URL strings with duplicate and validity checks. */
 const buildUrlArraySchema = (options: { duplicateMessage: string; invalidMessage: string }) =>
   z
@@ -110,6 +130,45 @@ const buildUrlArraySchema = (options: { duplicateMessage: string; invalidMessage
         });
       }
     });
+
+const projectRepositoriesSchema = z
+  .array(z.object({
+    name: z.string(),
+    url: z.string(),
+  }))
+  .default([])
+  .superRefine((repositories, ctx) => {
+    const completedRepositories = repositories.filter(
+      (repository) => repository.name.trim() || repository.url.trim()
+    );
+
+    completedRepositories.forEach((repository, index) => {
+      if (!repository.name.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Repository name is required',
+          path: [index, 'name'],
+        });
+      }
+
+      if (!repository.url.trim() || !isValidHttpUrl(repository.url)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please enter a valid repository URL (e.g. https://github.com/user/repo)',
+          path: [index, 'url'],
+        });
+      }
+    });
+
+    const urls = completedRepositories.map((repository) => repository.url);
+    if (new Set(urls).size !== urls.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Duplicate repository links are not allowed',
+        path: [],
+      });
+    }
+  });
 
 // Base schema without refinements - needed for .pick() to work
 const BaseFormSchema = z.object({
@@ -135,6 +194,10 @@ const BaseFormSchema = z.object({
       duplicateMessage: 'Duplicate repository links are not allowed',
       invalidMessage: 'Please enter valid repository links (e.g. https://github.com/user/repo)',
     })
+  ),
+  project_repositories: z.preprocess(
+    normalizeProjectRepositories,
+    projectRepositoriesSchema
   ),
   explanation: z.string().optional(),
   demo_link: z.preprocess(
@@ -214,6 +277,7 @@ export const Step1Schema = BaseFormSchema.pick({
   categories: true,
   other_category: true,
   deployed_addresses: true,
+  project_repositories: true,
   website: true,
   socials: true,
   hackaton_id: true,
@@ -322,6 +386,7 @@ export const useSubmissionFormSecure = (lang: EventsLang = 'en') => {
       categories: [],
       other_category: '',
       deployed_addresses: [],
+      project_repositories: [],
       website: [],
       socials: [],
       is_preexisting_idea: false,
@@ -344,6 +409,7 @@ export const useSubmissionFormSecure = (lang: EventsLang = 'en') => {
       "tracks",
       "categories",
       "other_category",
+      "project_repositories",
     ];
 
     const step2Fields: (keyof SubmissionForm)[] = [
@@ -613,6 +679,7 @@ export const useSubmissionFormSecure = (lang: EventsLang = 'en') => {
         demo_link: data.demo_link?.join(',') ?? "",
         categories: data.categories?.join(',') ?? "",
         deployed_addresses: filteredDeployedAddresses,
+        project_repositories: data.project_repositories ?? [],
         website: keyValueToObject(data.website),
         socials: keyValueToObject(data.socials),
         is_winner: false,
@@ -720,6 +787,16 @@ export const useSubmissionFormSecure = (lang: EventsLang = 'en') => {
       deployed_addresses: Array.isArray(project.deployed_addresses) 
         ? project.deployed_addresses 
         : [],
+      project_repositories: Array.isArray(project.project_repositories)
+        ? project.project_repositories
+        : Array.isArray(project.ProjectRepository)
+          ? project.ProjectRepository
+            .map((projectRepository: any) => ({
+              name: projectRepository.Repository?.repo_name ?? '',
+              url: projectRepository.Repository?.repo_id ?? '',
+            }))
+            .filter((repository: ProjectRepositoryItem) => repository.name || repository.url)
+          : [],
       website: (() => {
         const w = project.website;
         if (!w) return [];

@@ -24,6 +24,7 @@ import { MultiSelect } from '@/components/ui/multi-select';
 import { SubmissionForm } from '../hooks/useSubmissionFormSecure';
 import projectData from '../projectData.json';
 import { EventsLang, t } from '@/lib/events/i18n';
+import { ProjectRepositoriesInput } from './ProjectRepositoriesInput';
 
 export interface projectProps {
   project_id: string;
@@ -246,6 +247,14 @@ const SubmitStep1: FC<projectProps> = (project) => {
             )}
           />
         )}
+
+        <ProjectRepositoriesInput
+          name='project_repositories'
+          label={t(lang, "submission.step1.projectRepositories.label")}
+          namePlaceholder={t(lang, "submission.step1.projectRepositories.namePlaceholder")}
+          urlPlaceholder={t(lang, "submission.step1.projectRepositories.urlPlaceholder")}
+          addButtonLabel={t(lang, "submission.step1.projectRepositories.addButton")}
+        />
 
         <FormField
           control={form.control}

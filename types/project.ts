@@ -29,6 +29,7 @@ export interface Project {
   categories?: string[];
   other_category?: string;
   deployed_addresses?: Array<{ address: string; tag?: string }>;
+  project_repositories?: Array<{ name: string; url: string }>;
   website?: Record<string, string> | null;
   socials?: Record<string, string> | null;
   members?:Member[]

@@ -79,6 +79,20 @@ export const BASE_SUBMIT_FORM_FIELDS = {
       required: true,
     },
   },
+  project_repositories: {
+    label: 'Project Repositories',
+    field: {
+      id: 'project_repositories',
+      type: SubmitFormFieldType.Link,
+      label: 'Project Repositories',
+      description: 'Add each repository name and URL.',
+      placeholder: 'Enter the repository URL',
+      maxLinks: 10,
+      withNames: true,
+      predefinedField: true,
+      required: true,
+    },
+  },
   demo_link: {
     label: 'Demo and Other Links',
     field: {

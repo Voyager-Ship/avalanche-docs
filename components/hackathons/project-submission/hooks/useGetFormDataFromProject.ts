@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 
-type StageSubmitValues = Record<string, string | string[]>
+type StageSubmitValues = Record<string, string | string[] | Array<{ name: string; url: string }>>
 
 type UseProjectFormDataParams = {
   projectId: string

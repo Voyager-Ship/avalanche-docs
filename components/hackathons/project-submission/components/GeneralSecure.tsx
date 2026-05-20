@@ -93,6 +93,7 @@ export default function GeneralSecureComponent({
       "full_description",
       "tech_stack",
       "github_repository",
+      "project_repositories",
       "explanation",
       "demo_link",
       "logoFile",

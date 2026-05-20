@@ -75,6 +75,65 @@ function normalizeDeployedAddresses(
     }));
 }
 
+function normalizeProjectRepositories(
+  repositories: unknown
+): Array<{ name: string; url: string }> {
+  if (!Array.isArray(repositories)) return [];
+
+  return repositories
+    .filter((item): item is { name: string; url: string } => (
+      typeof item === 'object' &&
+      item !== null &&
+      'name' in item &&
+      'url' in item &&
+      typeof item.name === 'string' &&
+      typeof item.url === 'string'
+    ))
+    .map((item) => ({
+      name: item.name.trim(),
+      url: item.url.trim(),
+    }))
+    .filter((item) => item.name && item.url);
+}
+
+async function syncProjectRepositories(
+  tx: any,
+  projectId: string,
+  userId: string | undefined,
+  repositories: unknown
+): Promise<void> {
+  const normalizedRepositories = normalizeProjectRepositories(repositories);
+
+  await tx.projectRepository.deleteMany({
+    where: {
+      project_id: projectId,
+    },
+  });
+
+  for (const repository of normalizedRepositories) {
+    const createdRepository = await tx.repository.create({
+      data: {
+        repo_name: repository.name,
+        repo_id: repository.url,
+        user_id: userId,
+        commits: null,
+        first_contribution: null,
+        last_contribution: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    await tx.projectRepository.create({
+      data: {
+        project_id: projectId,
+        repository_id: createdRepository.id,
+      },
+    });
+  }
+}
+
 export async function createProject(
   projectData: Partial<Project>
 ): Promise<Project> {
@@ -182,9 +241,29 @@ export async function createProject(
         },
       });
 
+      if (Object.prototype.hasOwnProperty.call(projectData, "project_repositories")) {
+        await syncProjectRepositories(
+          tx,
+          updatedProject.id,
+          projectData.user_id,
+          projectData.project_repositories
+        );
+      }
+
+      const projectWithRepositories = await tx.project.findUniqueOrThrow({
+        where: { id: updatedProject.id },
+        include: {
+          ProjectRepository: {
+            include: {
+              Repository: true,
+            },
+          },
+        },
+      });
+
       projectData.id = updatedProject.id;
       revalidatePath("/api/projects/");
-      return updatedProject as unknown as Project;
+      return projectWithRepositories as unknown as Project;
     } else {
       // Create new project AND member atomically
       const projectDataToCreate: any = {
@@ -239,9 +318,29 @@ export async function createProject(
         data: projectDataToCreate,
       });
 
+      if (Object.prototype.hasOwnProperty.call(projectData, "project_repositories")) {
+        await syncProjectRepositories(
+          tx,
+          newProjectData.id,
+          projectData.user_id,
+          projectData.project_repositories
+        );
+      }
+
+      const projectWithRepositories = await tx.project.findUniqueOrThrow({
+        where: { id: newProjectData.id },
+        include: {
+          ProjectRepository: {
+            include: {
+              Repository: true,
+            },
+          },
+        },
+      });
+
       projectData.id = newProjectData.id;
       revalidatePath("/api/projects/");
-      return newProjectData as unknown as Project;
+      return projectWithRepositories as unknown as Project;
     }
   }, {
     // Transaction configuration for better performance

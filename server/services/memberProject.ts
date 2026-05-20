@@ -220,6 +220,11 @@ export async function GetProjectByIdWithMembers(project_id: string) {
           },
         },
       },
+      ProjectRepository: {
+        include: {
+          Repository: true,
+        },
+      },
     },
   });
   return project;
