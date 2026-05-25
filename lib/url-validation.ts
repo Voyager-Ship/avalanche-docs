@@ -26,8 +26,18 @@ export const normalizeUrl = (raw: string): string => {
  */
 export const isValidHttpUrl = (value: string): boolean => {
   if (!value) return false;
+
+  const trimmed = value.trim();
+  const rawHost = trimmed.replace(/^https?:\/\//i, "").split(/[/?#:]/)[0];
+  const hasRealisticHost =
+    rawHost === "localhost" ||
+    /^(\d{1,3}\.){3}\d{1,3}$/.test(rawHost) ||
+    /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(rawHost);
+
+  if (!hasRealisticHost) return false;
+
   try {
-    const url = new URL(value);
+    const url = new URL(trimmed);
     if (!["http:", "https:"].includes(url.protocol)) return false;
     const host = url.hostname;
     if (!host) return false;

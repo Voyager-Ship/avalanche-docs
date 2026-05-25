@@ -295,6 +295,7 @@ export const POST = withAuth(async (request: Request, _context, session) => {
             data: {
               repo_name: repository.name,
               repo_id: repository.url,
+              repo_url: repository.url,
               user_id: sessionUserId,
               commits: null,
               first_contribution: null,

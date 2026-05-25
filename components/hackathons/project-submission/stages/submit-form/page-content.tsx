@@ -76,6 +76,73 @@ function getRequiredMessage(label: string): string {
   return `${label || 'This field'} is required`
 }
 
+function normalizeLinkUrl(url: string): string {
+  const trimmedUrl: string = url.trim()
+
+  if (
+    trimmedUrl.startsWith('http://') ||
+    trimmedUrl.startsWith('https://')
+  ) {
+    return trimmedUrl
+  }
+
+  return `https://${trimmedUrl}`
+}
+
+function getInvalidUrlMessage(url: string): string | null {
+  const trimmedUrl: string = url.trim()
+
+  if (!trimmedUrl) {
+    return null
+  }
+
+  if (detectDangerousUrl(trimmedUrl)) {
+    return 'Please enter a valid http:// or https:// URL.'
+  }
+
+  if (/\s/.test(trimmedUrl)) {
+    return 'Please enter a valid URL without spaces.'
+  }
+
+  try {
+    const normalizedUrl = normalizeLinkUrl(trimmedUrl)
+    const parsedUrl = new URL(normalizedUrl)
+    const normalizedHost = normalizedUrl.replace(/^https?:\/\//, '').split(/[/?#:]/)[0]
+    const isHttpUrl: boolean = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+    const hasValidHost: boolean =
+      normalizedHost === 'localhost' ||
+      /^(\d{1,3}\.){3}\d{1,3}$/.test(normalizedHost) ||
+      /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(normalizedHost)
+
+    return isHttpUrl && hasValidHost
+      ? null
+      : 'Please enter a valid http:// or https:// URL.'
+  } catch {
+    return 'Please enter a valid URL.'
+  }
+}
+
+function validateLinkUrls(value: StageSubmitValue | undefined): true | string {
+  if (!Array.isArray(value)) {
+    return true
+  }
+
+  for (const item of value) {
+    const url: string | undefined = typeof item === 'string' ? item : item.url
+
+    if (!url) {
+      continue
+    }
+
+    const message = getInvalidUrlMessage(url)
+    if (message) {
+      return message
+    }
+  }
+
+  return true
+}
+
 function validateRequiredString(
   value: StageSubmitValue | undefined,
   field: SubmitFormField
@@ -134,6 +201,13 @@ function isRequiredFieldEmpty(
   return typeof value !== 'string' || value.trim().length === 0
 }
 
+function hasInvalidLinkUrl(
+  field: SubmitFormField,
+  value: StageSubmitValue | undefined
+): boolean {
+  return field.type === SubmitFormFieldType.Link && validateLinkUrls(value) !== true
+}
+
 export default function StageSubmitPageContent({
   hackathon,
   hackathonCreator,
@@ -164,8 +238,22 @@ export default function StageSubmitPageContent({
     (field: SubmitFormField): boolean =>
       isRequiredFieldEmpty(field, watchedValues[field.id])
   )
+  const hasInvalidSavedLinkUrls: boolean = (stage.submitForm?.fields ?? []).some(
+    (field: SubmitFormField): boolean =>
+      hasInvalidLinkUrl(field, watchedValues[field.id])
+  )
+  const hasInvalidLinkDrafts: boolean = (stage.submitForm?.fields ?? []).some(
+    (field: SubmitFormField): boolean =>
+      field.type === SubmitFormFieldType.Link &&
+      getInvalidUrlMessage(linkDrafts[field.id] ?? '') !== null
+  )
   const hasValidationErrors: boolean = Object.keys(form.formState.errors).length > 0
-  const isSaveDisabled: boolean = isSubmitting || hasMissingRequiredFields || hasValidationErrors
+  const isSaveDisabled: boolean =
+    isSubmitting ||
+    hasMissingRequiredFields ||
+    hasInvalidSavedLinkUrls ||
+    hasInvalidLinkDrafts ||
+    hasValidationErrors
   const fieldLabelClassName: string = 'font-medium text-zinc-800 dark:text-white'
   const fieldDescriptionClassName: string = 'text-sm text-zinc-600 dark:text-zinc-400'
   const inputClassName: string =
@@ -260,8 +348,13 @@ export default function StageSubmitPageContent({
                 if (requiredCheck !== true) {
                   return requiredCheck
                 }
-                // Then check for dangerous URLs
-                return validateUrlInput(value)
+                // Then check for dangerous and invalid URLs
+                const dangerousUrlCheck = validateUrlInput(value)
+                if (dangerousUrlCheck !== true) {
+                  return dangerousUrlCheck
+                }
+
+                return validateLinkUrls(value)
               },
             }}
             render={({ field: rhfField }) => {
@@ -281,6 +374,12 @@ export default function StageSubmitPageContent({
 
               const draftValue: string = linkDrafts[linkField.id] ?? ''
               const draftName: string = linkNameDrafts[linkField.id] ?? ''
+              const draftUrlError: string | null = getInvalidUrlMessage(draftValue)
+              const savedUrlValidation = validateLinkUrls(
+                rhfField.value as StageSubmitValue | undefined
+              )
+              const savedUrlError: string | null =
+                typeof savedUrlValidation === 'string' ? savedUrlValidation : null
               const withNames: boolean = linkField.withNames ?? false
               const linkCount: number = withNames ? namedLinks.length : links.length
               const maxLinks: number | null =
@@ -289,22 +388,18 @@ export default function StageSubmitPageContent({
                   : null
               const isSingleLink: boolean = maxLinks === 1
               const canAddMoreLinks: boolean = !maxLinks || linkCount < maxLinks
-
-              const normalizeUrl = (url: string): string => {
-                const trimmedUrl: string = url.trim()
-
-                if (
-                  trimmedUrl.startsWith('http://') ||
-                  trimmedUrl.startsWith('https://')
-                ) {
-                  return trimmedUrl
-                }
-
-                return `https://${trimmedUrl}`
-              }
+              const hasValidDraftUrl: boolean =
+                draftValue.trim().length > 0 && draftUrlError === null
+              const hasValidDraftName: boolean =
+                !withNames || draftName.trim().length > 0
+              const canAddDraftLink: boolean =
+                canAddMoreLinks && hasValidDraftUrl && hasValidDraftName
+              const displayedUrlError: string | null = isSingleLink
+                ? savedUrlError
+                : draftUrlError ?? savedUrlError
 
               const handleAddLink = (): void => {
-                if (!canAddMoreLinks) {
+                if (!canAddDraftLink) {
                   return
                 }
 
@@ -315,12 +410,11 @@ export default function StageSubmitPageContent({
                   return
                 }
 
-                // Check for dangerous URL
-                if (detectDangerousUrl(trimmedValue)) {
+                if (getInvalidUrlMessage(trimmedValue)) {
                   return
                 }
 
-                const normalizedUrl: string = normalizeUrl(trimmedValue)
+                const normalizedUrl: string = normalizeLinkUrl(trimmedValue)
 
                 if (
                   (!withNames && links.includes(normalizedUrl)) ||
@@ -392,7 +486,7 @@ export default function StageSubmitPageContent({
                   return
                 }
 
-                const normalizedUrl: string = normalizeUrl(value)
+                const normalizedUrl: string = normalizeLinkUrl(value)
 
                 form.setValue(linkField.id, withNames
                   ? [{ name: namedLinks[0]?.name ?? '', url: normalizedUrl }]
@@ -486,7 +580,11 @@ export default function StageSubmitPageContent({
                         }}
                         placeholder={linkField.placeholder}
                         disabled={!isSingleLink && !canAddMoreLinks}
-                        className={inputClassName}
+                        aria-invalid={Boolean(displayedUrlError)}
+                        className={[
+                          inputClassName,
+                          displayedUrlError ? 'border-red-500 focus:border-red-500' : '',
+                        ].join(' ')}
                       />
                     </FormControl>
 
@@ -494,13 +592,18 @@ export default function StageSubmitPageContent({
                       <Button
                         type="button"
                         onClick={handleAddLink}
-                        disabled={!canAddMoreLinks}
+                        disabled={!canAddDraftLink}
                         className="bg-[#d66666] text-zinc-900 hover:bg-[#e57f7f]"
                       >
                         Add
                       </Button>
                     )}
                   </div>
+                  {displayedUrlError && (
+                    <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                      {displayedUrlError}
+                    </p>
+                  )}
 
                   {withNames && !!namedLinks.length && (
                     <div className="flex flex-wrap gap-2">
@@ -576,7 +679,7 @@ export default function StageSubmitPageContent({
                       })}
                     </div>
                   )}
-                  <FormMessage />
+                  {!displayedUrlError && <FormMessage />}
                 </FormItem>
               )
             }}

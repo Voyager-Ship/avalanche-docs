@@ -604,6 +604,7 @@ model ProjectRepository {
 model Repository {
   id                 String              @id @default(dbgenerated("(gen_random_uuid())::text"))
   repo_id            String?
+  repo_url           String?
   repo_name          String?
   user_id            String?
   commits            Int?

@@ -115,6 +115,7 @@ async function syncProjectRepositories(
       data: {
         repo_name: repository.name,
         repo_id: repository.url,
+        repo_url: repository.url,
         user_id: userId,
         commits: null,
         first_contribution: null,
