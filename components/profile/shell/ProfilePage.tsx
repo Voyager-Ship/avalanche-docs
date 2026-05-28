@@ -126,6 +126,7 @@ export default function ProfilePage({ teamLabel }: Props) {
   const { data: session } = useSession();
   const router = useRouter();
   const avatarContext = useUserAvatar();
+  const setContextNounAvatar = avatarContext?.setNounAvatar;
   const [signOutOpen, setSignOutOpen] = React.useState(false);
   const {
     form,
@@ -159,6 +160,8 @@ export default function ProfilePage({ teamLabel }: Props) {
 
   React.useEffect(() => {
     let cancelled = false;
+    if (!session?.user?.id) return;
+
     async function loadNoun() {
       try {
         const res = await fetch("/api/user/noun-avatar");
@@ -168,7 +171,7 @@ export default function ProfilePage({ teamLabel }: Props) {
         const enabled = data.enabled ?? false;
         setNounAvatarSeed(seed);
         setNounAvatarEnabled(enabled);
-        avatarContext?.setNounAvatar(seed, enabled);
+        setContextNounAvatar?.(seed, enabled);
       } catch {
         /* noop */
       }
@@ -177,7 +180,7 @@ export default function ProfilePage({ teamLabel }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [avatarContext]);
+  }, [session?.user?.id, setContextNounAvatar]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -313,14 +316,22 @@ export default function ProfilePage({ teamLabel }: Props) {
     );
   };
 
-  const onAddWalletAndToast = (address: string) => {
-    handleAddWallet(address);
+  const onAddWalletAndToast = (address: string, tag?: string) => {
+    handleAddWallet(address, tag);
     pushToast("Wallet connected");
   };
 
   const onRemoveWallet = (address: string) => {
-    const current = watchedValues.wallet ?? [];
-    const idx = current.findIndex((w) => w.toLowerCase() === address.toLowerCase());
+    const current = (watchedValues.wallet ?? []) as Array<
+      | string
+      | { address: string; tag?: string }
+    >;
+    const idx = current.findIndex((entry) => {
+      if (typeof entry === "string") {
+        return entry.toLowerCase() === address.toLowerCase();
+      }
+      return entry.address.toLowerCase() === address.toLowerCase();
+    });
     if (idx >= 0) {
       handleRemoveWallet(idx);
       pushToast("Wallet removed");
@@ -414,7 +425,7 @@ export default function ProfilePage({ teamLabel }: Props) {
   const handleNounAvatarSave = async (seed: AvatarSeed, enabled: boolean) => {
     setNounAvatarSeed(seed);
     setNounAvatarEnabled(enabled);
-    avatarContext?.setNounAvatar(seed, enabled);
+    setContextNounAvatar?.(seed, enabled);
   };
 
   // Map server-side referral data into the ReferralPanel's view-model.
