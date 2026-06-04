@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth/authSession";
-import {
-  canGenerateReferralLinkForTarget,
-  canGenerateRestrictedReferralLinks,
-} from "@/lib/auth/permissions";
+import { hasPermission } from "@/lib/auth/roles";
 import { prisma } from "@/prisma/prisma";
 import {
   buildReferralUrl,
   createReferralLink,
   isReferralTargetType,
   listReferralLinksForUser,
+  resolveReferralDestination,
 } from "@/server/services/referrals";
 import type { ReferralTargetType } from "@/lib/referrals/constants";
 import {
@@ -65,7 +63,7 @@ async function resolveReferralTarget(targetType: ReferralTargetType, body: any) 
 
     return {
       targetId: hackathon.id,
-      destinationUrl: `/events/registration-form?event=${hackathon.id}`,
+      destinationUrl: `/events/${hackathon.id}`,
     };
   }
 
@@ -102,7 +100,7 @@ async function resolveReferralTarget(targetType: ReferralTargetType, body: any) 
 export async function GET(request: NextRequest) {
   const session = await getAuthSession();
 
-  if (!session?.user?.id || !canGenerateRestrictedReferralLinks(session.user.custom_attributes)) {
+  if (!session?.user?.id || !hasPermission(session.user.custom_attributes, { resource: "builder_insights", action: "write" })) {
     return NextResponse.json({ error: "Forbidden" }, { status: 401 });
   }
 
@@ -112,7 +110,11 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     links: links.map((link) => ({
       ...link,
-      shareUrl: buildReferralUrl(origin, link.destination_url, link.code),
+      shareUrl: buildReferralUrl(
+        origin,
+        resolveReferralDestination(link.target_type, link.target_id, link.destination_url),
+        link.code,
+      ),
     })),
   });
 }
@@ -130,7 +132,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid referral target type" }, { status: 400 });
   }
 
-  if (!canGenerateReferralLinkForTarget(session.user.custom_attributes, targetType)) {
+  if (targetType === "build_games_application") {
     return NextResponse.json({ error: "Forbidden" }, { status: 401 });
   }
 
@@ -148,6 +150,10 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     ...referralLink,
-    shareUrl: buildReferralUrl(getOrigin(request), referralLink.destination_url, referralLink.code),
+    shareUrl: buildReferralUrl(
+      getOrigin(request),
+      resolveReferralDestination(referralLink.target_type, referralLink.target_id, referralLink.destination_url),
+      referralLink.code,
+    ),
   });
 }

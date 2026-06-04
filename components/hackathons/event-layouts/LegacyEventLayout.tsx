@@ -17,6 +17,7 @@ import JoinBannerLink from "@/components/hackathons/hackathon/JoinBannerLink";
 import { EventReferralButton } from "@/components/hackathons/hackathon/EventReferralModal";
 import type { HackathonHeader } from "@/types/hackathons";
 import { normalizeEventsLang, t } from "@/lib/events/i18n";
+import type { SubmissionStatus } from "@/lib/hackathons/submission-progress";
 import StagesSection from "@/components/hackathons/hackathon/sections/StagesSection";
 
 interface LegacyEventLayoutProps {
@@ -24,7 +25,9 @@ interface LegacyEventLayoutProps {
   id: string;
   isRegistered: boolean;
   isAuthenticated: boolean;
-  utm: string;
+  submissionStatus?: SubmissionStatus;
+  submissionProgress?: number;
+  submissionProjectId?: string | null;
   /** Editor preview: banner overlay + stages use preview-safe behavior. */
   isPreview?: boolean;
 }
@@ -34,7 +37,9 @@ export default function LegacyEventLayout({
   id,
   isRegistered,
   isAuthenticated,
-  utm,
+  submissionStatus = "none",
+  submissionProgress = 0,
+  submissionProjectId = null,
   isPreview = false,
 }: LegacyEventLayoutProps) {
   const lang = normalizeEventsLang(hackathon.content?.language);
@@ -119,7 +124,6 @@ export default function LegacyEventLayout({
           className="w-2/5 md:w-1/3 lg:w-1/4 cursor-pointer"
           variant="red"
           showChatWhenRegistered={true}
-          utm={utm}
           lang={lang}
         />
       </div>
@@ -134,7 +138,6 @@ export default function LegacyEventLayout({
               id={id}
               isTopMost={false}
               isRegistered={isRegistered}
-              utm={utm}
               isPreview={isPreview}
             />
             <JoinBannerLink
@@ -147,7 +150,6 @@ export default function LegacyEventLayout({
                   : "https://qizat5l3bwvomkny.public.blob.vercel-storage.com/builders-hub/hackathon-images/main_banner_img-crBsoLT7R07pdstPKvRQkH65yAbpFX.png"
               }
               altText="Hackathon background"
-              utm={utm}
             />
           </div>
           <div className="py-8 sm:p-8 flex flex-col gap-20">
@@ -168,7 +170,16 @@ export default function LegacyEventLayout({
                 googleCalendarConfig={googleCalendarConfig}
               />
             )}
-            {isHackathon && <Submission hackathon={hackathon} isRegistered={isRegistered} isAuthenticated={isAuthenticated} utm={utm} />}
+            {isHackathon && (
+              <Submission
+                hackathon={hackathon}
+                isRegistered={isRegistered}
+                isAuthenticated={isAuthenticated}
+                submissionStatus={submissionStatus}
+                submissionProgress={submissionProgress}
+                submissionProjectId={submissionProjectId}
+              />
+            )}
             {hasSpeakers && <MentorsJudges hackathon={hackathon} />}
             <Community hackathon={hackathon} />
             {hasPartners && (

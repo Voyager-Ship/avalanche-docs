@@ -1,12 +1,8 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth/authSession";
 import { prisma } from "@/prisma/prisma";
-import {
-  canEvaluateHackathon,
-  canManageEvaluationPhase,
-  canManageHackathonJudges,
-} from "@/lib/auth/permissions";
 import { stripEvaluationsForViewer } from "@/lib/hackathons/evaluation-phase";
+import { canEvaluateHackathon, hasPermission } from "@/lib/auth/roles";
 import { HackathonEvaluateDashboard } from "@/components/evaluate/HackathonEvaluateDashboard";
 
 export default async function HackathonEvaluatePage({
@@ -57,6 +53,7 @@ export default async function HackathonEvaluatePage({
       website: true,
       socials: true,
       is_winner: true,
+      is_rejected: true,
       created_at: true,
       members: {
         select: {
@@ -88,13 +85,21 @@ export default async function HackathonEvaluatePage({
   });
 
   const viewerId = session!.user!.id;
+  const isDevrel = hasPermission(session?.user?.custom_attributes, { resource: "platform", action: "admin" });
+
+  // Rejected projects must never reach the client for non-devrel users — filter server-side.
+  const visibleProjects = isDevrel
+    ? projects
+    : projects.filter((p) => !p.is_rejected);
+
   const projectsForViewer = stripEvaluationsForViewer(
-    projects,
+    visibleProjects,
     hackathon.evaluation_phase,
     viewerId,
   );
 
-  const reviewedCount = projects.filter((p) => p.evaluations.length > 0).length;
+  // Reviewed count is based on visible projects only
+  const reviewedCount = visibleProjects.filter((p) => p.evaluations.length > 0).length;
 
   return (
     <main className="container relative px-4 py-8 lg:py-12">
@@ -104,15 +109,15 @@ export default async function HackathonEvaluatePage({
         </h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           <span className="text-zinc-800 dark:text-zinc-200">{hackathon.title}</span>{" "}
-          · {projects.length}{" "}
-          {projects.length === 1 ? "project" : "projects"} submitted
+          · {visibleProjects.length}{" "}
+          {visibleProjects.length === 1 ? "project" : "projects"} submitted
         </p>
       </div>
       <HackathonEvaluateDashboard
         hackathonId={hackathon.id}
         viewerId={viewerId}
-        canPickWinners={canManageHackathonJudges(session)}
-        canManagePhase={canManageEvaluationPhase(session)}
+        canPickWinners={hasPermission(session?.user?.custom_attributes, { resource: "platform", action: "admin" })}
+        canManagePhase={hasPermission(session?.user?.custom_attributes, { resource: "platform", action: "admin" })}
         initialPhase={hackathon.evaluation_phase}
         initialReviewed={reviewedCount}
         projects={projectsForViewer.map((p) => ({
