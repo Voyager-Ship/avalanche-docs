@@ -57,6 +57,9 @@ export const profileSchema = z.object({
         .max(WALLET_TAG_MAX_LENGTH, `Tag must not exceed ${WALLET_TAG_MAX_LENGTH} characters.`)
         .regex(WALLET_TAG_PATTERN, WALLET_TAG_VALIDATION_MESSAGE)
         .optional(),
+      signature: z.string().optional(),
+      issuedAt: z.string().optional(),
+      nonce: z.string().optional(),
     }),
   ).optional().default([]),
   additional_social_accounts: z.array(z.url("Must be a valid URL")).optional().default([]),
@@ -74,9 +77,39 @@ export type ProfileFormValues = z.infer<typeof profileSchema>;
 interface WalletFormEntry {
   address: string;
   tag?: string;
+  signature?: string;
+  issuedAt?: string;
+  nonce?: string;
 }
 
-function hasWalletAddress(value: unknown): value is { address: string; tag?: unknown } {
+function dedupeWallets(wallets: WalletFormEntry[]): WalletFormEntry[] {
+  return Object.values(
+    wallets.reduce<Record<string, WalletFormEntry>>((acc, item) => {
+      const key = item.address.toLowerCase();
+      if (!(key in acc)) {
+        acc[key] = {
+          address: item.address,
+          ...(item.tag ? { tag: item.tag } : {}),
+          ...(item.signature ? { signature: item.signature } : {}),
+          ...(item.issuedAt ? { issuedAt: item.issuedAt } : {}),
+          ...(item.nonce ? { nonce: item.nonce } : {}),
+        };
+      }
+
+      return acc;
+    }, {}),
+  );
+}
+
+function hasWalletAddress(
+  value: unknown,
+): value is {
+  address: string;
+  tag?: unknown;
+  signature?: unknown;
+  issuedAt?: unknown;
+  nonce?: unknown;
+} {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -145,6 +178,10 @@ export function useProfileForm() {
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialLoadRef = useRef(true);
   const lastSavedDataRef = useRef<string>("");
+  // Ref to gate the auto-save useEffect without adding isAutoSaving to its deps
+  // (adding the state directly would cause the effect to re-run after every save,
+  //  creating an infinite loop when the form is dirty and save completes)
+  const isAutoSavingRef = useRef(false);
   const [githubConnected, setGithubConnected] = useState(false);
 
   // Initialize form with react-hook-form and Zod
@@ -197,7 +234,11 @@ export function useProfileForm() {
         const address = item.address.trim();
         if (!address) return [];
         const tag = normalizeWalletTag(item.tag);
-        return [tag ? { address, tag } : { address }];
+        const entry: WalletFormEntry = tag ? { address, tag } : { address };
+        if (typeof item.signature === "string" && item.signature) entry.signature = item.signature;
+        if (typeof item.issuedAt === "string" && item.issuedAt) entry.issuedAt = item.issuedAt;
+        if (typeof item.nonce === "string" && item.nonce) entry.nonce = item.nonce;
+        return [entry];
       }
 
       return [];
@@ -330,7 +371,14 @@ export function useProfileForm() {
       return;
     }
 
+    // Skip auto-save if required fields are invalid (e.g. name is empty).
+    // Uses Zod directly so react-hook-form validation UI is not triggered.
+    if (!profileSchema.safeParse(data).success) {
+      return;
+    }
+
     setIsAutoSaving(true);
+    isAutoSavingRef.current = true;
 
     try {
       // Only handle image upload if explicitly requested (for manual saves)
@@ -376,19 +424,7 @@ export function useProfileForm() {
         ...restData
       } = data;
 
-      const cleanedWallets = Array.isArray(wallet)
-        ? normalizeWallets(wallet).reduce<Record<string, { address: string; tag?: string }>>(
-            (acc, item) => {
-              const key = item.address.toLowerCase();
-              if (!(key in acc)) {
-                acc[key] = item.tag ? { address: item.address, tag: item.tag } : { address: item.address };
-              }
-              return acc;
-            },
-            {},
-          )
-        : {};
-      const cleanedWalletEntries = Array.isArray(wallet) ? Object.values(cleanedWallets) : [];
+      const cleanedWalletEntries = Array.isArray(wallet) ? dedupeWallets(normalizeWallets(wallet)) : [];
 
       const profileData = {
         ...restData,
@@ -422,7 +458,6 @@ export function useProfileForm() {
           status: response.status,
           statusText: response.statusText,
           errorData,
-          payload: profileData,
         });
         throw new Error(message);
       }
@@ -441,13 +476,16 @@ export function useProfileForm() {
       // Silently fail - don't show toast for auto-save errors
     } finally {
       setIsAutoSaving(false);
+      isAutoSavingRef.current = false;
     }
   }, [session?.user?.id, session?.user?.email, form, formState.isDirty]);
 
   // Debounced auto-save effect - watches form values and triggers save after user stops editing
   useEffect(() => {
     // Skip auto-save during initial load
-    if (isInitialLoadRef.current || !formState.isDirty || isLoading || isAutoSaving) {
+    // Note: isAutoSaving is intentionally read via ref (not state) so this effect does
+    // not re-run each time a save completes, which would create an infinite save loop.
+    if (isInitialLoadRef.current || !formState.isDirty || isLoading || isAutoSavingRef.current) {
       return;
     }
 
@@ -474,17 +512,19 @@ export function useProfileForm() {
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [watchedValues, formState.isDirty, isLoading, isAutoSaving, autoSave, form]);
+  // isAutoSaving is deliberately excluded from deps — see isAutoSavingRef comment above.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedValues, formState.isDirty, isLoading, autoSave, form]);
 
   // Handle form submission
-  const onSubmit = async (data: ProfileFormValues) => {
+  const onSubmit = async (data: ProfileFormValues): Promise<boolean> => {
     if (!session?.user?.id) {
       toast({
         title: "Authentication required",
         description: "You must be logged in to update your profile",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     // Only format validations - no required fields
@@ -506,7 +546,7 @@ export function useProfileForm() {
     }
 
     if (hasErrors) {
-      return;
+      return false;
     }
 
     setIsSaving(true);
@@ -562,17 +602,7 @@ export function useProfileForm() {
         ...restData
       } = data;
 
-      const cleanedWalletEntries = normalizeWallets(wallet).reduce<Record<string, { address: string; tag?: string }>>(
-        (acc, item) => {
-          const key = item.address.toLowerCase();
-          if (!(key in acc)) {
-            acc[key] = item.tag ? { address: item.address, tag: item.tag } : { address: item.address };
-          }
-          return acc;
-        },
-        {},
-      );
-      const cleanedWalletArray = Object.values(cleanedWalletEntries);
+      const cleanedWalletArray = dedupeWallets(normalizeWallets(wallet));
 
       const profileData = {
         ...restData,
@@ -594,8 +624,6 @@ export function useProfileForm() {
         }
       };
 
-      console.log("Saving profile data:", profileData);
-      
       const response = await fetch(`/api/profile/extended/${session.user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -609,7 +637,6 @@ export function useProfileForm() {
           status: response.status,
           statusText: response.statusText,
           errorData,
-          payload: profileData,
         });
         throw new Error(message);
       }
@@ -657,6 +684,7 @@ export function useProfileForm() {
       
       // Update last saved data reference
       lastSavedDataRef.current = JSON.stringify(newFormData);
+      return true;
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
@@ -664,6 +692,7 @@ export function useProfileForm() {
         description: error instanceof Error ? error.message : "Error saving profile. Please try again.",
         variant: "destructive",
       });
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -695,7 +724,7 @@ export function useProfileForm() {
   };
 
   // Wallet handlers
-  const handleAddWallet = (address: string, tag?: string) => {
+  const handleAddWallet = (address: string, tag?: string, signature?: string, issuedAt?: string, nonce?: string) => {
     const currentWallets = normalizeWallets(watchedValues.wallet);
     const trimmedAddress = address?.trim() ?? "";
     if (trimmedAddress === "" || !/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) return;
@@ -710,7 +739,13 @@ export function useProfileForm() {
         "wallet",
         [
           ...currentWallets,
-          { address: trimmedAddress, ...(normalizedTag ? { tag: normalizedTag } : {}) },
+          {
+            address: trimmedAddress,
+            ...(normalizedTag ? { tag: normalizedTag } : {}),
+            ...(signature ? { signature } : {}),
+            ...(issuedAt ? { issuedAt } : {}),
+            ...(nonce ? { nonce } : {}),
+          },
         ],
         { shouldDirty: true },
       );
@@ -737,6 +772,12 @@ export function useProfileForm() {
     handleRemoveSocial,
     handleAddWallet,
     handleRemoveWallet,
-    onSubmit: form.handleSubmit(onSubmit),
+    onSubmit: async () => {
+      let saved = false;
+      await form.handleSubmit(async (data) => {
+        saved = await onSubmit(data);
+      })();
+      return saved;
+    },
   };
 }

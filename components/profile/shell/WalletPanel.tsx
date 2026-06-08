@@ -5,15 +5,14 @@ import { Check, Tag, Wallet } from "lucide-react";
 import { WalletConnectButton } from "../components/WalletConnectButton";
 import type { ProfileWallet } from "./types";
 import {
+  WALLET_TAG_OPTIONS,
   normalizeWalletTag,
-  WALLET_TAG_INPUT_PATTERN,
-  WALLET_TAG_MAX_LENGTH,
   WALLET_TAG_VALIDATION_MESSAGE,
 } from "@/lib/profile/walletTag";
 
 interface Props {
   wallets: ProfileWallet[];
-  onAddWallet: (address: string, tag?: string) => void;
+  onAddWallet: (address: string, tag?: string, signature?: string, issuedAt?: string, nonce?: string) => void;
   /** Called once per existing wallet when the user disconnects. */
   onRemove: (address: string) => void;
 }
@@ -24,35 +23,36 @@ function shorten(addr: string): string {
 }
 
 export function WalletPanel({ wallets, onAddWallet, onRemove }: Props) {
-  const [pendingTag, setPendingTag] = React.useState("");
+  const [pendingTag, setPendingTag] = React.useState<(typeof WALLET_TAG_OPTIONS)[number]>("dev");
   const isConnected = wallets.length > 0;
   const lastAddress = wallets[wallets.length - 1]?.address;
 
-  const handleAddWalletWithTag = (address: string) => {
+  const handleAddWalletWithTag = (address: string, signature: string, issuedAt: string, nonce: string) => {
     const tag = normalizeWalletTag(pendingTag);
-    onAddWallet(address, tag || undefined);
-    setPendingTag("");
-  };
-
-  const handleDisconnectAll = () => {
-    for (const w of [...wallets]) onRemove(w.address);
+    onAddWallet(address, tag || undefined, signature, issuedAt, nonce);
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <input
+        <select
           value={pendingTag}
-          onChange={(event) => setPendingTag(event.target.value.slice(0, WALLET_TAG_MAX_LENGTH))}
-          placeholder="Optional tag"
+          onChange={(event) => setPendingTag(event.target.value as (typeof WALLET_TAG_OPTIONS)[number])}
           className="pr-input"
           style={{ minWidth: 0, flex: 1 }}
           aria-label="Wallet tag"
-          maxLength={WALLET_TAG_MAX_LENGTH}
-          pattern={WALLET_TAG_INPUT_PATTERN}
           title={WALLET_TAG_VALIDATION_MESSAGE}
+        >
+          {WALLET_TAG_OPTIONS.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag}
+            </option>
+          ))}
+        </select>
+        <WalletConnectButton
+          onWalletConnected={handleAddWalletWithTag}
+          existingAddresses={wallets.map((w) => w.address)}
         />
-        <WalletConnectButton onWalletConnected={handleAddWalletWithTag} />
       </div>
       {!isConnected ? (
         <div />
@@ -91,8 +91,8 @@ export function WalletPanel({ wallets, onAddWallet, onRemove }: Props) {
               <button
                 type="button"
                 className="pr-btn pr-btn--sm pr-btn--success"
-                onClick={handleDisconnectAll}
-                aria-label="Disconnect wallet"
+                onClick={() => onRemove(w.address)}
+                aria-label="Disconnect this wallet"
               >
                 <Check size={12} /> Connected
               </button>

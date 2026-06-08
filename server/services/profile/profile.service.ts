@@ -3,10 +3,29 @@ import { prisma } from "@/prisma/prisma";
 import { ExtendedProfile, UserType, UpdateExtendedProfileData } from "@/types/extended-profile";
 import { syncUserDataToHubSpot } from "@/server/services/hubspotUserData";
 import { normalizeWalletTag } from "@/lib/profile/walletTag";
+import { verifyTypedData, type Address } from "viem";
+import {
+    EIP712_DOMAIN,
+    EIP712_TYPES_FOR_VERIFY,
+    EIP712_STATEMENT,
+} from "@/lib/profile/walletEip712";
+import {
+    claimWalletOwnershipProof,
+    confirmWalletOwnershipProof,
+    WalletOwnershipProofError,
+} from "./wallet-proof.service";
 
-type WalletEntry = {
+/** Shape stored in the DB — no ownership-proof fields. */
+type StoredWalletEntry = {
     address: string;
     tag?: string;
+};
+
+/** Shape accepted from API inputs — includes the ephemeral proof for new wallets. */
+type IncomingWalletEntry = StoredWalletEntry & {
+    signature?: string;
+    issuedAt?: string;
+    nonce?: string;
 };
 
 const EXTENDED_PROFILE_USER_SELECT = {
@@ -74,7 +93,7 @@ export async function getExtendedProfile(id: string): Promise<ExtendedProfile | 
         githubConnected: Boolean(user.github_access_token),
         x_account: user.x_account || null,
         linkedin_account: user.linkedin_account || null,
-        wallet: normalizeWallets(user.wallet),
+        wallet: normalizeWallets(user.wallet) || null,
         additional_social_accounts: user.additional_social_accounts || [],
         skills: user.skills || [],
         notifications: user.notifications,
@@ -138,12 +157,12 @@ function parseUserType(value: Prisma.JsonValue | null): UserType {
     };
 }
 
-function normalizeWallets(value: Prisma.JsonValue): WalletEntry[] | null {
+function normalizeWallets(value: Prisma.JsonValue): StoredWalletEntry[] {
     if (!Array.isArray(value)) {
-        return null;
+        return [];
     }
 
-    const wallets = value.flatMap((item): WalletEntry[] => {
+    return value.flatMap((item): StoredWalletEntry[] => {
         if (typeof item === "string") {
             const address = item.trim();
             return address ? [{ address }] : [];
@@ -163,11 +182,9 @@ function normalizeWallets(value: Prisma.JsonValue): WalletEntry[] | null {
             ? [{ address: address.trim(), tag }]
             : [{ address: address.trim() }];
     });
-
-    return wallets.length > 0 ? wallets : null;
 }
 
-function walletEntriesToJson(wallets: WalletEntry[] | null | undefined): Prisma.InputJsonValue {
+function walletEntriesToJson(wallets: StoredWalletEntry[] | null | undefined): Prisma.InputJsonValue {
     if (!wallets) {
         return [];
     }
@@ -220,11 +237,16 @@ function buildUserUpdateData(
  */
 export async function updateExtendedProfile(
     id: string,
-    profileData: UpdateExtendedProfileData
+    profileData: UpdateExtendedProfileData,
+    sessionUserId: string
 ): Promise<ExtendedProfile> {
+    if (sessionUserId !== id) {
+        throw new ProfileValidationError("Forbidden: authenticated user mismatch.", 403);
+    }
+
     const existingUser = await prisma.user.findUnique({
         where: { id },
-        select: { id: true },
+        select: { id: true, wallet: true },
     });
 
     if (!existingUser) {
@@ -239,10 +261,96 @@ export async function updateExtendedProfile(
     }
 
     const updateData = buildUserUpdateData(profileData);
+    const currentAddresses = new Set(
+        normalizeWallets(existingUser.wallet).map((w) => w.address.toLowerCase()),
+    );
 
-    await prisma.user.update({
-        where: { id },
-        data: updateData,
+    const verifiedWallets: IncomingWalletEntry[] = [];
+
+    if (profileData.wallet !== undefined && profileData.wallet !== null) {
+        for (const w of profileData.wallet as IncomingWalletEntry[]) {
+            const isNew = !currentAddresses.has(w.address.toLowerCase());
+            if (!isNew) continue;
+
+            if (!w.signature || !w.issuedAt) {
+                throw new ProfileValidationError(
+                    `Ownership proof required for wallet ${w.address}.`,
+                    400,
+                );
+            }
+
+            if (!w.nonce) {
+                throw new ProfileValidationError(
+                    `Ownership proof nonce required for wallet ${w.address}.`,
+                    400,
+                );
+            }
+
+            let valid = false;
+            try {
+                valid = await verifyTypedData({
+                    address: w.address as Address,
+                    domain: EIP712_DOMAIN,
+                    types: EIP712_TYPES_FOR_VERIFY,
+                    primaryType: "WalletOwnership",
+                    message: {
+                        statement: EIP712_STATEMENT,
+                        userId: sessionUserId,
+                        walletAddress: w.address as Address,
+                        issuedAt: w.issuedAt,
+                        nonce: w.nonce,
+                    },
+                    signature: w.signature as `0x${string}`,
+                });
+            } catch {
+                valid = false;
+            }
+
+            if (!valid) {
+                throw new ProfileValidationError(
+                    `Invalid ownership signature for wallet ${w.address}.`,
+                    400,
+                );
+            }
+
+            verifiedWallets.push(w);
+        }
+    }
+
+    await prisma.$transaction(async (tx) => {
+        for (const w of verifiedWallets) {
+            try {
+                await claimWalletOwnershipProof(
+                    {
+                        userId: sessionUserId,
+                        walletAddress: w.address,
+                        issuedAt: w.issuedAt!,
+                        nonce: w.nonce!,
+                    },
+                    tx,
+                );
+                await confirmWalletOwnershipProof(
+                    {
+                        userId: sessionUserId,
+                        walletAddress: w.address,
+                        issuedAt: w.issuedAt!,
+                        nonce: w.nonce!,
+                        signature: w.signature!,
+                    },
+                    tx,
+                );
+            } catch (error) {
+                if (error instanceof WalletOwnershipProofError) {
+                    throw new ProfileValidationError(error.message, error.statusCode);
+                }
+                throw error;
+            }
+        }
+
+        await tx.user.update({
+            where: { id },
+            data: updateData,
+        });
     });
 
     const updatedProfile = await getExtendedProfile(id);
